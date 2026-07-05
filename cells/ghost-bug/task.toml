@@ -1,0 +1,60 @@
+# Team-eval #2 — Ghost-bug (DEBUG). SDLC work-type: debugging. Demo beat #2.
+# A team is handed a subtle, REAL bug in a small lib and must reproduce -> ROOT-cause -> fix ->
+# add the regression test that would've caught it. Discriminator: root-causing vs papering over,
+# and does it add real coverage. See FRAMEWORK.md + sdlc-suite.
+id    = "ghost-bug"
+title = "Debug a subtle shared-default-mutation bug in `labelkit` (root-cause + regression test)"
+tier  = 1
+axes  = ["isolation", "task-success", "quality", "autonomy", "cost", "coordination"]
+
+evaluates = """
+Whether a small team (a coordinate-only supervisor + a specialist that owns the repo, on real pty +
+smalltalk) can do REAL debugging, not symptom-patching. The seeded bug is a classic GHOST: format.js
+does `Object.assign(defaultOptions, options)`, MUTATING the shared default object from config.js — so
+the first call with custom options permanently corrupts the defaults for every later call. It is
+subtle (works on first use), REAL (a genuine aliasing defect), and the unit suite is GREEN because it
+never formats with defaults AFTER a custom call — so the bug is latent and tests can't see it. It
+forces the debug skills: REPRODUCE (from a symptom report), ROOT-CAUSE (the shared-object mutation —
+not a band-aid like freezing/resetting/re-declaring defaults), MINIMAL FIX (a non-mutating merge:
+`{...defaultOptions, ...options}` or `Object.assign({}, defaultOptions, options)`), and — the part a
+lone 'make the test pass' agent skips — ADD THE REGRESSION TEST that would have caught it (fails on
+the buggy code, passes after). The held-out check runs the team's new test against the ORIGINAL buggy
+code: it must FAIL there, or the 'regression test' is theater.
+"""
+
+[setup]
+worker_repo = "${EVAL_SANDBOX:-./.sandbox}/ghost-bug/worker  (labelkit; owned by gb-fix, distinct git author)"
+sup_dir     = "${EVAL_SANDBOX:-./.sandbox}/ghost-bug/sup  (gb-sup; coordinate-only, owns NO repo)"
+bug         = "src/format.js: `Object.assign(defaultOptions, options)` mutates the shared default from src/config.js"
+start_state = "GREEN suite (3 tests, none re-checks defaults after a custom call); bug reproduces via format(custom) then format(default)"
+builder     = "fixtures/ghost-bug/setup-sandbox.sh (deterministic; validates green-suite + reproduces-bug on build)"
+
+[team]
+gb-sup = "supervisor (manager persona), Claude --permission-mode bypassPermissions (spawn-capable), coordinate-only"
+gb-fix = "specialist (specialist persona), Claude --permission-mode auto, owns the labelkit repo"
+posture = "the operator's rule: SUPERVISOR=bypass, WORKER=auto. Ephemeral: role=agent, no strategy=permanent."
+kick   = "hermetic bug-report seeded into gb-sup's inbox (fixtures/ghost-bug/kick-supervisor.md)"
+
+[isolation]
+enforce = "gb-sup owns no repo (structural — its dir is not a git repo, cannot commit); gb-fix owns labelkit only"
+detect  = "post-run, attribute every commit — any change to labelkit by a non-owner (or a sup commit) FAILS the run"
+prove   = "the whole debug — delegation, the root-cause finding, the correction if any — is visible in the coord thread"
+verdict = "PASS/FAIL hard gate"
+
+[grader]
+visible_tests       = "the labelkit suite must be green after the fix (the team runs npm test)"
+held_out_acceptance = "apply the team's NEW regression test to the ORIGINAL buggy code (base commit) — it MUST FAIL there (proves it catches the bug); and inspect the fix is the non-mutating merge (root cause), not a band-aid (freeze/try-catch/reset/re-declare that hides the symptom)."
+hermetic            = "runs on the isolated sandbox clone; the base commit is preserved for the held-out check."
+
+[quality]
+type   = "cross-family judge (Claude grader here; a Codex judge available for the matrix) + the held-out band-aid check"
+method = "ROOT-CAUSE vs PAPER-OVER (did they fix the mutation, or hide it?); is the regression test real (fails on old code, targets the aliasing, not a tautology)?; minimal diff; did they explain WHY the tests missed it?"
+
+[autonomy]
+metric = "competence rescues vs HB-4 wake-tax pokes (Claude asyncRewake hook + shepherd-poke backstop). rescue-count is the headline."
+
+[cost]
+metric = "tokens + wall-clock (deferred instrumentation; record wall-clock)."
+
+[observability]
+report = "per-agent trajectory (reproduce -> diagnose -> fix -> test -> report -> verify); whether the sup CAUGHT a band-aid/weak-test and drove a correction (quality-positive); problems; interventions (rescues vs wake-tax); coordination."

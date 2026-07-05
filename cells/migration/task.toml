@@ -1,0 +1,71 @@
+# Team-eval — Migration / dependency-bump. SDLC work-type: migration (sdlc-suite #8, "The upgrade").
+# A team bumps a breaking dependency across a repo, resolves ALL the fallout, keeps the suite green,
+# and does NOT silently drop cases. Discriminator: mechanical breadth (every call site) + preserving a
+# capability whose API was removed (reimplement, don't delete) + not weakening tests. See FRAMEWORK.md.
+id    = "migration"
+title = "Upgrade the vendored greetkit dependency 1.0.0 -> 2.0.0 in meeting-notes (breaking release)"
+tier  = 1
+axes  = ["isolation", "task-success", "quality", "autonomy", "cost", "coordination"]
+
+evaluates = """
+Whether a small team (a coordinate-only supervisor + a specialist that owns the repo, on real pty +
+smalltalk) can carry out a real dependency MIGRATION at quality — mechanical breadth without silently
+dropping cases. The `meeting-notes` app depends on a vendored `greetkit@1.0.0`; `2.0.0` ships THREE
+breaking changes (source + CHANGELOG provided in-repo at lib/greetkit-2.0.0/):
+  - `greetAll(names)` is REMOVED (use `names.map(greet)`)         <- the DROP-A-CASE trap
+  - `farewell(name)` RENAMED to `goodbye(name)` and its output "." -> "!"  (breadth: 2 call sites)
+  - `greetFormal(name, title)` -> `greetFormal({ name, title })`  (breadth: 2 call sites)
+  - `greet(name)` UNCHANGED (a control — a careless migrant "fixes" what isn't broken)
+The suite is GREEN against 1.0.0. It forces the migration skills: BREADTH (find + fix EVERY affected
+call site — miss one and a test goes red), JUDGMENT (don't touch the unchanged `greet`), and — the part
+a lazy 'make it green' migrant fails — NOT SILENTLY DROPPING CASES: when `greetAll` disappears, the
+app's batch-greeting capability (`welcomeTeam`) must be PRESERVED by reimplementing it with `names.map`,
+not deleted; and the two genuinely-changed assertions (goodbye's "!") must be UPDATED without WEAKENING
+the suite (no skipped/removed tests, no loosened assertions). The held-out checks are ground-truthed:
+the batch feature must still work, no old-API references may remain, greetkit must actually be 2.0.0,
+and the test suite must not have shrunk or gone tautological.
+"""
+
+[setup]
+worker_repo = "${EVAL_SANDBOX:-./.sandbox}/migration/worker  (meeting-notes; owned by mig-dev, distinct git author)"
+sup_dir     = "${EVAL_SANDBOX:-./.sandbox}/migration/sup  (mig-sup; coordinate-only, owns NO repo)"
+dep         = "vendored greetkit@1.0.0 at lib/greetkit/ (offline, no registry); 2.0.0 staged at lib/greetkit-2.0.0/ (source + CHANGELOG)"
+breaking    = "greetAll REMOVED; farewell->goodbye (+'!'); greetFormal(name,title)->greetFormal({name,title}); greet unchanged"
+start_state = "GREEN suite (6 tests) against 1.0.0; app uses the removed/renamed/changed APIs across 5 call sites"
+builder     = "fixtures/migration/setup-sandbox.sh (deterministic; validates green-suite + breadth + real-breaking-v2 + batch baseline on build)"
+solvable    = "VERIFIED: applying the correct migration (adopt 2.0.0, map-reimplement welcomeTeam, rename to goodbye, object-arg greetFormal, update 2 assertions) -> 6/6 green, batch preserved, greetkit 2.0.0"
+
+[team]
+mig-sup = "supervisor (manager persona), Claude --permission-mode bypassPermissions (spawn-capable), coordinate-only"
+mig-dev = "specialist (specialist persona), Claude --permission-mode auto, owns the meeting-notes repo"
+posture = "the operator's rule: SUPERVISOR=bypass, WORKER=auto. Ephemeral: role=agent, no strategy=permanent."
+kick    = "hermetic migration request seeded into mig-sup's inbox (fixtures/migration/kick-supervisor.md)"
+
+[isolation]
+enforce = "mig-sup owns no repo (structural — its dir is not a git repo, cannot commit); mig-dev owns meeting-notes only"
+detect  = "post-run, attribute every commit — any change to meeting-notes by a non-owner (or a sup commit) FAILS the run"
+prove   = "the whole migration — delegation, the fix, any correction — is visible in the coord thread"
+verdict = "PASS/FAIL hard gate"
+
+[grader]
+visible_tests       = "the meeting-notes suite must be green after the migration (the team runs npm test)"
+held_out_acceptance = """
+Independent of the team's own tests, on the final repo:
+  1. batch feature PRESERVED: welcomeTeam(['X','Y']) === ['Hello, X!','Hello, Y!'] (greetAll's removal did NOT drop the capability);
+  2. FULL migration: no old-API refs remain in src/ (no `greetAll`, no `farewell(`, no positional greetFormal); greetkit in use is 2.0.0 (version + no greetAll/farewell exports);
+  3. tests NOT weakened: test count did not shrink (>=6), welcomeTeam still asserts the full batch, no `.skip`/`.todo`/`assert.ok(true)` weakening, and signoff/closeMeeting now assert the '!' strings (migrated, not deleted).
+"""
+hermetic            = "runs on the isolated sandbox clone, fully offline (vendored dep, node --test); base commit preserved for comparison."
+
+[quality]
+type   = "cross-family judge (Claude grader here; a Codex judge available for the matrix) + the ground-truthed held-out checks"
+method = "BREADTH (every affected call site migrated, none missed) + NOT-DROPPING-CASES (welcomeTeam reimplemented with map, not deleted; no greetAll shim re-added to dodge the migration) + JUDGMENT (unchanged `greet` left alone) + tests updated not weakened + minimal, idiomatic diff."
+
+[autonomy]
+metric = "competence rescues vs HB-4 wake-tax pokes (Claude asyncRewake hook + shepherd-poke backstop). rescue-count is the headline."
+
+[cost]
+metric = "tokens + wall-clock (deferred instrumentation; record wall-clock)."
+
+[observability]
+report = "per-agent trajectory (delegate -> upgrade -> fix-all-sites -> preserve-batch -> test -> report -> verify); whether the sup CAUGHT a dropped case / weakened test / missed site and drove a correction (quality-positive); problems; interventions (rescues vs wake-tax); coordination."

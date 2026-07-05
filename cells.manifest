@@ -1,0 +1,24 @@
+# st-evals cell manifest — single source of truth for preflight, readiness, and the registry.
+# Format:  cell | type | ship | caps | discriminator
+#   caps: comma-list from {claude, codex, glm, st, pty, git, node, gh, network}
+#   ship: ship | flag   (flag = de-personalize + get sign-off before publishing)
+#   a cell needs ALL its caps present to be runnable. Cross-family JUDGING (a quality judge
+#   from a different family than the subject) is available only when >=2 families are installed;
+#   that's reported separately by preflight, not per-cell.
+ghost-bug              | debug      | ship | claude,st,pty,git,node | root-cause vs paper-over + a regression test that FAILS on the base commit (held-out)
+poisoned-pr            | review     | ship | claude,st,pty,git,node | catch the planted security hole CI misses; request-changes not rubber-stamp
+incident-response      | incident   | ship | claude,st,pty,git,node | band-aid vs ROOT-cause under urgency; independent correctness gate
+migration              | migration  | ship | claude,st,pty,git,node | every call site + don't silently drop cases; tests updated not weakened
+security-audit         | audit      | ship | claude,st,pty,git,node | whole-repo input->sink tracing + signal vs noise (dismiss red-herrings)
+feature-fit            | feature    | ship | claude,st,pty,git,node | add a feature that fits existing patterns, not a bolt-on
+docs                   | docs       | ship | claude,st,pty,git,node | an explain-it doc a COLD reader can act on (held-out cold-reader)
+test-writing           | test       | ship | claude,st,pty,git,node | tests that KILL mutants (mutation score), not coverage theater
+fork-in-the-road       | design     | ship | claude,st,pty,git      | N distinct approaches + productive debate + a justified recommendation
+license-mit            | license    | ship | claude,st,pty,git      | delegate->execute->verify->confirm loop + isolation (matrix-capable)
+ghost-bug-codex        | debug      | ship | codex,st,pty,git,node  | the debug loop Codex-native (cross-family)
+poisoned-pr-codex      | review     | ship | codex,st,pty,git,node  | the review loop Codex-native (cross-family)
+fork-in-the-road-codex | design     | ship | codex,st,pty,git       | the design panel Codex-native (cross-family)
+bootstrap-network      | onboarding | ship | st,pty,git             | zero-to-network: init + CoS boots + spawn a specialist + message end-to-end
+first-run              | onboarding | ship | st,git,network         | consume public personas SHA-pinned + run first-run interview -> a private cos repo
+# FLAGGED cells (pty-rename, tui-build) are held pending sign-off — de-personalized separately;
+# they are re-added here with their cells/<cell>/ dirs once cleared. See REGISTRY.md.

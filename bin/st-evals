@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# st-evals — run isolation-gated, held-out-graded agent-team evals on your own
+# network. One instruction seeds a team; the team self-organizes; a held-out check
+# grades the result so it can't be gamed by editing a unit test.
+#
+#   st-evals preflight        # what you have installed → which cells you can run
+#   st-evals readiness        # first-boot smoke: bus works, agents spawn, msgs round-trip
+#   st-evals list             # the cell catalogue (type · ship/flag · caps)
+#   st-evals run <cell>       # run one cell (ensures the pinned personas first)
+#
+# Env a cell may need (documented per cell): ST_ROOT (a scratch network root),
+# ST_HOOKS_DIR (<smalltalk>/examples/claude-code/hooks), PERSONAS_DIR (auto via
+# bin/ensure-personas.sh). Cross-family JUDGING needs ≥2 model families installed.
+# ─────────────────────────────────────────────────────────────────────────────
+set -euo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$HERE/.." && pwd)"
+MAN="$ROOT/cells.manifest"
+
+usage() { sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; }
+
+cmd="${1:-help}"; shift || true
+case "$cmd" in
+  preflight) exec "$HERE/preflight.sh" "$@" ;;
+  readiness) exec "$HERE/readiness.sh" "$@" ;;
+
+  list)
+    printf '%-24s %-11s %-5s %s\n' CELL TYPE SHIP CAPS
+    awk -F'|' 'NF>=4 && $1 !~ /^[[:space:]]*#/ {
+      for(i=1;i<=4;i++){gsub(/^[ \t]+|[ \t]+$/,"",$i)}
+      printf "%-24s %-11s %-5s %s\n",$1,$2,$3,$4 }' "$MAN"
+    ;;
+
+  run)
+    cell="${1:-}"; [ -n "$cell" ] || { echo "usage: st-evals run <cell>" >&2; exit 2; }
+    dir="$ROOT/cells/$cell"
+    [ -d "$dir" ] || { echo "no such cell: $cell (try: st-evals list)" >&2; exit 2; }
+
+    # gate on capabilities before doing anything
+    if ! "$HERE/preflight.sh" --runnable | grep -qx "$cell"; then
+      echo "cell '$cell' is not runnable with your installed tools. Run: st-evals preflight" >&2
+      exit 1
+    fi
+
+    # ensure the pinned public personas are present, unless the cell already has PERSONAS_DIR
+    if [ -z "${PERSONAS_DIR:-}" ]; then
+      PERSONAS_DIR="$("$HERE/ensure-personas.sh")"; export PERSONAS_DIR
+    fi
+
+    fx="$dir/fixture"
+    if   [ -x "$fx/run-real-path.sh" ]; then exec "$fx/run-real-path.sh" "$@"
+    elif [ -x "$fx/run.sh" ];          then exec "$fx/run.sh" "$@"
+    elif [ -x "$fx/setup-sandbox.sh" ]; then
+      echo "== materialize the sandbox =="; "$fx/setup-sandbox.sh"
+      if [ -x "$fx/spin.sh" ]; then
+        echo "== launch the team (needs ST_ROOT + ST_HOOKS_DIR set) =="; exec "$fx/spin.sh"
+      else
+        echo "sandbox ready. Compose + launch with the fixture/configure-*-agent.sh scripts (see cells/$cell/README.md)."
+      fi
+    else
+      echo "cell '$cell' has no recognized entry script; see cells/$cell/README.md" >&2; exit 1
+    fi
+    ;;
+
+  help|--help|-h|"") usage ;;
+  *) echo "unknown command: $cmd" >&2; usage; exit 2 ;;
+esac

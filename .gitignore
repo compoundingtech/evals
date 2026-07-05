@@ -1,0 +1,9 @@
+# build scratch + runtime artifacts (never committed)
+.build/
+.sandbox/
+.personas/
+
+# noise
+.DS_Store
+node_modules/
+*.log

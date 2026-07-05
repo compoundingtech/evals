@@ -1,71 +1,64 @@
 #!/usr/bin/env bash
-# Wire one Migration Claude eval agent: coord MCP (channel) + asyncRewake wake hook + pty.toml
-# (HB-3 identity env, ST_ROOT/COORD_ROOT) + pre-created coord dir + bootstrap session jsonl.
+# Launch one Migration Claude eval agent via the REAL `st launch` (not a homegrown config writer).
+# `st launch` writes .mcp.json (server `st` = coord --channel), .claude/settings.local.json (asyncRewake
+# + PreCompact + StopFailure hooks, enableAllProjectMcpServers, enabledMcpjsonServers:["st"]), the
+# session-id, pty.toml, installs the composed persona (--persona -> PERSONA.md + @PERSONA.md in CLAUDE.md),
+# and starts the pty session. We add the two things st launch does NOT do for an eval:
+#   1. ISOLATION (RISK 2): the isolated bus reaches the agent by ENV INHERITANCE — spin.sh exports
+#      ST_ROOT/COORD_ROOT before calling this, so `st launch` -> pty session -> claude -> the `st` MCP
+#      server all inherit the isolated root (verified live: agent registers on $ST_ROOT, live bus untouched).
+#      (When st launch learns to bake ST_ROOT into the generated session env, this stays correct for free.)
+#   2. ZERO-ORPHAN TEARDOWN (RISK 1): --session-name "$(stev_prefix ...)" makes the pty session name
+#      collision-proof (`<id>-stev-<cell>-<runid>-<id>`, never a bare `<id>-claude`); we register that EXACT
+#      name via stev_track_extra so `st-evals teardown` removes it (teardown's prefix-grep extracts the stem
+#      mid-string, so the exact full name is load-bearing).
+# Plus deterministic startup hygiene st launch leaves to the operator: pre-create the isolated coord dir
+# (so the boot ritual doesn't rabbit-hole) and pre-trust the folder (belt-and-suspenders with --unattended).
 # Permission POSTURE (the operator): SUPERVISOR = bypassPermissions (spawn-capable); WORKER = auto.
-#   ./configure-claude-agent.sh <sup|dev> [SANDBOX]
+#   ./configure-claude-agent.sh <sup|dev> [SANDBOX]   # ST_ROOT must be exported (spin.sh does this)
 set -euo pipefail
-STEV_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$STEV_HERE/../../../bin/lib-harness.sh"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/../../../bin/lib-harness.sh"
 role="$1"; SB="${2:-${EVAL_SANDBOX:-./.sandbox}/migration}"
-HOOKS="${ST_HOOKS_DIR:?set ST_HOOKS_DIR to <smalltalk>/examples/claude-code/hooks}"
-ROOT="${ST_ROOT:-${XDG_STATE_HOME:-$HOME/.local/state}/smalltalk}"
+ROOT="${ST_ROOT:?spin.sh must export ST_ROOT to the isolated bus root ($SB/st-root) before launching}"
+stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # collision-proof pty prefix; idempotent (standalone-safe)
 
 case "$role" in
   sup) id="mig-sup"; d="$SB/sup";    mode="bypassPermissions" ;;   # coordinate-only, spawn-capable
   dev) id="mig-dev"; d="$SB/worker"; mode="auto" ;;                # owns the repo; no child agents
   *) echo "role must be sup|dev" >&2; exit 1 ;;
 esac
-sid="$(uuidgen | tr 'A-Z' 'a-z')"
+persona="$SB/personas-local/$id.md"
+[ -f "$persona" ] || { echo "missing composed persona $persona — run compose-persona.sh $role first" >&2; exit 1; }
+pfx="$(stev_prefix "$SB" "$id")"     # stev-<cell>-<runid>-<id>
+sess="$id-$pfx"                       # st launch names the pty session <identity>-<session-name>
 
-# Pre-trust the dir for Claude Code so `claude --print`/launch don't block on the folder-trust gate.
+# Pre-create the FULL coord dir on the ISOLATED bus (inbox+archive+status) so the boot ritual doesn't
+# rabbit-hole looking for its own folder.
+mkdir -p "$ROOT/$id/inbox" "$ROOT/$id/archive"; printf 'available\n' > "$ROOT/$id/status"
+
+# Pre-trust the folder for Claude Code (skip the workspace-trust gate). --unattended also auto-pokes the
+# startup gates, but pre-trust is deterministic and cheap — keep both (the auto-poker's fixed timing can miss).
 python3 - "$d" <<'PY'
-import json,sys
-p="$HOME/.claude.json"; d=json.load(open(p))
+import json,os,sys
+p=os.path.expanduser("~/.claude.json")
+d=json.load(open(p)) if os.path.exists(p) else {}
 e=d.setdefault("projects",{}).setdefault(sys.argv[1],{})
 e["hasTrustDialogAccepted"]=True; e["hasCompletedProjectOnboarding"]=True
 json.dump(d,open(p,"w"),indent=2)
 PY
 
-# Pre-create the FULL coord dir (inbox+archive+status) so the boot ritual doesn't rabbit-hole.
-mkdir -p "$ROOT/$id/inbox" "$ROOT/$id/archive"; printf 'available\n' > "$ROOT/$id/status"
-mkdir -p "$d/.claude"; printf '%s\n' "$sid" > "$d/.claude-session-id"
+# Launch via the real st launch. It inherits ST_ROOT/COORD_ROOT from this process's env (exported by
+# spin.sh) -> the agent binds the ISOLATED bus. --unattended bakes the startup auto-poker; --session-name
+# makes the pty session name collision-proof.
+( cd "$d" && st launch claude \
+    --identity "$id" \
+    --session-name "$pfx" \
+    --permission-mode "$mode" \
+    --persona "$persona" \
+    --unattended )
 
-cat > "$d/.mcp.json" <<JSON
-{
-  "mcpServers": {
-    "coord": { "type": "stdio", "command": "$(command -v coord || echo coord)", "args": ["mcp", "--channel"], "env": {} }
-  }
-}
-JSON
+# Register the EXACT resulting session name so teardown is zero-orphan even though it's outside our prefix stem.
+stev_track_extra "$SB" "$sess"
 
-cat > "$d/.claude/settings.local.json" <<JSON
-{
-  "\$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "enabledMcpjsonServers": ["coord"],
-  "enableAllProjectMcpServers": true,
-  "hooks": {
-    "SessionStart": [{ "hooks": [{ "type": "command", "command": "$HOOKS/session-start.sh", "async": true, "asyncRewake": true }] }],
-    "StopFailure": [{ "hooks": [{ "type": "command", "command": "$HOOKS/stop-failure.sh" }] }]
-  }
-}
-JSON
-
-stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"; pfx="$(stev_prefix "$SB" "$id")"
-cat > "$d/pty.toml" <<TOML
-prefix = "$pfx"
-
-[sessions.claude]
-command = "claude --permission-mode $mode --dangerously-load-development-channels server:st --resume $sid"
-tags = { role = "agent" }
-
-[sessions.claude.env]
-ST_AGENT = "$id"
-COORD_IDENTITY = "$id"
-ST_IDENTITY = "$id"
-ST_ROOT = "$ROOT"
-COORD_ROOT = "$ROOT"
-TOML
-
-( cd "$d" && timeout 90 env ST_AGENT="$id" claude --print --session-id "$sid" "session init" >/dev/null 2>&1 ) \
-  && echo "  bootstrapped jsonl" || echo "  (bootstrap best-effort/timed out; continuing)"
-
-echo "configured $id  (sid=$sid, claude --permission-mode $mode, asyncRewake, pre-trusted, coord dir pre-created)"
+echo "launched $id  (pty session=$sess, --permission-mode $mode, isolated bus=$ROOT, persona=$persona, asyncRewake)"

@@ -1,40 +1,50 @@
 #!/usr/bin/env bash
-# Spin the Migration (dependency-bump) Claude cell: mig-sup (bypass, coordinate-only) + mig-dev
-# (auto, owns meeting-notes). Run AFTER setup-sandbox.sh. Composes personas, wires coord+asyncRewake,
-# seeds the hermetic migration-request kick into mig-sup's inbox, and launches (worker first, sup last).
-# Claude agents auto-wake via the asyncRewake hook but still need shepherd-poke.sh as an HB-4 backstop.
+# Spin the Migration (dependency-bump) Claude cell via the REAL `st launch`: mig-sup (bypass, coordinate-only) +
+# mig-dev (auto, owns meeting-notes). Run AFTER setup-sandbox.sh (auto-materializes if the sandbox is absent).
+# SELF-ISOLATING: creates + exports an isolated bus root ($SB/st-root) so nothing touches the operator's
+# live network — the st-launched agents inherit ST_ROOT/COORD_ROOT from this process (verified: RISK 2).
+# Composes personas (standalone files for --persona), launches worker first + supervisor last, and seeds
+# the hermetic migration-request kick into mig-sup's inbox. Claude agents auto-wake via st launch's asyncRewake hook.
 #
-#   ./spin.sh            # sandbox defaults to ${EVAL_SANDBOX:-./.sandbox}/migration
+#   ./spin.sh [SANDBOX]        # sandbox defaults to ${EVAL_SANDBOX:-./.sandbox}/migration
+#   needs: PERSONAS_DIR (bin/ensure-personas.sh provisions it). No external ST_ROOT / ST_HOOKS_DIR needed —
+#          spin owns the isolated root and st launch wires its own boot hooks.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/../../../bin/lib-harness.sh"
 SB="${1:-${EVAL_SANDBOX:-./.sandbox}/migration}"
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"; stev_arm_teardown "$SB"
-ROOT="${ST_ROOT:-${XDG_STATE_HOME:-$HOME/.local/state}/smalltalk}"
+STR="$SB/st-root"                                    # SELF-ISOLATED bus root (never the live network)
+export ST_ROOT="$STR"; export COORD_ROOT="$STR"      # st-launched agents inherit these -> isolated bus
+stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # per-run collision-proof pty prefix
+stev_arm_teardown "$SB"                              # trap: teardown on crash/interrupt/early-exit
 
-echo "== 1/4  compose personas (CLAUDE.md) =="
+[ -d "$SB/worker" ] || { echo "== sandbox absent — materializing =="; "$HERE/setup-sandbox.sh" "$SB"; }
+mkdir -p "$STR/mig-sup/inbox" "$STR/mig-sup/archive"   # so the kick can land before mig-sup launches
+
+echo "== 1/4  compose personas (standalone files for st launch --persona) =="
 "$HERE/compose-persona.sh" sup "$SB"
 "$HERE/compose-persona.sh" dev "$SB"
 
-echo "== 2/4  wire agents (sup=bypass, dev=auto) =="
-"$HERE/configure-claude-agent.sh" sup "$SB"
+echo "== 2/4  launch the worker first (st launch: mig-dev, auto, owns meeting-notes) =="
 "$HERE/configure-claude-agent.sh" dev "$SB"
 
 echo "== 3/4  seed the hermetic kick into mig-sup's inbox (boot-time ms; strip HTML header) =="
 ms=$(( $(date +%s) * 1000 ))
 sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$ROOT/mig-sup/inbox/${ms}-${sfx}.md"
-echo "   seeded $ROOT/mig-sup/inbox/${ms}-${sfx}.md"
+sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$STR/mig-sup/inbox/${ms}-${sfx}.md"
+echo "   seeded $STR/mig-sup/inbox/${ms}-${sfx}.md"
 
-echo "== 4/4  launch (pty up) — worker first, supervisor last =="
-for pair in "dev:$SB/worker" "sup:$SB/sup"; do
-  d="${pair#*:}"; echo "   pty up in $d"; ( cd "$d" && pty up )
-done
+echo "== 4/4  launch the supervisor last (st launch: mig-sup, bypass, coordinate-only) =="
+"$HERE/configure-claude-agent.sh" sup "$SB"
 
 echo
-echo "SPUN (Migration cell). sessions:"; pty ls 2>/dev/null | grep -E "mig-(sup|dev)-" || pty ls
+echo "SPUN (Migration cell, isolated bus at $STR). sessions:"
+pty ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E "$(stev_run_prefix "$SB")|mig-sup-|mig-dev-" || pty ls
 echo
-echo "OBSERVE the coord thread: kick -> mig-sup delegate -> mig-dev upgrade+fix-all-sites+preserve-batch+green -> report"
-echo "  -> mig-sup read-only verify (greetkit 2.0.0? all call sites migrated? batch feature preserved+tested? tests not weakened? green?) -> confirm to eval-runner."
-echo "WAKE: Claude auto-wakes via asyncRewake, but run the HB-4 backstop if agents idle on delivered msgs:"
-echo "  bin/shepherd-poke.sh \"mig-sup mig-dev\" 40 180 &"
+echo "OBSERVE the coord thread (ST_ROOT=$STR): kick -> mig-sup delegate -> mig-dev upgrade+fix-all-sites+"
+echo "  preserve-batch+green -> report -> mig-sup read-only verify (greetkit 2.0.0? all call sites migrated?"
+echo "  batch feature preserved+tested? tests not weakened? green?) -> confirm to eval-runner."
+echo "WAKE: Claude auto-wakes via st launch's asyncRewake hook. If an agent idles on a delivered message, poke"
+echo "  by hand (a tracked HB-4 poke): pty send <session> --with-delay 0.4 --seq key:ctrl+u --seq 'read your inbox and proceed' --seq key:return"
+echo
+echo "TEARDOWN after grading:  bin/st-evals teardown \"$SB\""

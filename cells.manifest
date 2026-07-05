@@ -21,5 +21,6 @@ fork-in-the-road-codex | design     | ship | codex,st,pty,git       | the design
 bootstrap-network      | onboarding | ship | st,pty,git             | zero-to-network: init + CoS boots + spawn a specialist + message end-to-end
 first-run              | onboarding | ship | st,git,network         | consume public personas SHA-pinned + run first-run interview -> a private cos repo
 team-standup           | standup    | ship | claude,st,pty,git,node  | a stood-up CoS stands up a WORKING specialist that drives a delegated task end-to-end (delegate->execute->report->walk); isolation hard-gate
+tui-build              | greenfield | ship | claude,st,pty,git,node  | a team builds a real TUI over the agent network + a human-centered usability find->fix pass (not just "it renders"); isolation hard-gate + held-out cold-nav + usability rubric
 # FLAGGED cells (pty-rename, tui-build) are held pending sign-off — de-personalized separately;
 # they are re-added here with their cells/<cell>/ dirs once cleared. See REGISTRY.md.

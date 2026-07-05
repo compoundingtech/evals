@@ -24,6 +24,7 @@ Legend — caps: **C** claude · **X** codex · **G** ollama+GLM · **st** the b
 | **test-writing** | tests | a regression-catching suite with **exact-value + boundary** assertions, not coverage theater | a **mutation score** — the tests must KILL planted mutants; high line-coverage alone fails | C·st·pty·git·node |
 | **fork-in-the-road** | design | generate **N genuinely distinct** approaches → a productive debate (real on-record changes of mind) → a **justified** recommendation + **escalate** the values call | did the panel independently surface the held-out **privacy** crux? (a judge-panel shape, not delegate→execute) | C·st·pty·git |
 | **license-mit** | team loop | the **smallest** delegate→execute→verify→confirm loop; the supervisor must **not** edit the worker's repo | isolation from git metadata (only the owner commits); canonical MIT, tree clean — the **matrix** cell (runs C/X/G/mixed) | C·st·pty·git |
+| **tui-build** | greenfield build | a team builds a real TUI over the agent network (two views + one shared data layer) + a **human-centered usability find→fix pass** — not just "it renders" | isolation by lane (the reviewer writes no code); **held-out cold-nav** (render the built views on a frozen synthetic network) + a **usability rubric** the team never sees; a frozen fixture plants the edge cases (an `away` status the seed type omits, overflow, empty, stale-unknown) | C·st·pty·git·node |
 
 ---
 
@@ -65,7 +66,6 @@ separately (a synthetic dependency-graph; a frozen fixture network) before they 
 
 | Cell | Type | Why it's held |
 |---|---|---|
-| **pty-rename** | cross-repo rename | crown-jewel coordination (decomposition + sequencing + judgment across a real multi-repo dependency graph) — needs a synthetic graph swapped in first |
-| **tui-build** | greenfield build | a team builds a terminal UI over a live agent network + a human-centered usability pass — needs a frozen fixture network first |
+| **pty-rename** | cross-repo rename | crown-jewel coordination (decomposition + sequencing + judgment across a multi-repo dependency graph) — public version needs a **synthetic** base-package + 2 consumers with an analogous product-vs-primitive naming trap (build in progress) |
 
 They re-appear in `cells.manifest` with their `cells/<cell>/` dirs once cleared.

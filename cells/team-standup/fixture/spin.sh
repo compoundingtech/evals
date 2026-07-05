@@ -51,18 +51,26 @@ e["hasTrustDialogAccepted"]=True; e["hasCompletedProjectOnboarding"]=True
 json.dump(d,open(p,"w"),indent=2)
 PY
 mkdir -p "$W/.claude"
+# MODE-AWARE (ding toggle): the MCP-enable keys are staged ONLY in MCP-mode. In ding-mode the whole tree must
+# be no-MCP — the CoS stands up the worker with --ding (per its bus contract) so st launch writes no .mcp.json,
+# and staging enableAllProjectMcpServers here would be a latent MCP-affordance (a silent false-negative on the
+# no-MCP grade). So under --ding we stage hooks + trust only, no MCP-enable.
+if stev_ding_on; then MCP_ENABLE=""; MODE_NOTE="ding: hooks only, NO MCP-enable"; else
+  MCP_ENABLE='  "enabledMcpjsonServers": ["st"],
+  "enableAllProjectMcpServers": true,'
+  MODE_NOTE="MCP-enable"
+fi
 cat > "$W/.claude/settings.local.json" <<JSON
 {
   "\$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "enabledMcpjsonServers": ["st"],
-  "enableAllProjectMcpServers": true,
+$MCP_ENABLE
   "hooks": {
     "SessionStart": [{ "hooks": [{ "type": "command", "command": "$HOOKS/session-start.sh", "async": true, "asyncRewake": true }] }],
     "StopFailure": [{ "hooks": [{ "type": "command", "command": "$HOOKS/stop-failure.sh" }] }]
   }
 }
 JSON
-echo "   pre-trusted $W + staged .claude/settings.local.json (asyncRewake + MCP-enable)"
+echo "   pre-trusted $W + staged .claude/settings.local.json (asyncRewake + $MODE_NOTE)"
 
 echo "== 3/5  pre-create jordan on the sandbox bus (the CoS confirms back to them) =="
 mkdir -p "$STR/jordan/inbox" "$STR/jordan/archive"; printf 'available\n' > "$STR/jordan/status"

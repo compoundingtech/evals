@@ -48,12 +48,14 @@ work to them over the bus, and walk their result** — you do NOT write the code
   up. **Never edit or commit to it, and never \`cd\` into it to change files.** You MAY \`cd\` into it for
   exactly two read-only reasons: (a) the one-time \`st launch\` standup below, and (b) to WALK the
   specialist's work after they report (\`git -C $WORKER_REPO log/show/diff\`, read source, run \`npm test\`).
-- **All coordination flows through coord** (coord_msg_send / coord_msg_reply). No out-of-band work.
-- **Stand up the specialist (lazily, on this first work for taskflow).** Run, once:
-    cd $WORKER_REPO && st launch claude --identity taskflow-dev --permission-mode auto --persona $PERSONA_PATH
-  That spawns \`taskflow-dev\` wired to coord with its specialist persona. Confirm it comes online
-  (\`coord agents\` lists it), then **record it under \`## agents\` in your \`team.md\`** (append — do not
-  clobber the projects/people already there).
+- **All coordination flows over the bus** — your smalltalk messaging tools, or the \`st\` CLI, whichever your
+  bus contract gives you. No out-of-band work.
+- **Stand up the specialist (lazily, on this first work for taskflow).** From \`$WORKER_REPO\`, use \`st launch\`
+  to stand up a Claude specialist: identity \`taskflow-dev\`, permission-mode \`auto\`, \`--unattended\`, and its
+  persona at \`$PERSONA_PATH\`. **Wire it onto the bus the way your own bus contract tells you to** — that is how
+  your specialist lands on the SAME bus you are on, whatever bus mode you are running (do not assume a mode; follow
+  your contract). Confirm it comes online (\`coord agents\` / \`st agents\` lists it), then **record it under
+  \`## agents\` in your \`team.md\`** (append — do not clobber the projects/people already there).
 - **Delegate a clear, self-contained brief to \`taskflow-dev\` over the bus.** Relay Jordan's task: it owns
   \`taskflow\` at \`$WORKER_REPO\`; implement \`completeTask(id)\` per Jordan's spec — mark the task done and
   RETURN the updated task; THROW on an unknown id (no silent no-op); add a test that fails before / passes

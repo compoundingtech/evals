@@ -2,9 +2,10 @@
 # Compose the TEAM-STANDUP personas from the PINNED PUBLIC personas repo (read-only) — the same
 # contract first-run consumes, so this gate ports cleanly to the public st-evals cut. Two roles:
 #
-#   cos          -> $SB/cos/CLAUDE.md                    the interviewed chief-of-staff. Stands up +
+#   cos          -> $SB/personas-local/cos.md            the interviewed chief-of-staff. Stands up +
 #                                                        briefs a specialist for taskflow, delegates the
 #                                                        seeded task, walks the result. Owns NO repo.
+#                                                        (spin.sh hands this to `st launch --persona`.)
 #   taskflow-dev -> $SB/personas-local/taskflow-dev.md   a GENERIC specialist lane (task-agnostic on
 #                                                        purpose — the task arrives by bus). The CoS hands
 #                                                        this file to `st launch --persona` at standup.
@@ -28,8 +29,8 @@ case "$role" in
   taskflow-dev) id="taskflow-dev"; dir="$SB/personas-local"; rolefile="$PZ/specialist.md" ;;
   *) echo "role must be cos|taskflow-dev" >&2; exit 1 ;;
 esac
-mkdir -p "$dir"
-out="$dir/CLAUDE.md"; [ "$role" = "taskflow-dev" ] && out="$dir/taskflow-dev.md"
+mkdir -p "$SB/personas-local" "$dir"
+out="$SB/personas-local/$id.md"   # standalone persona file fed to `st launch --persona` (cos + taskflow-dev)
 
 if [ "$role" = "cos" ]; then
 cat > "$out" <<LANE

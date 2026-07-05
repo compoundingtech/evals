@@ -6,15 +6,19 @@
 
 ## Run it
 
-Point `ST_ROOT` at a scratch network root, `ST_HOOKS_DIR` at your smalltalk `examples/claude-code/hooks`,
-and `PERSONAS_DIR` at a checkout of the public personas repo (`bin/ensure-personas.sh` clones it pinned).
-The whole run is on an **isolated bus root** (`$SANDBOX/st-root`) — never your live network.
+Both the CoS **and** the specialist are launched via the real `st launch` (the same command that onboards a
+chief-of-staff — the eval dogfoods the whole launch surface). `fixture/spin.sh` is **self-isolating** — it
+creates and exports its own scratch bus root at `$SANDBOX/st-root`, so nothing touches your live network; the
+st-launched CoS (and the worker it stands up) inherit that root by env inheritance. You need `PERSONAS_DIR`
+(a checkout of the public personas repo — `bin/ensure-personas.sh` clones it pinned; the runner sets it) and
+`ST_HOOKS_DIR` (your smalltalk `examples/claude-code/hooks` — used to pre-stage the *stood-up specialist's*
+startup gates). No external `ST_ROOT` — spin owns the isolated root.
 
 - `fixture/gate-p4.sh [SANDBOX]` — **P4**, the standup *mechanics*, hermetic + offline (exit 0 = PASS): `st launch --dry-run` writes the child's identity + wires the boot hook; the CoS records the specialist in `team.md`.
-- `fixture/spin.sh [SANDBOX]` — **P5**, the LIVE proof: launches only the CoS; the CoS reads the seeded task, **stands up `taskflow-dev` itself** via `st launch`, briefs it over the bus, and walks the result.
-- `fixture/grade.sh [SANDBOX]` — ground-truth grade once the loop closes.
+- `fixture/spin.sh [SANDBOX]` — **P5**, the LIVE proof: `st launch`es the CoS (`--unattended`, collision-proof stev session name so it can't clobber a live `cos`); the CoS reads the seeded task, **stands up `taskflow-dev` itself** via `st launch`, briefs it over the bus, and walks the result. Or: `bin/st-evals run team-standup`.
+- `fixture/grade.sh [SANDBOX]` — ground-truth grade once the loop closes. Tear down after with `bin/st-evals teardown <SANDBOX>`.
 
-**Launch tax you'll see** (a known friction, not a failure): the CoS and the specialist each boot into the `--dangerously-load-development-channels` confirmation gate — press **Enter** for each as it comes up. `st launch` doesn't pre-trust the child's folder or enable its project MCP server, so `spin.sh` pre-stages those. asyncRewake carries the wakes; poke by hand only if an agent idles on a delivered message (the pty session prefix differs from the coord identity — see the notes `spin.sh` prints).
+`st launch --unattended` auto-dismisses the CoS's startup gates (dev-channels / folder-trust / MCP-enable). The specialist the CoS stands up gets its folder-trust + project-MCP pre-staged by `spin.sh` (st launch installs its persona + boot hooks). asyncRewake carries the wakes; poke by hand only if an agent idles on a delivered message (the pty session name differs from the coord identity — see the notes `spin.sh` prints).
 
 ## Grading
 

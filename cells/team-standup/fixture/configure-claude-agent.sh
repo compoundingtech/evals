@@ -1,73 +1,58 @@
 #!/usr/bin/env bash
-# Wire the TEAM-STANDUP CoS as a spawn-capable Claude agent on an ISOLATED bus root ($SB/st-root, never
-# the live network): coord MCP + asyncRewake hook + pty.toml (HB-3 env explicit) + pre-trust + bootstrap
-# jsonl. ONLY the CoS is wired here — the CoS stands up taskflow-dev itself via `st launch` (that IS the
-# P5 test). Posture: CoS = bypassPermissions (spawn-capable; it shells `st launch` + `pty up`).
-#   ./configure-claude-agent.sh [SANDBOX]
+# Launch the TEAM-STANDUP CoS via the REAL `st launch` (not a homegrown config writer) — the SAME command
+# a human runs to onboard a chief-of-staff (onboarding.md documents `st launch claude --identity cos …`),
+# so the eval dogfoods the whole launch surface. ONLY the CoS is launched here; the CoS stands up
+# taskflow-dev ITSELF via `st launch` during the run (that IS the P5 test — untouched).
+# `st launch` writes .mcp.json (server `st`), .claude/settings.local.json (asyncRewake + PreCompact +
+# StopFailure hooks, enableAllProjectMcpServers, enabledMcpjsonServers:["st"]), the session-id, pty.toml,
+# installs the composed persona (--persona -> PERSONA.md + @PERSONA.md), and starts the pty session.
+# We add the two eval-only concerns st launch leaves to the operator:
+#   1. ISOLATION (RISK 2): the isolated bus reaches the CoS by ENV INHERITANCE — spin.sh exports
+#      ST_ROOT/COORD_ROOT before calling this, so st launch -> pty session -> claude -> the `st` MCP server
+#      inherit the isolated root (and post-#52 st also bakes ST_ROOT into the generated session env).
+#   2. ZERO-ORPHAN + NO-CLOBBER (RISK 1): --session-name "$(stev_prefix ...)" makes the pty session name
+#      collision-proof (`cos-stev-team-standup-<runid>-cos`, carries the runid) so it can NEVER clobber a
+#      live `cos` pty session; we register that EXACT name via stev_track_extra so teardown is zero-orphan.
+# Posture: CoS = bypassPermissions (spawn-capable — it shells `st launch` + `pty up` to stand up the worker).
+#   ./configure-claude-agent.sh [SANDBOX]   # ST_ROOT must be exported (spin.sh does this)
 set -euo pipefail
-STEV_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$STEV_HERE/../../../bin/lib-harness.sh"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/../../../bin/lib-harness.sh"
 SB="${1:-${EVAL_SANDBOX:-./.sandbox}/team-standup}"
-STR="$SB/st-root"
-HOOKS="${ST_HOOKS_DIR:?set ST_HOOKS_DIR to <smalltalk>/examples/claude-code/hooks}"
-id="cos"; d="$SB/cos"; mode="bypassPermissions"
-# The pty session namespace is GLOBAL (unlike the coord bus, which we isolate via ST_ROOT). If you already
-# run a chief-of-staff pty session (prefix `cos`), give this eval CoS a DISTINCT pty PREFIX so `pty up`
-# can't clobber it. The coord identity stays `cos` (on the isolated sandbox bus); only the pty prefix differs.
-stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"
-PTY_PREFIX="$(stev_prefix "$SB" "$id")"   # collision-proof: stev-team-standup-<runid>-cos (was bare ts-cos)
-sid="$(uuidgen | tr 'A-Z' 'a-z')"
+ROOT="${ST_ROOT:?spin.sh must export ST_ROOT to the isolated bus root ($SB/st-root) before launching}"
+stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # collision-proof pty prefix; idempotent (standalone-safe)
 
-# Pre-trust the CoS dir for Claude Code (skip the folder-trust gate on launch).
+id="cos"; d="$SB/cos"; mode="bypassPermissions"      # coordinate-only, spawn-capable; owns NO repo
+persona="$SB/personas-local/$id.md"
+[ -f "$persona" ] || { echo "missing composed persona $persona — run compose-persona.sh cos first" >&2; exit 1; }
+pfx="$(stev_prefix "$SB" "$id")"     # stev-team-standup-<runid>-cos
+sess="$id-$pfx"                       # st launch names the pty session <identity>-<session-name> = cos-<pfx>
+
+# Pre-create the FULL coord dir on the ISOLATED bus so the boot ritual doesn't rabbit-hole.
+mkdir -p "$ROOT/$id/inbox" "$ROOT/$id/archive"; printf 'available\n' > "$ROOT/$id/status"
+
+# Pre-trust the CoS folder for Claude Code (skip the workspace-trust gate). --unattended also auto-pokes
+# the startup gates, but pre-trust is deterministic and cheap — keep both.
 python3 - "$d" <<'PY'
 import json,os,sys
-p=os.path.expanduser("~/.claude.json"); d=json.load(open(p))
+p=os.path.expanduser("~/.claude.json")
+d=json.load(open(p)) if os.path.exists(p) else {}
 e=d.setdefault("projects",{}).setdefault(sys.argv[1],{})
 e["hasTrustDialogAccepted"]=True; e["hasCompletedProjectOnboarding"]=True
 json.dump(d,open(p,"w"),indent=2)
 PY
 
-mkdir -p "$STR/$id/inbox" "$STR/$id/archive"; printf 'available\n' > "$STR/$id/status"
-mkdir -p "$d/.claude"; printf '%s\n' "$sid" > "$d/.claude-session-id"
+# Launch via the real st launch. It inherits ST_ROOT/COORD_ROOT from this process's env (exported by
+# spin.sh) -> the CoS binds the ISOLATED bus. --unattended bakes the startup auto-poker; --session-name
+# makes the pty session name collision-proof (never clobbers a live `cos`).
+( cd "$d" && st launch claude \
+    --identity "$id" \
+    --session-name "$pfx" \
+    --permission-mode "$mode" \
+    --persona "$persona" \
+    --unattended )
 
-cat > "$d/.mcp.json" <<JSON
-{
-  "mcpServers": {
-    "coord": { "type": "stdio", "command": "$(command -v coord || echo coord)", "args": ["mcp", "--channel"], "env": {} }
-  }
-}
-JSON
+# Register the EXACT resulting session name so teardown is zero-orphan even though it's outside our prefix stem.
+stev_track_extra "$SB" "$sess"
 
-cat > "$d/.claude/settings.local.json" <<JSON
-{
-  "\$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "enabledMcpjsonServers": ["coord"],
-  "enableAllProjectMcpServers": true,
-  "hooks": {
-    "SessionStart": [{ "hooks": [{ "type": "command", "command": "$HOOKS/session-start.sh", "async": true, "asyncRewake": true }] }],
-    "StopFailure": [{ "hooks": [{ "type": "command", "command": "$HOOKS/stop-failure.sh" }] }]
-  }
-}
-JSON
-
-# HB-3: pin every identity var to the CoS in its own pty.toml env, and pin ST_ROOT/COORD_ROOT to the
-# ISOLATED sandbox bus so nothing touches the live network. (COORD_IDENTITY=cos here is correct for the
-# CoS; it can leak into a child via `st launch`, but the child's ST_AGENT wins — see the worker persona.)
-cat > "$d/pty.toml" <<TOML
-prefix = "$PTY_PREFIX"
-
-[sessions.claude]
-command = "claude --permission-mode $mode --dangerously-load-development-channels server:st --resume $sid"
-tags = { role = "agent" }
-
-[sessions.claude.env]
-ST_AGENT = "$id"
-COORD_IDENTITY = "$id"
-ST_IDENTITY = "$id"
-ST_ROOT = "$STR"
-COORD_ROOT = "$STR"
-TOML
-
-( cd "$d" && timeout 90 env ST_AGENT="$id" ST_ROOT="$STR" COORD_ROOT="$STR" claude --print --session-id "$sid" "session init" >/dev/null 2>&1 ) \
-  && echo "  bootstrapped jsonl" || echo "  (bootstrap best-effort/timed out; continuing)"
-
-echo "configured $id  (sid=$sid, pty session=$PTY_PREFIX-claude, bypassPermissions, isolated bus=$STR, asyncRewake, pre-trusted)"
+echo "launched $id  (pty session=$sess, --permission-mode $mode, isolated bus=$ROOT, persona=$persona, asyncRewake)"

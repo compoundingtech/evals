@@ -6,9 +6,12 @@
 
 ## Run it
 
-Point `ST_ROOT` at a scratch network root, `ST_HOOKS_DIR` at your smalltalk `examples/claude-code/hooks`,
-and `PERSONAS_DIR` at a checkout of the public personas repo (`bin/ensure-personas.sh` clones it pinned).
-Then: `fixture/run.sh [SANDBOX]` — self-asserting; exit 0 = all gates PASS.
+`fixture/run.sh` is **self-isolating** — it creates its own scratch network root at `$SB/st-root` and pins
+every CLI call to it, so nothing touches your live network; no external `ST_ROOT` / `ST_HOOKS_DIR` /
+`PERSONAS_DIR` are required (this is a hermetic, offline CLI onboarding walk, not a persona-team launch).
+
+Run it: `fixture/run.sh [SANDBOX]` (or `bin/st-evals run bootstrap-network`) — self-asserting; exit 0 =
+all 4 gates PASS. The deliverable is the printed friction list.
 
 ## Grading
 

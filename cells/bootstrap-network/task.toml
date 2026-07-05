@@ -27,7 +27,7 @@ Walk the documented newcomer path in a fresh hermetic ST_ROOT sandbox, trying th
 FIRST at each gate so its failure surfaces as a finding, then applying the workaround and proceeding.
 Fully reproducible + self-asserting via the runner; every friction point is collected and printed.
 """
-runner    = "fixtures/bootstrap-network/run.sh  [SANDBOX_DIR]   (exits 0 iff all 4 gates pass)"
+runner    = "cells/bootstrap-network/fixture/run.sh  [SANDBOX_DIR]   (exits 0 iff all 4 gates pass)"
 hermetic  = "fresh ST_ROOT under ${EVAL_SANDBOX:-./.sandbox}/bootstrap-network each run; never the live network; fully offline."
 live_vs_dry = "Gates A/B/D run LIVE against the real coord binary (real folders, real status, real message round-trip + an HB-3 kill-test). Gate C uses `coord launch --dry-run` to inspect the generated bootable harness cheaply/offline; the autonomous-reasoning boot of a launched agent is an OPTIONAL live capstone."
 

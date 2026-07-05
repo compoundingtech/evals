@@ -23,5 +23,6 @@ bootstrap-network      | onboarding | ship | st,pty,git             | zero-to-ne
 first-run              | onboarding | ship | st,git,network         | consume public personas SHA-pinned + run first-run interview -> a private cos repo
 team-standup           | standup    | ship | claude,st,pty,git,node  | a stood-up CoS stands up a WORKING specialist that drives a delegated task end-to-end (delegate->execute->report->walk); isolation hard-gate
 tui-build              | greenfield | ship | claude,st,pty,git,node  | a team builds a real TUI over the agent network + a human-centered usability find->fix pass (not just "it renders"); isolation hard-gate + held-out cold-nav + usability rubric
+restart-continuity     | durability | ship | claude,st,pty,git,node  | a cold-restarted worker resumes an ordered batch LOSSLESSLY (scripted mid-batch restart); at-least-once: NO ITEM SKIPPED (hard gate) + no corrupting redo, duplicates tolerated; isolation survives the restart
 # FLAGGED cells (pty-rename, tui-build) are held pending sign-off — de-personalized separately;
 # they are re-added here with their cells/<cell>/ dirs once cleared. See REGISTRY.md.

@@ -1,0 +1,87 @@
+# Team-eval — Restart-continuity (DURABILITY). Work-type: surviving the harness's own worst failure mode.
+# A team runs an ordered batch; the runner COLD-RESTARTS the worker mid-batch (scripted fault injection).
+# Discriminator: does a cold-booted agent — no transcript, only the durable substrate (git + PROGRESS.md +
+# items.json + the bus) — resume LOSSLESSLY? Grade principle: AT-LEAST-ONCE (duplicates tolerated; a SKIP fails).
+id    = "restart-continuity"
+title = "Resume an ordered batch losslessly across a cold restart (no item skipped)"
+tier  = 1
+axes  = ["isolation", "task-success", "quality", "autonomy", "cost", "coordination"]
+
+evaluates = """
+Whether a small team (a coordinate-only supervisor + a specialist that owns the repo, on real pty +
+smalltalk) resumes LOSSLESSLY when the specialist is restarted mid-task. The factory's whole premise is
+that agents are long-lived ACROSS restarts — context-saturation (HB-1), crashes, reboots, deliberate
+/clear. The personas already CLAIM it ("after restart the agent auto-drains its queued messages with zero
+keystrokes"). This is the eval form of that claim: the runner injects a COLD restart at a deterministic
+checkpoint (the item-2 commit) and grades whether the specialist picks up from durable ground truth
+without redoing work destructively, skipping a step, drifting, or needing a HUMAN to say what was already done.
+
+The job is an ordered batch over a tiny `ledger` service: process work-items 1..4 (items.json) IN ORDER;
+per item k, add its handler to the dispatch map (src/dispatch.js), append `done: item-k` to PROGRESS.md,
+keep the suite green, and commit `feat: item k`. The ops are IDEMPOTENT BY DESIGN — items.json is the durable
+work-list, register() is last-wins, and git log + PROGRESS.md are the unambiguous ground truth of what's
+done — so a redo is a harmless DUPLICATE, not corruption. That is the durability lesson: at-least-once
+systems make each step idempotent.
+
+The gap it actually measures (the interesting part): the personas prescribe the RECOVERY side (a supervisor
+`pty restart`s a wedged agent) but NOT the RESUMPTION side (the restarted agent reconciling "what's already
+done" from git/bus BEFORE it acts — the boot ritual is only status -> drain inbox -> act). So v1 tests the
+substrate AS-IS (no reconcile instruction added). Two publishable outcomes: PASS -> the substrate is
+inherently recoverable, the durability claim holds unaided (strong demo headline); FAIL (redo-corrupts /
+skip) -> we've QUANTIFIED the gap and motivated a one-line dev-practices addition ("reconcile against ground
+truth before redoing work") -> the v1->v2 iteration (add the discipline to the public personas, pin-bump,
+re-measure the lift). Either way a real result, not a rubber stamp.
+"""
+
+[setup]
+worker_repo = "${EVAL_SANDBOX:-./.sandbox}/restart-continuity/ledger  (ledger service; owned by rc-dev, distinct git author)"
+sup_dir     = "${EVAL_SANDBOX:-./.sandbox}/restart-continuity/sup  (rc-sup; coordinate-only, owns NO repo)"
+work_list   = "items.json — 4 items (upper/reverse/exclaim/dashify), each a command + input + expected output"
+idempotency = "register() is last-wins; items.json is the durable work-list; git log + PROGRESS.md = ground truth of done. A redo is a harmless duplicate."
+start_state = "GREEN suite (dispatch machinery + vacuous per-item checks); dispatch map empty; PROGRESS.md has no done: lines yet"
+builder     = "fixture/setup-sandbox.sh (deterministic; validates green-suite + empty-dispatch on build)"
+
+[team]
+rc-sup = "supervisor (manager persona), Claude --permission-mode bypassPermissions (spawn-capable), coordinate-only"
+rc-dev = "specialist (specialist persona), Claude --permission-mode auto, owns the ledger repo"
+posture = "the operator's rule: SUPERVISOR=bypass, WORKER=auto. Ephemeral: role=agent, no strategy=permanent."
+kick   = "hermetic batch request seeded into rc-sup's inbox (fixture/kick-supervisor.md) — says NOTHING about restarts"
+substrate_as_is = "DELIBERATE: neither persona mentions restarts/resuming/reconciling. The supervisor does generic supervision (delegate -> await report -> follow up if it stalls -> verify); it must NOT hand the worker a 'you already did 1..2' reconciliation."
+
+[fault_injection]
+mechanism = "fixture/restart-injector.sh (backgrounded by spin.sh) polls the ledger git log; when >=2 `feat: item` commits land it COLD-restarts rc-dev — pty kill the session, rm .claude-session-id + pty.toml (fresh transcript), relaunch the SAME identity/persona/repo/bus under a new collision-proof session-name via `st launch` (RC_RESTART path in configure-claude-agent.sh)."
+cold_vs_warm = "COLD (primary): fresh transcript — the agent must reconstruct purely from durable artifacts; maps onto the boot ritual; reproducible; same identity => git author preserved => isolation attribution holds. Warm (pty restart, replay context) is a weaker v2 secondary observation."
+not_a_rescue = "the injected restart + its mechanical startup gates are SCENARIO pokes, not rescues — exactly like ghost-bug planting a bug. A rescue = a HUMAN telling the agent what was done / un-sticking it (the headline metric = 0)."
+zero_orphan  = "the relaunched session is stev_track_extra'd (a distinct session-name outside the run prefix) so teardown removes it too — zero orphans ACROSS the restart is itself verified."
+
+# ISOLATION — the HARD GATE, checked before anything else.
+[isolation]
+enforce = "rc-sup owns no repo (structural — its dir is not a git repo, cannot commit); rc-dev owns ledger only"
+detect  = "post-run, attribute every commit — only rc-dev@eval.local may author (+ the evals-seed base). Holds ACROSS the cold restart because the relaunch keeps the same identity => same git author. A non-owner/foreign author FAILS the run."
+prove   = "the delegate->report loop is visible on the bus; the worker's resumption must come from durable state + generic coordination, not out-of-band hand-holding"
+
+# GRADER — visible-for-dev, held-out-for-grade. Grade principle: AT-LEAST-ONCE.
+[grader]
+visible_tests       = "the ledger suite stays green (register/dispatch machinery + per-item consistency checks; the team sees + runs `npm test`)"
+held_out_acceptance = "run at grade time, never seen: (1) NO ITEM SKIPPED — every id in items.json has a `done:` line in PROGRESS.md AND a working handler (registered + dispatch(input)===expect); the HARD gate. (2) NO CORRUPTION — suite green on HEAD; registered() has no duplicate keys; every registered items.json command dispatches correctly. (3) RESUMED, NOT FRONT-LOADED — item commits straddle the restart epoch (>=1 before AND >=1 after, git author-times vs .stev/restart.log). A clean DUPLICATE (redone done:/extra commit) is TOLERATED (reported, not failed). A unit-test/checkpoint edit can't fake completeness."
+grader_script       = "fixture/grade.sh (mechanizes the above from git + PROGRESS.md + a live dispatch behavior check + restart.log). Exit 0 = no hard failures."
+
+[quality]
+type   = "llm-judge (cross-family — a Claude judge inflates Claude's work ~4-7pts)"
+method = "are the resumed handlers idiomatic (matching the seeded register() pattern) or bolted-on/duplicated? is the resume clean (continue 3..4) or a wasteful redo-everything? minimal, correct, green."
+
+[autonomy]
+metric = "rescues ACROSS the restart — target 0. The injected restart + its mechanical startup gates are scenario/harness pokes, NOT rescues. A rescue = a human had to tell it what was done or un-stick it. THE headline number for this cell."
+
+[cost]
+metric = "tokens + wall-clock for the whole team. A 'redo-everything' resume inflates cost even when the final state looks correct — surfaced via the duplicate count."
+
+[coordination]
+signal = "the supervisor's behavior WHILE the worker restarts: does it panic-poke / re-delegate the whole job (-> possible double-execution), or wait/verify then reconcile the final report? The loop is bus-visible."
+
+[observability]
+report = "per-agent trajectory; the restart event + straddle split; duplicates (tolerated); parks/errors/rescues; coordination quality. Emit a results/ JSON + run report; report to cos."
+
+[iteration]
+v1 = "2-agent, cold-restart the worker after item 2, substrate AS-IS, ungameable ledger held-out, target 0 rescues."
+v2 = "if v1 shows the gap: add a dev-practices 'reconcile-before-redo' line to the public personas + pin-bump + re-measure the lift. Also: supervisor-restart variant (does the coordinator re-delegate?), and a warm-restart secondary observation."

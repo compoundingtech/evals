@@ -6,11 +6,15 @@
 
 ## Run it
 
-Point `ST_ROOT` at a scratch coordination bus, `ST_HOOKS_DIR` at your smalltalk `examples/claude-code/hooks`,
-and `PERSONAS_DIR` at a checkout of the public personas repo (`bin/ensure-personas.sh` clones it pinned).
+The team is launched via the real `st launch` (the same command a user runs). `fixture/spin.sh` is
+**self-isolating** — it creates and exports its own scratch **coordination** bus root at `$SB/st-root`, so
+nothing touches your live network; the st-launched agents inherit that root by env inheritance. You only
+need `PERSONAS_DIR` (a checkout of the public personas repo — `bin/ensure-personas.sh` clones it pinned; the
+runner sets it). No external `ST_ROOT` / `ST_HOOKS_DIR` required — spin owns the root and `st launch` wires
+the boot hooks (asyncRewake / PreCompact / StopFailure) itself.
 
 - `fixture/setup-sandbox.sh [SANDBOX]` — seed the `agent-viz` repo from the bundled prototypes (bare origin + one clone per agent, distinct authors) + materialize the frozen synthetic network.
-- `fixture/spin.sh [SANDBOX]` — compose the 4 personas, wire them (asyncRewake + pre-trust), seed the build request into `tui-sup`'s inbox, launch the team (`tui-sup` integration lead + `tui-tree`/`tui-cards` view specialists + `tui-ux` usability reviewer).
+- `fixture/spin.sh [SANDBOX]` — compose the 4 personas, `st launch` the team (workers first, sup last), seed the build request into `tui-sup`'s inbox (`tui-sup` integration lead + `tui-tree`/`tui-cards` view specialists + `tui-ux` usability reviewer). Or: `bin/st-evals run tui-build`.
 - `fixture/grade.sh [SANDBOX]` — mechanical gates (isolation + suite-green + wired-to-real-data + status-coverage) + render/usability pointers.
 
 **Two roots (don't conflate):** `ST_ROOT` here is the **coordination bus** (where the team talks). The built viz reads its **data** from the **frozen fixture** — `ST_ROOT=<sandbox>/fixture/smalltalk` — a separate root the personas pass explicitly. The frozen fixture is what makes tests + grading reproducible.

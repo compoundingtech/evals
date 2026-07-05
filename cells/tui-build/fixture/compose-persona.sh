@@ -18,7 +18,7 @@ case "$role" in
   ux)    id="tui-ux";    dir="$SB/ux";    rolefile="$PZ/specialist.md" ;;
   *) echo "role must be sup|tree|cards|ux" >&2; exit 1 ;;
 esac
-out="$dir/CLAUDE.md"; mkdir -p "$dir"
+mkdir -p "$SB/personas-local" "$dir"; out="$SB/personas-local/$id.md"
 
 if [ "$role" = "sup" ]; then
 cat > "$out" <<LANE

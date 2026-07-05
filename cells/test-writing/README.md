@@ -6,9 +6,15 @@
 
 ## Run it
 
-Point `ST_ROOT` at a scratch network root, `ST_HOOKS_DIR` at your smalltalk `examples/claude-code/hooks`,
-and `PERSONAS_DIR` at a checkout of the public personas repo (`bin/ensure-personas.sh` clones it pinned).
-Then: `fixture/setup-sandbox.sh` to materialize the world, then `fixture/spin.sh` to launch the team.
+The team is launched via the real `st launch` (the same command a user runs). `fixture/spin.sh` is
+**self-isolating** — it creates and exports its own scratch bus root at `$SB/st-root`, so nothing touches
+your live network; the st-launched agents inherit that root by env inheritance. You only need
+`PERSONAS_DIR` (a checkout of the public personas repo — `bin/ensure-personas.sh` clones it pinned; the
+runner sets it for you). No external `ST_ROOT` / `ST_HOOKS_DIR` required — spin owns the root and
+`st launch` wires the boot hooks (asyncRewake / PreCompact / StopFailure) itself.
+
+Run it: `fixture/spin.sh` (auto-materializes the sandbox via `fixture/setup-sandbox.sh` if absent), or
+`bin/st-evals run test-writing`. Tear down after grading with `bin/st-evals teardown <SB>`.
 
 ## Grading
 

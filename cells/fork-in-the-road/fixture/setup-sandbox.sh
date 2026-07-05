@@ -44,6 +44,7 @@ node_modules/
 .DS_Store
 CLAUDE.md
 AGENTS.md
+PERSONA.md
 .mcp.json
 .claude-session-id
 .claude/
@@ -58,6 +59,11 @@ for role in sup a b c; do
   git -C "$d" init -q -b main
   git -C "$d" add -A
   git -C "$d" -c user.name="evals-seed" -c user.email="seed@local" commit -q -m "fork-in-the-road: seed the design brief (PROBLEM.md)"
+  # Pin each dir's git author to the OWNING agent — the isolation gate attributes every commit by
+  # DISTINCT git author per agent (task.toml). Without this, all agents' commits fall back to the
+  # operator's GLOBAL identity (indistinguishable authors → attribution gate can't tell who committed).
+  git -C "$d" config user.name  "fd-$role"
+  git -C "$d" config user.email "fd-$role@eval.local"
 done
 
 echo

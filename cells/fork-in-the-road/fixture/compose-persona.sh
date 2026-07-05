@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Compose a Fork-in-the-road (design-decision) eval agent's persona = design task-lane + coord boot
-# ritual + BASE (dev-practices + known-harness-bugs) + role persona. Claude family (CLAUDE.md).
+# ritual + BASE (dev-practices + known-harness-bugs) + role persona. Writes a STANDALONE persona file
+# ($SB/personas-local/<id>.md) that spin.sh hands to `st launch --persona` (installs PERSONA.md + @import).
 #   ./compose-persona.sh <sup|a|b|c> [SANDBOX] [REQUESTER]
 set -euo pipefail
 role="$1"; SB="${2:-${EVAL_SANDBOX:-./.sandbox}/fork-in-the-road}"; REQUESTER="${3:-eval-runner}"
@@ -13,7 +14,7 @@ case "$role" in
   c)   id="fd-c";   dir="$SB/c";   rolefile="$PZ/specialist.md" ;;
   *) echo "role must be sup|a|b|c" >&2; exit 1 ;;
 esac
-out="$dir/CLAUDE.md"; mkdir -p "$dir"
+mkdir -p "$SB/personas-local" "$dir"; out="$SB/personas-local/$id.md"
 
 if [ "$role" = "sup" ]; then
 cat > "$out" <<LANE
@@ -76,7 +77,10 @@ fi
 cat >> "$out" <<'BOOT'
 ---
 ## Coord boot ritual (do this first, every fresh start)
-1. Set your status available: shell out `coord status <your-identity> --set available` (use $COORD_IDENTITY).
+1. Set your status available: shell out `coord status "$ST_AGENT" --set available`.
+   Use `$ST_AGENT` — it is the authoritative identity here. Do NOT interpolate `$COORD_IDENTITY` for your
+   identity: when a parent stands you up via `st launch`, its COORD_IDENTITY can leak into your env (a known
+   launch quirk); `$ST_AGENT` is set correctly to YOU, and coord's own tools already resolve ST_AGENT first.
 2. Drain your inbox: list messages, read each, reply if warranted, archive it. Don't leave inbox items.
 3. Then act on what you found (the supervisor: the seeded design problem; a proposer: await/handle the assignment).
 Your coord correspondent is your interlocutor — questions/blockers/"done" all go through coord messages,

@@ -18,6 +18,7 @@ license-mit            | license    | ship | claude,st,pty,git      | delegate->
 ghost-bug-codex        | debug      | ship | codex,st,pty,git,node  | the debug loop Codex-native (cross-family)
 poisoned-pr-codex      | review     | ship | codex,st,pty,git,node  | the review loop Codex-native (cross-family)
 fork-in-the-road-codex | design     | ship | codex,st,pty,git       | the design panel Codex-native (cross-family)
+license-mit-codex      | license    | ship | codex,st,pty,git       | the delegate->execute->verify->confirm loop Codex-native (cross-family)
 bootstrap-network      | onboarding | ship | st,pty,git             | zero-to-network: init + CoS boots + spawn a specialist + message end-to-end
 first-run              | onboarding | ship | st,git,network         | consume public personas SHA-pinned + run first-run interview -> a private cos repo
 team-standup           | standup    | ship | claude,st,pty,git,node  | a stood-up CoS stands up a WORKING specialist that drives a delegated task end-to-end (delegate->execute->report->walk); isolation hard-gate

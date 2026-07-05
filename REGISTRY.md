@@ -38,6 +38,7 @@ full-Codex (or GLM, or mixed) team must reach the same graded outcome as the Cla
 | **ghost-bug-codex** | ghost-bug | Codex | AGENTS.md persona; `ding` wake sidecar (no asyncRewake); pre-trust dirs |
 | **poisoned-pr-codex** | poisoned-pr | Codex | same review discriminator; cross-family severity-calibration differences are a feature to observe |
 | **fork-in-the-road-codex** | fork-in-the-road | Codex | distinct per-panelist git author; prior-cell content quarantined so convergence is genuine |
+| **license-mit-codex** | license-mit | Codex | full-Codex team on the smallest loop; distinct worker git author → isolation provable from commit metadata; `ding` wake sidecar |
 | **license-mit** *(matrix)* | — | C / X / G / mixed | one task/world, four compositions; the only variable is which family fills each seat |
 
 > **The matrix claim.** `license-mit` is the anchor: the identical task and world, run by a Claude team,

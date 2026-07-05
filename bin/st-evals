@@ -39,7 +39,14 @@ case "$cmd" in
     ;;
 
   run)
-    cell="${1:-}"; [ -n "$cell" ] || { echo "usage: st-evals run <cell>" >&2; exit 2; }
+    # Whole-suite ding toggle: `st-evals run <cell> --ding` (or ST_EVAL_DING=1)
+    # runs the cell in the no-MCP ding shape — every launcher consults stev_ding_flags.
+    # Strip --ding from the args so it never reaches the cell's entry script.
+    args=(); for a in "$@"; do
+      if [ "$a" = "--ding" ]; then export ST_EVAL_DING=1; else args+=("$a"); fi
+    done
+    set -- "${args[@]:-}"
+    cell="${1:-}"; [ -n "$cell" ] || { echo "usage: st-evals run <cell> [--ding]" >&2; exit 2; }
     dir="$ROOT/cells/$cell"
     [ -d "$dir" ] || { echo "no such cell: $cell (try: st-evals list)" >&2; exit 2; }
 

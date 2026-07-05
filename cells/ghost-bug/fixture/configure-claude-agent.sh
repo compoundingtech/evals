@@ -32,6 +32,7 @@ persona="$SB/personas-local/$id.md"
 [ -f "$persona" ] || { echo "missing composed persona $persona — run compose-persona.sh $role first" >&2; exit 1; }
 pfx="$(stev_prefix "$SB" "$id")"     # stev-<cell>-<runid>-<id>
 sess="$id-$pfx"                       # st launch names the pty session <identity>-<session-name>
+dingsess="$id-ding"                   # under --ding: the `st ding` sidecar (prefix=<id>, session-name=`ding`)
 
 # Pre-create the FULL coord dir on the ISOLATED bus (inbox+archive+status) so the boot ritual doesn't
 # rabbit-hole looking for its own folder.
@@ -50,8 +51,10 @@ PY
 
 # Launch via the real st launch. It inherits ST_ROOT/COORD_ROOT from this process's env (exported by
 # spin.sh) -> the agent binds the ISOLATED bus. --unattended bakes the startup auto-poker; --session-name
-# makes the pty session name collision-proof.
-( cd "$d" && st launch claude \
+# makes the pty session name collision-proof. $(stev_ding_flags) is the WHOLE-SUITE toggle: empty in
+# MCP mode (byte-identical to before), `--ding` under `st-evals run … --ding` / ST_EVAL_DING=1 (no MCP,
+# `st ding` sidecar, CLI bus ops — the MCP-hostile-host shape).
+( cd "$d" && st launch claude $(stev_ding_flags) \
     --identity "$id" \
     --session-name "$pfx" \
     --permission-mode "$mode" \
@@ -60,5 +63,7 @@ PY
 
 # Register the EXACT resulting session name so teardown is zero-orphan even though it's outside our prefix stem.
 stev_track_extra "$SB" "$sess"
+# Under --ding, also track the `st ding` sidecar (`<id>-ding`, outside our stev prefix) or it orphans at teardown.
+stev_ding_on && stev_track_extra "$SB" "$dingsess" || true
 
-echo "launched $id  (pty session=$sess, --permission-mode $mode, isolated bus=$ROOT, persona=$persona, asyncRewake)"
+echo "launched $id  (pty session=$sess$(stev_ding_on && echo " + ding sidecar=$dingsess"), --permission-mode $mode, isolated bus=$ROOT, persona=$persona)"

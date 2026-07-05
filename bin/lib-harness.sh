@@ -86,6 +86,35 @@ stev_track_extra() {
   grep -qxF "$name" "$sb/.stev/extra" 2>/dev/null || printf '%s\n' "$name" >> "$sb/.stev/extra"
 }
 
+# --- ding-mode toggle -------------------------------------------------------
+# The WHOLE-SUITE --ding switch. Some hosts can't run MCP servers, so every cell
+# must ALSO pass in the no-MCP `st launch … --ding` shape (agents coordinate over
+# the `st` CLI + `st ding` inbox pokes instead of the `st` MCP channel). This makes
+# that ONE switch, not a per-cell edit each: every cell's configure-*-agent.sh
+# consults these two helpers.
+#
+#   st launch claude $(stev_ding_flags) --identity … --unattended   # splice UNQUOTED
+#   stev_ding_on && stev_track_extra "$SB" "$id-ding"               # sidecar teardown
+#
+# Turn it on with `st-evals run <cell> --ding` or `ST_EVAL_DING=1`.
+
+# stev_ding_on : true (rc 0) iff ding-mode is enabled for this run.
+stev_ding_on() {
+  case "${ST_EVAL_DING:-}" in
+    1|true|TRUE|yes|YES|on|ON) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# stev_ding_flags : echo `--ding` when ding-mode is on, nothing otherwise. Splice
+# UNQUOTED into an `st launch` line — off = empty = a normal MCP-mode launch
+# (byte-identical to before the toggle existed, so MCP-mode never regresses); on
+# = the no-MCP + `st ding` sidecar shape. LOAD-BEARING companion: under --ding the
+# launch adds an `st ding` sidecar named `<id>-ding` (outside our stev prefix), so
+# the caller MUST `stev_ding_on && stev_track_extra "$SB" "$id-ding"` or the sidecar
+# orphans at teardown.
+stev_ding_flags() { stev_ding_on && printf -- '--ding' || true; }
+
 # --- teardown ---------------------------------------------------------------
 
 # stev_teardown <SB> : remove EVERY pty session under this run's unique prefix +

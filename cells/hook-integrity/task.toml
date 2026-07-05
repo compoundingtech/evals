@@ -1,0 +1,72 @@
+# Diagnostic — hook-integrity (LAUNCH-INTEGRITY / SessionStart hook fires). Work-type: verifying the
+# harness itself. A standalone, single-command "clone → run → read a loud PASS/FAIL banner" check that
+# proves — from GROUND TRUTH — that a Claude agent's SessionStart hook actually FIRES on launch. Built
+# because a Claude Code agent's hooks were configured but silently never ran in the field, and NO eval would have
+# caught it (reading settings.local.json only proves they're configured, which was already true).
+id    = "hook-integrity"
+title = "Prove a Claude agent's SessionStart hook FIRES (ungameable rehydrate-token + --no-hooks control)"
+tier  = 1
+axes  = ["task-success", "isolation", "autonomy"]
+
+evaluates = """
+Whether a Claude agent launched via `st launch claude` actually RUNS its SessionStart hook — not
+whether the hook is configured (settings.local.json), but whether it FIRES. The SessionStart hook is
+load-bearing: it drives the boot ritual AND rehydrates durable working-state (context/now.md) so a
+restarted agent resumes rather than reconstructs. The silent failure showed up in the field — hooks present in
+config, never executed — and it went undetected.
+
+v1 asserts the hook's UNGAMEABLE side effect: it injects context/now.md as a <context> block on the
+agent's first turn IFF it fires (and the file is fresh, age < COORD_REHYDRATE_STALE_S, default 24h).
+We seed now.md with a SECRET TOKEN the agent can learn no other way — not in its persona, not in its
+repo, not in its inbox — only via that injection. now.md tells the agent to write `REHYDRATE-<token>`
+into HOOK_OK.txt. If the hook fires, the token appears; if it doesn't, it can't. A `--no-hooks`
+negative control runs the IDENTICAL fixture (same token, MCP still on): it must produce NO token. The
+DIFFERENCE — token present with hooks, absent without — is the integrity proof; a check that passes
+both ways tests nothing. The token is generated fresh per run, so no fixture edit can pre-satisfy it.
+
+Deliberately a single agent (this tests launch/hook plumbing, not coordination) with a MINIMAL
+standalone persona that never mentions now.md / the token / HOOK_OK.txt / a boot ritual — so the
+token's presence is attributable ONLY to the hook, and the boot ritual (if it runs) is not persona-
+driven. Shipped as a standalone diagnostic: one command, a loud PASS/FAIL banner, readable solo.
+"""
+
+[setup]
+repo        = "${EVAL_SANDBOX:-./.sandbox}/hook-integrity/{on,off}/repo  (tiny repo owned by hi-agent, author-pinned)"
+now_md      = "st-root/hi-agent/context/now.md  — the hook-EXCLUSIVE working-state; carries the secret token, written fresh (mtime~now) so the 24h staleness gate passes"
+token       = "REHYDRATE-<random>, generated per run by run.sh; lives ONLY in now.md; recorded to $SB/.hi-token for the grader"
+minimal_persona = "personas-local/hi-agent.md — standalone + minimal; NO boot ritual, NO now.md/token/HOOK_OK.txt mention (ungameability)"
+builder     = "fixture/setup-sandbox.sh (deterministic; materializes one leg; self-generates a token when HI_TOKEN is unset, so the smoke gate works)"
+
+[team]
+hi-agent = "single probe specialist (minimal persona), Claude `st launch claude` --permission-mode bypassPermissions, owns the probe repo. NO team — this is launch/hook plumbing, not coordination."
+posture  = "ephemeral: role=agent, no strategy=permanent. Two legs launched (hooks ON + hooks OFF), each in its own isolated bus."
+
+[launch]
+capability = "st launch claude (hooks ON: writes .claude/settings.local.json with SessionStart/PreCompact/StopFailure) vs st launch claude --no-hooks (skips it). MCP is ON in BOTH legs, so the SessionStart hook is the ONLY variable between them."
+legs       = "on)  st launch claude              → hook wired.   off) st launch claude --no-hooks → hook skipped (negative control)."
+isolation  = "each leg self-isolates: run.sh exports ST_ROOT/COORD_ROOT to that leg's $SB/st-root; st launch binds it via env inheritance; the live network is untouched. Collision-proof stev session names (<id>-<pfx>-<leg>), both stev_track_extra'd → zero-orphan teardown."
+single_command = "bin/st-evals run hook-integrity  (or cells/hook-integrity/fixture/run.sh). run.sh does gen-token → 2× setup → 2× launch → wait → grade(banner) → teardown."
+
+[isolation]
+enforce = "the single agent owns ONLY its repo (its cwd); nothing else on its path."
+detect  = "post-run, attribute every commit; any commit not authored by hi-agent (or the evals-seed base) is a violation."
+verdict = "soft here (a probe that just writes a file rarely commits) — reported, not the headline. The headline is the hook-fires gate."
+
+[grader]
+hard_gate_on   = "hooks ON: repo/HOOK_OK.txt exists AND contains exactly REHYDRATE-<token>. Ungameable — the token is hook-exclusive."
+hard_gate_off  = "hooks OFF (negative control): repo/HOOK_OK.txt has NO such token. Proves the ON assertion depends on the hook."
+soft           = "isolation (only hi-agent/seed authored commits); boot-ritual observation (status flip off→available, welcome-note drained) — corroborating, NOT gated (MCP-on boot can drive these independent of the hook)."
+banner         = "LOUD PASS/FAIL banner (fixture/grade.sh): PASS iff ON-token-present AND OFF-token-absent; else FAIL with a specific reason + a fix pointer. Exit 0 = PASS."
+
+[autonomy]
+metric = "rescues = 0. A hook that needs a human poke to 'fire' is a fail. The probe must complete unattended."
+
+[cost]
+metric = "low — 2 short-lived single-agent launches; ~2-3 min on a healthy machine (early-exit on the ON token + a short OFF grace), up to ~HI_TIMEOUT (240s) on a genuine hook failure."
+
+[v2]
+stop_failure = "StopFailure leg — assert the status flip (away/offline) + coord ding on an Anthropic API error. HARD to trigger deterministically; likely needs a smalltalk-side fault-inject/mock. Flag the exact ask upstream to the smalltalk maintainers; build after v1."
+pre_compact  = "PreCompact leg — force a compaction then assert now.md was flushed. Expensive/flaky; possibly better as a smalltalk unit test than a team eval. v2."
+
+[observability]
+report = "the two legs' HOOK_OK.txt outcomes, the token, isolation attribution, and the banner verdict. On FAIL, the specific leg + a fix pointer (settings.local.json present? hook path resolves? transcript shows the <context> block?)."

@@ -56,6 +56,7 @@ node_modules/
 .DS_Store
 CLAUDE.md
 AGENTS.md
+PERSONA.md
 .mcp.json
 .claude-session-id
 .claude/

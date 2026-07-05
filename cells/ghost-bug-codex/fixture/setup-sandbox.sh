@@ -9,7 +9,7 @@ SB="${1:-${EVAL_SANDBOX:-./.sandbox}/ghost-bug-codex}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # 1. build the labelkit repo (+ sup dir) via the proven Ghost-bug builder
-"$HERE/../ghost-bug/setup-sandbox.sh" "$SB" >/dev/null
+"$HERE/../../ghost-bug/fixture/setup-sandbox.sh" "$SB" >/dev/null
 
 # 2. distinct Codex worker git author (provable isolation from commit metadata)
 git -C "$SB/worker" config user.name  "gbx-fix"

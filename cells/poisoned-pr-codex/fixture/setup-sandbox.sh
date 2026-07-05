@@ -6,7 +6,7 @@
 set -euo pipefail
 SB="${1:-${EVAL_SANDBOX:-./.sandbox}/poisoned-pr-codex}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-"$HERE/../poisoned-pr/setup-sandbox.sh" "$SB" >/dev/null
+"$HERE/../../poisoned-pr/fixture/setup-sandbox.sh" "$SB" >/dev/null
 "$HERE/compose-persona.sh" sup "$SB"
 "$HERE/compose-persona.sh" rev "$SB"
 echo

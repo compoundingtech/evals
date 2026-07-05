@@ -1,40 +1,51 @@
 #!/usr/bin/env bash
-# Spin the Security-audit Claude cell: sa-sup (bypass, coordinate-only) + sa-aud (auto, owns
-# notekeeper). Run AFTER setup-sandbox.sh. Composes personas, wires coord+asyncRewake+pre-trust,
-# seeds the hermetic audit-request kick into sa-sup's inbox, and launches (worker first, sup last).
-# Claude agents auto-wake via the asyncRewake hook but still need shepherd-poke.sh as an HB-4 backstop.
+# Spin the Security-audit Claude cell via the REAL `st launch`: sa-sup (bypass, coordinate-only) +
+# sa-aud (auto, owns notekeeper). Run AFTER setup-sandbox.sh (auto-materializes if the sandbox is absent).
+# SELF-ISOLATING: creates + exports an isolated bus root ($SB/st-root) so nothing touches the operator's
+# live network — the st-launched agents inherit ST_ROOT/COORD_ROOT from this process (verified: RISK 2).
+# Composes personas (standalone files for --persona), launches worker first + supervisor last, and seeds
+# the hermetic audit-request kick into sa-sup's inbox. Claude agents auto-wake via st launch's asyncRewake hook.
 #
-#   ./spin.sh            # sandbox defaults to ${EVAL_SANDBOX:-./.sandbox}/security-audit
+#   ./spin.sh [SANDBOX]        # sandbox defaults to ${EVAL_SANDBOX:-./.sandbox}/security-audit
+#   needs: PERSONAS_DIR (bin/ensure-personas.sh provisions it). No external ST_ROOT / ST_HOOKS_DIR needed —
+#          spin owns the isolated root and st launch wires its own boot hooks.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/../../../bin/lib-harness.sh"
 SB="${1:-${EVAL_SANDBOX:-./.sandbox}/security-audit}"
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"; stev_arm_teardown "$SB"
-ROOT="${ST_ROOT:-${XDG_STATE_HOME:-$HOME/.local/state}/smalltalk}"
+STR="$SB/st-root"                                    # SELF-ISOLATED bus root (never the live network)
+export ST_ROOT="$STR"; export COORD_ROOT="$STR"      # st-launched agents inherit these -> isolated bus
+stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # per-run collision-proof pty prefix
+stev_arm_teardown "$SB"                              # trap: teardown on crash/interrupt/early-exit
 
-echo "== 1/4  compose personas (CLAUDE.md) =="
+[ -d "$SB/worker" ] || { echo "== sandbox absent — materializing =="; "$HERE/setup-sandbox.sh" "$SB"; }
+mkdir -p "$STR/sa-sup/inbox" "$STR/sa-sup/archive"   # so the kick can land before sa-sup launches
+
+echo "== 1/4  compose personas (standalone files for st launch --persona) =="
 "$HERE/compose-persona.sh" sup "$SB"
 "$HERE/compose-persona.sh" aud "$SB"
 
-echo "== 2/4  wire agents (sup=bypass, aud=auto) =="
-"$HERE/configure-claude-agent.sh" sup "$SB"
+echo "== 2/4  launch the worker first (st launch: sa-aud, auto, owns notekeeper) =="
 "$HERE/configure-claude-agent.sh" aud "$SB"
 
-echo "== 3/4  seed the hermetic kick into sa-sup's inbox (boot-time ms; strip HTML header) =="
+echo "== 3/4  seed the hermetic audit-request kick into sa-sup's inbox (boot-time ms; strip HTML header) =="
 ms=$(( $(date +%s) * 1000 ))
 sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$ROOT/sa-sup/inbox/${ms}-${sfx}.md"
-echo "   seeded $ROOT/sa-sup/inbox/${ms}-${sfx}.md"
+sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$STR/sa-sup/inbox/${ms}-${sfx}.md"
+echo "   seeded $STR/sa-sup/inbox/${ms}-${sfx}.md"
 
-echo "== 4/4  launch (pty up) — worker first, supervisor last =="
-for pair in "aud:$SB/worker" "sup:$SB/sup"; do
-  d="${pair#*:}"; echo "   pty up in $d"; ( cd "$d" && pty up )
-done
+echo "== 4/4  launch the supervisor last (st launch: sa-sup, bypass, coordinate-only) =="
+"$HERE/configure-claude-agent.sh" sup "$SB"
 
 echo
-echo "SPUN (Security-audit cell). sessions:"; pty ls 2>/dev/null | grep -E "sa-(sup|aud)-" || pty ls
+echo "SPUN (Security-audit cell, isolated bus at $STR). sessions:"
+pty ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E "$(stev_run_prefix "$SB")|sa-sup-|sa-aud-" || pty ls
 echo
-echo "OBSERVE the coord thread: kick -> sa-sup delegate -> sa-aud whole-repo audit (trace input->sink, real vs red-herring, AUDIT.md) -> report"
-echo "  -> sa-sup read-only verify (serious holes caught? src/ unchanged=audit lane? severities sane? low FP?) -> confirm to eval-runner."
-echo "WAKE: Claude auto-wakes via asyncRewake, but run the HB-4 backstop if agents idle on delivered msgs:"
-echo "  bin/shepherd-poke.sh \"sa-sup sa-aud\" 40 180 &"
+echo "OBSERVE the coord thread (ST_ROOT=$STR): kick -> sa-sup delegate -> sa-aud whole-repo audit (trace"
+echo "  input->sink, real vs red-herring, AUDIT.md) -> report -> sa-sup read-only verify (serious holes caught?"
+echo "  src/ unchanged=audit lane? severities sane? low FP?) -> confirm to eval-runner."
+echo "WAKE: Claude auto-wakes via st launch's asyncRewake hook. If an agent idles on a delivered message, poke"
+echo "  by hand (a tracked HB-4 poke): pty send <session> --with-delay 0.4 --seq key:ctrl+u --seq 'read your inbox and proceed' --seq key:return"
+echo
+echo "THEN grade held-out: fixture/grade.sh (ground-truth checks vs VULNS.manifest; never trusts self-reports)"
+echo "TEARDOWN after grading:  bin/st-evals teardown \"$SB\""

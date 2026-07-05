@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Compose a Security-audit eval agent's persona = task-lane + coord boot ritual + BASE
-# (dev-practices + known-harness-bugs) + role persona, per FRAMEWORK.md. Claude family (CLAUDE.md).
+# (dev-practices + known-harness-bugs) + role persona, per FRAMEWORK.md. Writes a STANDALONE
+# persona file ($SB/personas-local/<id>.md) that spin.sh hands to `st launch --persona` — st launch
+# installs it as PERSONA.md in the agent's cwd and adds `@PERSONA.md` to CLAUDE.md.
 #   ./compose-persona.sh <sup|aud> [SANDBOX] [REQUESTER]
 set -euo pipefail
 role="$1"; SB="${2:-${EVAL_SANDBOX:-./.sandbox}/security-audit}"; REQUESTER="${3:-eval-runner}"
@@ -12,7 +14,7 @@ case "$role" in
   aud) id="sa-aud"; dir="$WORKER_REPO";  rolefile="$PZ/specialist.md" ;;
   *) echo "role must be sup|aud" >&2; exit 1 ;;
 esac
-out="$dir/CLAUDE.md"; mkdir -p "$dir"
+mkdir -p "$SB/personas-local" "$dir"; out="$SB/personas-local/$id.md"
 
 if [ "$role" = "sup" ]; then
 cat > "$out" <<LANE
@@ -69,11 +71,14 @@ You are \`$id\` on smalltalk/coord. You own exactly one repo: the \`notekeeper\`
 LANE
 fi
 
-# ── coord boot ritual ──
+# ── coord boot ritual (HB-3-safe: identity from $ST_AGENT, never $COORD_IDENTITY) ──
 cat >> "$out" <<'BOOT'
 ---
 ## Coord boot ritual (do this first, every fresh start)
-1. Set your status available: shell out `coord status <your-identity> --set available` (use $COORD_IDENTITY).
+1. Set your status available: shell out `coord status "$ST_AGENT" --set available`.
+   Use `$ST_AGENT` — it is the authoritative identity here. Do NOT interpolate `$COORD_IDENTITY` for your
+   identity: when a parent stands you up via `st launch`, its COORD_IDENTITY can leak into your env (a known
+   launch quirk); `$ST_AGENT` is set correctly to YOU, and coord's own tools already resolve ST_AGENT first.
 2. Drain your inbox: list messages, read each, reply if warranted, archive it. Don't leave inbox items.
 3. Then act on what you found (the supervisor: the seeded audit request; the auditor: await/handle the delegation).
 Your coord correspondent is your interlocutor — questions/blockers/"done" all go through coord messages,

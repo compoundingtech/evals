@@ -30,9 +30,10 @@ case "$role" in
 esac
 persona="$SB/personas-local/$id.md"
 [ -f "$persona" ] || { echo "missing composed persona $persona — run compose-persona.sh $role first" >&2; exit 1; }
-pfx="$(stev_prefix "$SB" "$id")"     # stev-<cell>-<runid>-<id>
-sess="$id-$pfx"                       # st launch names the pty session <identity>-<session-name>
-dingsess="$id-ding"                   # under --ding: the `st ding` sidecar (prefix=<id>, session-name=`ding`)
+# stev-retirement: NO collision-proof prefix, NO track_extra. The run's decoupled short PTY_ROOT (exported by
+# spin.sh, honored verbatim by st launch #69) physically isolates every session — the agent AND the `st ding`
+# sidecar — from the operator's global pty daemon, so a plain session name is fine and teardown just kills
+# everything in the run's PTY_ROOT.
 
 # Pre-create the FULL coord dir on the ISOLATED bus (inbox+archive+status) so the boot ritual doesn't
 # rabbit-hole looking for its own folder.
@@ -56,14 +57,11 @@ PY
 # `st ding` sidecar, CLI bus ops — the MCP-hostile-host shape).
 ( cd "$d" && st launch claude $(stev_ding_flags) \
     --identity "$id" \
-    --session-name "$pfx" \
+    --session-name run \
     --permission-mode "$mode" \
     --persona "$persona" \
     --unattended )
 
-# Register the EXACT resulting session name so teardown is zero-orphan even though it's outside our prefix stem.
-stev_track_extra "$SB" "$sess"
-# Under --ding, also track the `st ding` sidecar (`<id>-ding`, outside our stev prefix) or it orphans at teardown.
-stev_ding_on && stev_track_extra "$SB" "$dingsess" || true
-
-echo "launched $id  (pty session=$sess$(stev_ding_on && echo " + ding sidecar=$dingsess"), --permission-mode $mode, isolated bus=$ROOT, persona=$persona)"
+# (stev-retirement: no stev_track_extra — every session, incl. the ding sidecar, is in the run's PTY_ROOT and
+#  is torn down by killing that root. The mid-launch-orphan class is gone by construction.)
+echo "launched $id  (pty root=${PTY_ROOT:-?}, session=$id-run$(stev_ding_on && echo " + $id-ding sidecar"), --permission-mode $mode, isolated bus=$ROOT, persona=$persona)"

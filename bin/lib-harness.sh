@@ -53,10 +53,21 @@ stev_init() {
   mkdir -p "$sb/.stev"
   [ -s "$sb/.stev/cell" ]  || printf '%s\n' "$cell" > "$sb/.stev/cell"
   [ -s "$sb/.stev/runid" ] || printf '%s\n' "$(stev_gen_runid)" > "$sb/.stev/runid"
+  # stev-retirement: mint a per-run SHORT, decoupled PTY_ROOT (`/tmp/stev-<runid>`). The 104-byte unix-socket
+  # path limit forbids the deep `<ST_ROOT>/pty` nesting, so this is short by construction. A cell that has cut
+  # over EXPORTS this (see stev_pty_root) so `st launch` honors it verbatim (needs st launch's direct-$PTY_ROOT
+  # support, smalltalk #69). Minting it here is harmless to cells not yet cut over — they simply don't export it.
+  [ -s "$sb/.stev/pty-root" ] || printf '/tmp/stev-%s\n' "$(cat "$sb/.stev/runid")" > "$sb/.stev/pty-root"
+  mkdir -p "$(cat "$sb/.stev/pty-root")" 2>/dev/null || true
 }
 
 stev_cell()  { cat "$1/.stev/cell"  2>/dev/null; }
 stev_runid() { cat "$1/.stev/runid" 2>/dev/null; }
+# stev_pty_root <SB> : the run's decoupled short PTY_ROOT. A cut-over cell does
+#   export PTY_ROOT="$(stev_pty_root "$SB")"
+# before launching so EVERY session (agent, st-launch worker, ding sidecar) lands in it — a physical partition
+# from the operator's global pty daemon. Retires the collision-proof prefix + track_extra machinery.
+stev_pty_root() { cat "$1/.stev/pty-root" 2>/dev/null; }
 
 # stev_prefix <SB> <id> : the collision-proof pty prefix for one agent. Requires
 # stev_init to have run for this SB.
@@ -123,7 +134,18 @@ stev_teardown() {
   local sb="$1" stem
   [ -s "$sb/.stev/runid" ] || { echo "stev_teardown: no run to tear down at $sb" >&2; return 0; }
   stem="$(stev_run_prefix "$sb")"
-  # `pty ls` carries ANSI colour; strip it, then pull every session name under
+  # stev-retirement: if this run used a DECOUPLED PTY_ROOT (a cut-over cell exported it), kill every session in
+  # it and remove the root. Physical partition ⇒ can't miss a session, can't touch another run or the operator —
+  # this retires the prefix-grep + track_extra dance (and the mid-launch-orphan class it had). No-op for cells
+  # not yet cut over (their pty-root is minted-but-unused/empty; rm of an empty dir is harmless).
+  local pr; pr="$(stev_pty_root "$sb")"
+  if [ -n "$pr" ] && [ -d "$pr" ]; then
+    pty --root "$pr" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -oE '\([a-z0-9]+\)' | tr -d '()' \
+      | while read -r sid; do [ -n "$sid" ] && { pty --root "$pr" kill "$sid" >/dev/null 2>&1 || true; }; done
+    pty --root "$pr" gc >/dev/null 2>&1 || true
+    rm -rf "$pr" 2>/dev/null || true
+  fi
+  # LEGACY (cells not yet cut over): `pty ls` carries ANSI colour; strip it, then pull every session name under
   # our unique stem. Prefix-keyed so we never touch a live or other-run session.
   pty ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' \
     | grep -oE "${stem}[A-Za-z0-9_-]*" | sort -u \

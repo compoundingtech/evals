@@ -43,7 +43,7 @@ echo
 echo "SPUN (Docs cell, isolated bus at $STR). sessions:"
 pty --root "$PTY_ROOT" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'doc-sup|doc-writer' || pty --root "$PTY_ROOT" ls 2>/dev/null
 echo
-echo "OBSERVE the coord thread (ST_ROOT=$STR): request -> doc-sup delegate -> doc-writer read code+tests ->"
+echo "OBSERVE the message thread (ST_ROOT=$STR): request -> doc-sup delegate -> doc-writer read code+tests ->"
 echo "  write README/docs (surface the 3 gotchas) -> commit -> report -> doc-sup read-only verify (accurate?"
 echo "  complete? cold-usable? src unchanged? suite green?) -> confirm to eval-runner."
 echo "WAKE: Claude auto-wakes via st launch's asyncRewake hook. If an agent idles on a delivered message, poke"

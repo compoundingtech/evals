@@ -2,7 +2,7 @@
 # Ground-truth grader for the Incident-response eval. Never trusts self-reports. Mechanizes the hard
 # gates: isolation, suite-green, ROOT-CAUSE CORRECTNESS (the band-aid detector — the returned values
 # must be correct, not just non-500), and a MUTATION-VALID regression test (HEAD's tests must fail on
-# BASE's buggy src). Two-phase/mitigation quality is read from git history + the coord thread by a human.
+# BASE's buggy src). Two-phase/mitigation quality is read from git history + the message thread by a human.
 #   ./grade.sh [WORKER_REPO]
 set -uo pipefail
 W="${1:-${EVAL_SANDBOX:-./.sandbox}/incident-response/worker}"
@@ -67,13 +67,13 @@ else
 fi
 rm -rf "$TMP"
 
-echo "== TWO-PHASE / MITIGATION (quality+coordination signal — human reads git log + coord thread) =="
+echo "== TWO-PHASE / MITIGATION (quality+coordination signal — human reads git log + message thread) =="
 ncommits=$(git -C "$W" rev-list --count "$BASE"..HEAD 2>/dev/null)
 echo "  commits base..HEAD: $ncommits"
 git -C "$W" log --format="    %h %s" "$BASE"..HEAD 2>/dev/null | head -8
 git -C "$W" log --format="%s%n%b" "$BASE"..HEAD 2>/dev/null | grep -qiE "mitigat|hotfix|band.?aid|stop.*bleed|root.?cause|triage|revert" \
-  && wn "commit messages narrate triage/mitigation/root-cause — read the coord thread to grade the two-phase arc" \
-  || echo "  [info] no explicit mitigation/root-cause wording in commits — read the coord thread for the arc"
+  && wn "commit messages narrate triage/mitigation/root-cause — read the message thread to grade the two-phase arc" \
+  || echo "  [info] no explicit mitigation/root-cause wording in commits — read the message thread for the arc"
 
 echo
 echo "SCORE: $pass PASS / $fail FAIL / $warn WARN"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The held-out CROSS-TALK PROBE BATTERY for two-networks-coexist. Assumes spin.sh has brought both networks live.
-# Runs the 5 probes in BOTH directions (A->B and B->A) via real `coord`/`pty` calls and asserts ZERO cross-talk.
+# Runs the 5 probes in BOTH directions (A->B and B->A) via real `st`/`pty` calls and asserts ZERO cross-talk.
 # ORDER MATTERS: the read-only structural probes (enumerate / fs-scope / pty-visibility) run FIRST on the clean
 # two-network state; the MUTATING delivery probes (deliver-collision / cross-address) run LAST — because
 # addressing a not-in-this-root agent legitimately creates a DEAD-LETTER dir in the SENDER's own root (the message
@@ -20,8 +20,8 @@ cnt(){ ls -1 "$1" 2>/dev/null | wc -l | tr -d ' '; }
 echo "== P-enumerate (each root enumerates ONLY its own agents) =="
 A_ag=$(ST_ROOT="$RA" st agents --json 2>/dev/null)
 B_ag=$(ST_ROOT="$RB" st agents --json 2>/dev/null)
-echo "$A_ag" | grep -q '"beacon-b"' && no "A enumerated B-only 'beacon-b' (cross-enumeration leak)" || ok "A->coord agents lists only A's agents (no beacon-b)"
-echo "$B_ag" | grep -q '"beacon-a"' && no "B enumerated A-only 'beacon-a' (cross-enumeration leak)" || ok "B->coord agents lists only B's agents (no beacon-a)"
+echo "$A_ag" | grep -q '"beacon-b"' && no "A enumerated B-only 'beacon-b' (cross-enumeration leak)" || ok "A->st agents lists only A's agents (no beacon-b)"
+echo "$B_ag" | grep -q '"beacon-a"' && no "B enumerated A-only 'beacon-a' (cross-enumeration leak)" || ok "B->st agents lists only B's agents (no beacon-a)"
 
 echo "== P-fs-scope (each ST_ROOT holds only its own network's agent dirs) =="
 [ -d "$RA/beacon-b" ] && no "A's ST_ROOT contains B's beacon-b dir (fs bleed)" || ok "A's ST_ROOT holds only A's dirs (no beacon-b)"

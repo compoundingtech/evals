@@ -44,7 +44,7 @@ echo
 echo "SPUN (Test-writing cell, isolated bus at $STR). sessions:"
 pty --root "$PTY_ROOT" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'tw-sup|tw-dev' || pty --root "$PTY_ROOT" ls 2>/dev/null
 echo
-echo "OBSERVE the coord thread (ST_ROOT=$STR): request -> tw-sup delegate -> tw-dev read module -> write a"
+echo "OBSERVE the message thread (ST_ROOT=$STR): request -> tw-sup delegate -> tw-dev read module -> write a"
 echo "  THOROUGH suite (boundaries+edges+errors, exact asserts) -> commit -> report -> tw-sup read-only verify"
 echo "  (green? src unchanged? would it CATCH a regression, or shallow?) -> confirm to eval-runner."
 echo "WAKE: Claude auto-wakes via st launch's asyncRewake hook. If an agent idles on a delivered message, poke"

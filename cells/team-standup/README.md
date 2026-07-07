@@ -18,7 +18,7 @@ startup gates). No external `ST_ROOT` — spin owns the isolated root.
 - `fixture/spin.sh [SANDBOX]` — **P5**, the LIVE proof: `st launch`es the CoS (`--unattended`, collision-proof stev session name so it can't clobber a live `cos`); the CoS reads the seeded task, **stands up `taskflow-dev` itself** via `st launch`, briefs it over the bus, and walks the result. Or: `bin/st-evals run team-standup`.
 - `fixture/grade.sh [SANDBOX]` — ground-truth grade once the loop closes. Tear down after with `bin/st-evals teardown <SANDBOX>`.
 
-`st launch --unattended` auto-dismisses the CoS's startup gates (dev-channels / folder-trust / MCP-enable). The specialist the CoS stands up gets its folder-trust + project-MCP pre-staged by `spin.sh` (st launch installs its persona + boot hooks). asyncRewake carries the wakes; poke by hand only if an agent idles on a delivered message (the pty session name differs from the coord identity — see the notes `spin.sh` prints).
+`st launch --unattended` auto-dismisses the CoS's startup gates (dev-channels / folder-trust / MCP-enable). The specialist the CoS stands up gets its folder-trust + project-MCP pre-staged by `spin.sh` (st launch installs its persona + boot hooks). asyncRewake carries the wakes; poke by hand only if an agent idles on a delivered message (the pty session name differs from the smalltalk identity — see the notes `spin.sh` prints).
 
 ## Grading
 

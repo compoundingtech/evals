@@ -37,7 +37,7 @@ kick     = "hermetic feature request seeded into feat-sup's inbox (fixtures/feat
 [isolation]
 enforce = "feat-sup owns no repo (structural — its dir is not a git repo); feat-dev owns tasklit only"
 detect  = "post-run, attribute every commit — any change to tasklit by a non-owner (or a sup commit) FAILS the run"
-prove   = "the whole loop — delegation, the feature, the verification — is visible in the coord thread"
+prove   = "the whole loop — delegation, the feature, the verification — is visible in the message thread"
 verdict = "PASS/FAIL hard gate"
 
 [grader]

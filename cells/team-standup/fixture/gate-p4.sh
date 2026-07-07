@@ -30,7 +30,7 @@ GATE_FAIL=0
 
 [ -d "$SB/taskflow" ] || { echo "== sandbox absent — materializing =="; "$HERE/setup-sandbox.sh" "$SB"; }
 
-BIN=""; for c in st smalltalk coord; do command -v "$c" >/dev/null 2>&1 && { BIN="$c"; break; }; done
+BIN=""; for c in st smalltalk; do command -v "$c" >/dev/null 2>&1 && { BIN="$c"; break; }; done
 [ -z "$BIN" ] && { echo "no smalltalk CLI on PATH"; exit 1; }
 c() { local who="$1"; shift; env ST_ROOT="$STR" ST_AGENT="$who" "$BIN" "$@"; }
 

@@ -12,7 +12,7 @@
 #      removes the whole root — nothing to miss, nothing that can touch a live session.
 # TWO ROOTS (do not conflate): ST_ROOT here is the isolated COORDINATION bus (where the team
 # talks). The viz they BUILD reads its DATA from the frozen fixture ($SB/fixture/smalltalk) — a SEPARATE
-# root the personas pass explicitly at run time. This launcher only wires the coordination bus.
+# root the personas pass explicitly at run time. This launcher only wires the message bus.
 # Permission POSTURE (the operator): SUPERVISOR = bypassPermissions (integration + git + runs both views);
 # view/reviewer workers = auto.
 #   ./configure-claude-agent.sh <sup|tree|cards|ux> [SANDBOX]   # ST_ROOT must be exported (spin.sh does this)
@@ -53,7 +53,7 @@ json.dump(d,open(p,"w"),indent=2)
 PY
 
 # Launch via the real st launch. It inherits ST_ROOT from this process's env (exported by
-# spin.sh) -> the agent binds the ISOLATED coordination bus. --unattended bakes the startup auto-poker;
+# spin.sh) -> the agent binds the ISOLATED message bus. --unattended bakes the startup auto-poker;
 # the run's decoupled PTY_ROOT keeps this session off the operator's global pty daemon.
 ( cd "$d" && st launch claude $(stev_ding_flags) \
     --identity "$id" \

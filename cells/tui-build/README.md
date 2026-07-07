@@ -17,7 +17,7 @@ the boot hooks (asyncRewake / PreCompact / StopFailure) itself.
 - `fixture/spin.sh [SANDBOX]` — compose the 4 personas, `st launch` the team (workers first, sup last), seed the build request into `tui-sup`'s inbox (`tui-sup` integration lead + `tui-tree`/`tui-cards` view specialists + `tui-ux` usability reviewer). Or: `bin/st-evals run tui-build`.
 - `fixture/grade.sh [SANDBOX]` — mechanical gates (isolation + suite-green + wired-to-real-data + status-coverage) + render/usability pointers.
 
-**Two roots (don't conflate):** `ST_ROOT` here is the **coordination bus** (where the team talks). The built viz reads its **data** from the **frozen fixture** — `ST_ROOT=<sandbox>/fixture/smalltalk` — a separate root the personas pass explicitly. The frozen fixture is what makes tests + grading reproducible.
+**Two roots (don't conflate):** `ST_ROOT` here is the **message bus** (where the team talks). The built viz reads its **data** from the **frozen fixture** — `ST_ROOT=<sandbox>/fixture/smalltalk` — a separate root the personas pass explicitly. The frozen fixture is what makes tests + grading reproducible.
 
 **Launch tax:** with an older `st launch`, each agent boots into the dev-channels confirmation gate (press Enter); the hands-off `st launch` (unattended mode) dismisses it. asyncRewake carries the wakes; poke by hand only if an agent idles on a delivered message.
 

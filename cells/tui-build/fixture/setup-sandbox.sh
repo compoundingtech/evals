@@ -24,7 +24,7 @@ lift "$PROTO/proto-5-tree-preview.ts" | sed -E 's#\./data\.ts#../../data/mock.ts
 lift "$PROTO/proto-6-cards-preview.ts" | sed -E 's#\./data\.ts#../../data/mock.ts#g' > "$SEED/src/views/cards/index.ts"
 # mock data (self-contained synthetic roster; tests + reference)
 cp "$PROTO/data.ts" "$SEED/src/data/mock.ts"
-# real-network fetch (the shared data-layer basis: `coord agents --enrich --json`) — the supervisor builds on this
+# real-network fetch (the shared data-layer basis: `st agents --enrich --json`) — the supervisor builds on this
 lift "$PROTO/agent-network.ts" > "$SEED/src/data/network.ts"
 
 echo "== seed: entry + package + config + docs =="
@@ -95,7 +95,7 @@ share one data layer:
 
 - **tree** view + preview pane — `src/views/tree/`
 - **cards** view + preview pane — `src/views/cards/`
-- **shared data layer** — `src/data/` (`network.ts` reads `coord agents --enrich --json`;
+- **shared data layer** — `src/data/` (`network.ts` reads `st agents --enrich --json`;
   `mock.ts` is fixture/reference data)
 
 Built on `@myobie/pty/tui` (the published TUI framework).

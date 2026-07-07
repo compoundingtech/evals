@@ -8,7 +8,7 @@ evaluates = """
 Whether a TREE of agents (an integration lead + two view specialists + a usability reviewer, on real pty +
 coord) can BUILD a real product collaboratively and make it USABLE — not just make it render. The team
 takes two seed prototype views (tree+preview, cards+preview, on `@myobie/pty/tui`) and: builds ONE shared
-read-only data layer (`coord agents --enrich --json` + the message dir), wires both views to it, keeps the
+read-only data layer (`st agents --enrich --json` + the message dir), wires both views to it, keeps the
 suite + typecheck green, and — the discriminator — runs a real HUMAN-CENTERED usability pass that FINDS the
 problems a mock never shows (statuses the seed type doesn't model, overflow/truncation, empty states,
 cold-readability, navigation) and FIXES them. "It renders the mock" is table stakes; "it's usable on the

@@ -25,7 +25,7 @@ collision means a pass can't be an accident of unique names.
 
 | Probe | PASS |
 |---|---|
-| **P-enumerate** | `coord agents` in A lists only A's agents |
+| **P-enumerate** | `st agents` in A lists only A's agents |
 | **P-deliver-collision** | A→`wk` lands in A's `wk`; B's `wk` inbox unchanged |
 | **P-cross-address** | A→B-only `beacon-b` never reaches `$ST_ROOT_B/beacon-b/inbox` |
 | **P-pty-visibility** | B's pty sessions invisible/unaddressable from A (per-network `PTY_ROOT`) |
@@ -37,7 +37,7 @@ proving the partition isn't the trivial "two dead networks" pass. **Isolation is
 ## Two builds (infra first)
 
 1. **Pure-infra probe battery** *(build first — the deterministic hard gate)*: the harness plays the agents via
-   shell `coord`/`pty` calls (+ cheap `sleep` pty sessions for the pty probe). **No `claude` bootstraps → runs on
+   shell `st`/`pty` calls (+ cheap `sleep` pty sessions for the pty probe). **No `claude` bootstraps → runs on
    any box**, no machine-load dependency. This is the CI-able, ungameable gate.
 2. **Live-agents concurrency run** *(the demo beat)*: real agents in both networks under real load — same battery.
    Env-heavy → runs on the quiet/bare box (like signal-rename's live grade).

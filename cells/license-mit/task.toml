@@ -27,7 +27,7 @@ agents        = "eval-supervisor (supervisor persona) + eval-worker (specialist 
 builder       = "fixture/setup-sandbox.sh (deterministic). Compose via configure-{claude,codex,glm}-agent.sh to pick the family."
 
 # The ONLY input. Everything else must emerge from the personas.
-kick = "single coord message → eval-supervisor: 'The license should be MIT.'"
+kick = "single message → eval-supervisor: 'The license should be MIT.'"
 
 # MATRIX — the same task/world across compositions; the only variable is which family runs each seat.
 [matrix]

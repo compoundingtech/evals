@@ -37,13 +37,13 @@ kick       = "hermetic docs request seeded into doc-sup's inbox (fixtures/docs/k
 [isolation]
 enforce = "doc-sup owns no repo (structural — its dir is not a git repo); doc-writer owns checkout only; DOCS lane = src/ unchanged"
 detect  = "post-run, attribute every commit — any change to checkout by a non-owner (or a sup commit) FAILS; any src/ change FAILS the docs lane"
-prove   = "the whole loop — delegation, the docs, the verification — is visible in the coord thread"
+prove   = "the whole loop — delegation, the docs, the verification — is visible in the message thread"
 verdict = "PASS/FAIL hard gate"
 
 [grader]
 mechanical = "fixtures/docs/grade.sh — isolation (only doc-writer authored; src/ byte-identical; sup not a repo) + suite green + docs written + completeness keyword-signals for the 3 contracts + return shape."
 held_out   = """
-THE DISCRIMINATOR — fixtures/docs/cold-reader.sh: a FRESH `claude --print` agent (no coord/persona/memory)
+THE DISCRIMINATOR — fixtures/docs/cold-reader.sh: a FRESH `claude --print` agent (no bus/persona/memory)
 gets ONLY the team's docs + the library as a MANGLED BLACK BOX (input identifiers stripped so peeking
 reveals nothing about the conventions) + a task in HUMAN terms ($12.50, 8% tax). It must produce the
 library's total(). PASS iff totalCents === 1944 (the docs conveyed all load-bearing contracts).

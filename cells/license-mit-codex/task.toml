@@ -20,7 +20,7 @@ task/world is the point — only the composition changes.
 
 [family_notes]
 persona = "Codex reads AGENTS.md (fixture/compose-persona.sh), not CLAUDE.md"
-wake    = "`ding` sidecar wakes Codex (no asyncRewake); pre-trust dirs in ~/.codex/config.toml; pre-create the coord dir so ding doesn't die on a missing folder"
+wake    = "`ding` sidecar wakes Codex (no asyncRewake); pre-trust dirs in ~/.codex/config.toml; pre-create the st dir so ding doesn't die on a missing folder"
 author  = "the worker commits as a distinct git author (lmc-worker@eval.local) so isolation is provable from commit metadata (the sup dir isn't a git repo -> structural isolation)"
 
 [grader]

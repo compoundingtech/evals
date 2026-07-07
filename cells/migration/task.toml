@@ -44,7 +44,7 @@ kick    = "hermetic migration request seeded into mig-sup's inbox (fixtures/migr
 [isolation]
 enforce = "mig-sup owns no repo (structural — its dir is not a git repo, cannot commit); mig-dev owns meeting-notes only"
 detect  = "post-run, attribute every commit — any change to meeting-notes by a non-owner (or a sup commit) FAILS the run"
-prove   = "the whole migration — delegation, the fix, any correction — is visible in the coord thread"
+prove   = "the whole migration — delegation, the fix, any correction — is visible in the message thread"
 verdict = "PASS/FAIL hard gate"
 
 [grader]

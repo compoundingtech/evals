@@ -61,7 +61,7 @@ Build this order and compute the total:
 Write the exact object returned by the cart's `total()` to `./result.json` (as JSON).
 MD
 
-# 4) pre-trust + run a FRESH headless agent (no coord, no dev-channels, no persona).
+# 4) pre-trust + run a FRESH headless agent (no bus, no dev-channels, no persona).
 sid="$(uuidgen | tr 'A-Z' 'a-z')"
 python3 - "$R" <<'PY'
 import json,sys

@@ -15,7 +15,7 @@ every consumer (signal-relay peer-depends on it; signal-hub drives `signal` sess
 resource scheme) plus a config sweep (app.toml) — while keeping every suite green and the system working
 end-to-end. It forces the three skills a real factory needs: DECOMPOSITION (who owns which repo),
 SEQUENCING (you cannot rename the base package without breaking consumers until they're updated — so order
-+ a backward-compat/alias window matter, exactly like the coord->smalltalk dual-honor cutover), and
++ a backward-compat/alias window matter, exactly like the coord->smalltalk rename cutover), and
 JUDGMENT (the word `signal` ALSO names a ubiquitous primitive — the OS signal + AbortSignal/controller.signal
 — renaming THAT breaks everything; a blind find-replace fails this task and the quality judge catches it).
 The held-out invariant — the renamed stack still launches, the relay still connects over the new scheme,

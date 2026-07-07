@@ -35,7 +35,7 @@ kick    = "hermetic request seeded into tw-sup's inbox (fixtures/test-writing/ki
 [isolation]
 enforce = "tw-sup owns no repo (structural — its dir is not a git repo); tw-dev owns grades only; TEST-WRITING lane = src/ unchanged"
 detect  = "post-run, attribute every commit — any change to grades by a non-owner (or a sup commit) FAILS; any src/ change breaks the test-writing lane"
-prove   = "the whole loop — delegation, the suite, the verification, any bug escalation — is visible in the coord thread"
+prove   = "the whole loop — delegation, the suite, the verification, any bug escalation — is visible in the message thread"
 verdict = "PASS/FAIL hard gate"
 
 [grader]

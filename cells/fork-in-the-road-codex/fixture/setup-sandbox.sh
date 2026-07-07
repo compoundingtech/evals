@@ -3,7 +3,7 @@
 # are design docs. Four dirs, each a git repo owned by one agent, each seeded with the shared design
 # brief PROBLEM.md (committed by evals-seed) so every agent has the problem locally without any
 # cross-dir read. Proposers add PROPOSAL.md in their own dir; the supervisor adds RECOMMENDATION.md in
-# its own dir. Isolation = each agent commits ONLY in its own dir; the debate flows through coord.
+# its own dir. Isolation = each agent commits ONLY in its own dir; the debate flows through smalltalk.
 # See tasks/fork-in-the-road.toml.
 #
 #   ./setup-sandbox.sh            # builds ${EVAL_SANDBOX:-./.sandbox}/fork-in-the-road-codex

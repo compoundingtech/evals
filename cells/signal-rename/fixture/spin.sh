@@ -13,7 +13,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/../../../bin/lib-harness.sh"
 SB="${1:-${EVAL_SANDBOX:-./.sandbox}/signal-rename}"
-STR="$SB/st-root"                                    # SELF-ISOLATED coordination bus (never the live network)
+STR="$SB/st-root"                                    # SELF-ISOLATED message bus (never the live network)
 export ST_ROOT="$STR"      # st-launched agents inherit these -> isolated bus
 stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # per-run id + decoupled short PTY_ROOT
 export PTY_ROOT="$(stev_pty_root "$SB")"             # stev-retirement: st launch honors this verbatim (#69) -> every session in the run's isolated pty root
@@ -41,7 +41,7 @@ echo
 echo "SPUN (signal-rename cell, isolated bus at $STR). sessions:"
 pty --root "$PTY_ROOT" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'sig-(sup|base|relay|hub)' || pty --root "$PTY_ROOT" ls 2>/dev/null || true
 echo
-echo "OBSERVE the coord thread: sig-sup sequences the cutover — briefs sig-base to rename @acme/signal->@acme/beacon"
+echo "OBSERVE the message thread: sig-sup sequences the cutover — briefs sig-base to rename @acme/signal->@acme/beacon"
 echo "  (+ the bin) FIRST with a compat/alias window; sig-base signals the consumers; then sig-relay + sig-hub bump"
 echo "  peerDep + imports (+ signal://->beacon:// for the hub), each keeping node --test GREEN and the PRIMITIVE"
 echo "  (AbortSignal/SIGTERM) intact; sig-sup renames app.toml + integrates + reports to the requester (morgan)."

@@ -44,7 +44,7 @@ kick      = "hermetic incident PAGE (symptoms only; root cause is theirs to diag
 [isolation]
 enforce = "ir-sup owns no repo (structural — its dir is not a git repo, cannot commit); ir-oncall owns pulse only"
 detect  = "post-run, attribute every commit — any change to pulse by a non-owner (or a sup commit) FAILS the run"
-prove   = "the whole incident — page, delegation, triage, mitigation, root fix, verification — is visible in the coord thread"
+prove   = "the whole incident — page, delegation, triage, mitigation, root fix, verification — is visible in the message thread"
 verdict = "PASS/FAIL hard gate"
 
 [grader]
@@ -62,14 +62,14 @@ Independent of the team's own tests, on the final repo (fixtures/incident-respon
 hermetic            = "runs on the isolated sandbox clone, fully offline (node --test, node:http); base commit preserved for ground-truth comparison."
 
 [quality]
-type   = "cross-family LLM-judge on the diff + the coord thread (a Claude judge inflates Claude ~4-7pts)"
+type   = "cross-family LLM-judge on the diff + the message thread (a Claude judge inflates Claude ~4-7pts)"
 method = "smallest correct change (fixed the formula, didn't rewrite the service)? mitigation-vs-root narrated? regression test real + not weakening the suite? empty-metric edge also guarded (bonus)? band-aid left as final state = low score."
 
 [autonomy]
-metric = "rescue-interventions after the page (planned-gate vs rescue); wake-nudges are harness tax, not rescues; a coord message to the team = rescue"
+metric = "rescue-interventions after the page (planned-gate vs rescue); wake-nudges are harness tax, not rescues; a message to the team = rescue"
 
 [cost]
-metric = "tokens + wall-clock for the tree — capture if instrumented; else wall-clock from the coord thread timestamps"
+metric = "tokens + wall-clock for the tree — capture if instrumented; else wall-clock from the message thread timestamps"
 
 [coordination]
 metric = "clean triage->delegate->mitigate->root-fix->verify arc; the TWO-PHASE quality (did the sup hold the bar and reject a band-aid if offered?); handoffs visible; no thrash/duplication"

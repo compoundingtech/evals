@@ -16,7 +16,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/../../../bin/lib-harness.sh"
 SB="${1:-${EVAL_SANDBOX:-./.sandbox}/tui-build}"
-STR="$SB/st-root"                                    # SELF-ISOLATED coordination bus (never the live network)
+STR="$SB/st-root"                                    # SELF-ISOLATED message bus (never the live network)
 export ST_ROOT="$STR"      # st-launched agents inherit these -> isolated bus
 stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # per-run id + decoupled short PTY_ROOT
 export PTY_ROOT="$(stev_pty_root "$SB")"             # stev-retirement: st launch honors this verbatim (#69) -> every session in the run's isolated pty root
@@ -44,7 +44,7 @@ echo
 echo "SPUN (tui-build cell, isolated bus at $STR). sessions:"
 pty --root "$PTY_ROOT" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'tui-(sup|tree|cards|ux)' || pty --root "$PTY_ROOT" ls 2>/dev/null || true
 echo
-echo "OBSERVE the coord thread: tui-sup builds the shared data layer (src/data/network.ts -> coord agents"
+echo "OBSERVE the message thread: tui-sup builds the shared data layer (src/data/network.ts -> st agents"
 echo "  --enrich --json, read-only) -> briefs tui-tree + tui-cards to wire their views to it -> briefs"
 echo "  tui-ux for the usability pass -> integrates -> drives the find->fix loop (ux finds, the view owner"
 echo "  fixes, re-verify) -> reports to river. The built viz reads the FROZEN fixture (a SEPARATE root):"

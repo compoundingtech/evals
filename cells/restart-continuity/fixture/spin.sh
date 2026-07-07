@@ -48,7 +48,7 @@ echo
 echo "SPUN (Restart-continuity cell, isolated bus at $STR). sessions:"
 pty --root "$PTY_ROOT" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'rc-sup|rc-dev' || pty --root "$PTY_ROOT" ls 2>/dev/null
 echo
-echo "OBSERVE the coord thread (ST_ROOT=$STR): kick -> rc-sup delegate -> rc-dev process items 1..4 (per-item"
+echo "OBSERVE the message thread (ST_ROOT=$STR): kick -> rc-sup delegate -> rc-dev process items 1..4 (per-item"
 echo "  commit) -> [INJECTED: cold restart of rc-dev after item 2] -> rc-dev resumes items 3..4 -> report ->"
 echo "  rc-sup verify (every item done? suite green?) -> confirm to eval-runner."
 echo "WATCH: tail -f $SB/.stev/injector.out   (the fault injection);   git -C $SB/ledger log --oneline"

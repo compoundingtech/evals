@@ -42,7 +42,7 @@ echo
 echo "SPUN (Incident-response cell, isolated bus at $STR). sessions:"
 pty --root "$PTY_ROOT" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'ir-sup|ir-oncall' || pty --root "$PTY_ROOT" ls 2>/dev/null
 echo
-echo "OBSERVE the coord thread (ST_ROOT=$STR): page -> ir-sup triage+delegate -> ir-oncall reproduce -> mitigate ->"
+echo "OBSERVE the message thread (ST_ROOT=$STR): page -> ir-sup triage+delegate -> ir-oncall reproduce -> mitigate ->"
 echo "  ROOT fix + regression test -> report -> ir-sup read-only verify (500 gone AND values correct? root cause"
 echo "  fixed not masked? regression test real? suite green? lane held?) -> confirm to eval-runner."
 echo "WAKE: Claude auto-wakes via st launch's asyncRewake hook. If an agent idles on a delivered message, poke"

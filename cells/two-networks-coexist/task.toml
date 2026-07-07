@@ -43,7 +43,7 @@ verdict  = "PASS/FAIL gate — a single bleed (message, enumeration, or pty visi
 # The held-out probe battery (probe-battery.sh). Ungameable: run after both nets are live; both directions.
 [[probes]]
 id     = "P-enumerate"
-action = "in A, `coord agents --json`"
+action = "in A, `st agents --json`"
 pass   = "lists ONLY A's agents; B's roster + beacon-b absent"
 
 [[probes]]
@@ -72,7 +72,7 @@ liveness            = "each network independently completed its own seeded task 
 teardown            = "ZERO orphans across BOTH networks (double teardown surface; network-scoped stev prefixes -A-/-B-)"
 
 # TWO builds (design fork — build the infra battery FIRST):
-#  1. pure-infra probe battery — the harness acts as the agents via shell coord/pty calls (+ cheap `sleep` pty
+#  1. pure-infra probe battery — the harness acts as the agents via shell st/pty calls (+ cheap `sleep` pty
 #     sessions for P-pty-visibility). Deterministic, no `claude` bootstraps -> no machine-load dependency. The gate.
 #  2. live-agents concurrency run — real launched agents in both nets doing their tasks, same battery under real
 #     load. The demo beat ("two real teams, side by side, never touched"). Env-heavy -> the bare/quiet box.

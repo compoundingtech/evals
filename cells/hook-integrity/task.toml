@@ -65,7 +65,7 @@ metric = "rescues = 0. A hook that needs a human poke to 'fire' is a fail. The p
 metric = "low — 2 short-lived single-agent launches; ~2-3 min on a healthy machine (early-exit on the ON token + a short OFF grace), up to ~HI_TIMEOUT (240s) on a genuine hook failure."
 
 [v2]
-stop_failure = "StopFailure leg — assert the status flip (away/offline) + coord ding on an Anthropic API error. HARD to trigger deterministically; likely needs a smalltalk-side fault-inject/mock. Flag the exact ask upstream to the smalltalk maintainers; build after v1."
+stop_failure = "StopFailure leg — assert the status flip (away/offline) + st ding on an Anthropic API error. HARD to trigger deterministically; likely needs a smalltalk-side fault-inject/mock. Flag the exact ask upstream to the smalltalk maintainers; build after v1."
 pre_compact  = "PreCompact leg — force a compaction then assert now.md was flushed. Expensive/flaky; possibly better as a smalltalk unit test than a team eval. v2."
 
 [observability]

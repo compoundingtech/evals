@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Frozen SYNTHETIC smalltalk network for the tui-build cell (tests + hermetic grading).
-# Point ST_ROOT at the output and the viz's `coord agents --enrich --json` + message-dir reads
+# Point ST_ROOT at the output and the viz's `st agents --enrich --json` + message-dir reads
 # render this reproducible, fully-invented network. See ../task.toml.
 #
 #   ./generate-fixture.sh [OUT_DIR]   # default: ./smalltalk (next to this script)
 #
-# IMPORTANT — run this at RENDER/EVAL time, not once-and-commit. `coord` derives the `unknown`
+# IMPORTANT — run this at RENDER/EVAL time, not once-and-commit. `st` derives the `unknown`
 # status from a status-file mtime older than ~15 min, so this sets the "live" agents' mtimes to
 # now and the one intentional stale agent far in the past. git doesn't preserve mtimes, so
 # committed output would show everyone as fresh. The generator (deterministic content) is the
@@ -51,7 +51,7 @@ Walked the overnight work. The two views share one data layer now; kicking the u
 EOF
 
 msg atlas inbox 1782928200000 a1d4e5 sol high "shared data layer landed — need the 'where the preview reads from' call" <<'EOF'
-network.ts reads `coord agents --enrich --json` + the message dir. Confirm the preview pane reads from the same frozen dir, not a live peek?
+network.ts reads `st agents --enrich --json` + the message dir. Confirm the preview pane reads from the same frozen dir, not a live peek?
 EOF
 msg atlas inbox 1782928500000 a2f6a7 orion normal "cards view green + integrated, ready to review" <<'EOF'
 Card grid + preview pane done, tests green. Held for your integration walk.
@@ -70,7 +70,7 @@ msg orion inbox 1782920000000 o0aa01 sol normal "brief — cards layout + previe
 Port the cards+preview seed onto the shared data layer. Get to a working, tested state.
 EOF
 for i in $(seq -w 2 12); do
-  # 13-digit ms required by coord's filename grammar; keep them distinct + valid.
+  # 13-digit ms required by the message filename grammar; keep them distinct + valid.
   msg orion inbox "$((1782920000000 + 10#$i * 1000))" "o0aa$i" bot low "review nudge #$i" <<EOF
 Automated: a review comment thread is waiting on item $i. (filler to exercise the overflow/truncation state)
 EOF
@@ -85,4 +85,4 @@ EOF
 touch -t 202601010000 "$OUT/zephyr/status"
 
 echo "fixture materialized at: $OUT"
-echo "render with:  ST_ROOT='$OUT' coord agents --enrich --json"
+echo "render with:  ST_ROOT='$OUT' st agents --enrich --json"

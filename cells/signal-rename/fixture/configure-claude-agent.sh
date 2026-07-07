@@ -3,7 +3,7 @@
 # `st launch` writes .mcp.json (server `st`), the boot hooks (asyncRewake/PreCompact/StopFailure), the
 # session-id, pty.toml, installs the composed persona (--persona), and starts the pty session. We add the two
 # things st launch does NOT do for an eval:
-#   1. ISOLATION: the isolated coordination bus reaches the agent by ENV INHERITANCE — spin.sh exports
+#   1. ISOLATION: the isolated message bus reaches the agent by ENV INHERITANCE — spin.sh exports
 #      ST_ROOT before calling this, so st launch -> pty session -> claude -> the `st` MCP server all
 #      inherit the isolated root (the agent registers on $ST_ROOT; the live bus is untouched).
 #   2. ZERO-ORPHAN TEARDOWN: spin.sh exports the run's decoupled PTY_ROOT and `st launch` honors it verbatim

@@ -46,7 +46,7 @@ kick    = "hermetic audit request seeded into sa-sup's inbox (fixtures/security-
 [isolation]
 enforce = "sa-sup owns no repo (structural — not a git repo, cannot commit); sa-aud owns notekeeper only"
 detect  = "post-run, attribute every commit to sa-aud; AUDIT LANE — product code in src/ must be UNCHANGED (auditor adds AUDIT.md, does NOT fix code). A src/ change or a non-owner commit FAILS the run"
-prove   = "the whole audit — delegation, findings, verification — visible in the coord thread"
+prove   = "the whole audit — delegation, findings, verification — visible in the message thread"
 verdict = "PASS/FAIL hard gate"
 
 [grader]

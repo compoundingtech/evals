@@ -38,7 +38,7 @@ kick   = "hermetic bug-report seeded into gb-sup's inbox (fixtures/ghost-bug/kic
 [isolation]
 enforce = "gb-sup owns no repo (structural — its dir is not a git repo, cannot commit); gb-fix owns labelkit only"
 detect  = "post-run, attribute every commit — any change to labelkit by a non-owner (or a sup commit) FAILS the run"
-prove   = "the whole debug — delegation, the root-cause finding, the correction if any — is visible in the coord thread"
+prove   = "the whole debug — delegation, the root-cause finding, the correction if any — is visible in the message thread"
 verdict = "PASS/FAIL hard gate"
 
 [grader]

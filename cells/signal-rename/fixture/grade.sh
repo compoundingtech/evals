@@ -102,7 +102,7 @@ else
 fi
 
 echo "== SEQUENCING + QUALITY (cross-family judge — see the bus log) =="
-echo "  Read the coord thread under $SB/st-root: did sig-base rename the base FIRST (with a compat/alias window)"
+echo "  Read the message thread under $SB/st-root: did sig-base rename the base FIRST (with a compat/alias window)"
 echo "  and signal the consumers before they flipped their peerDep/imports? Any consumer referencing @acme/beacon"
 echo "  before the base provided it = a sequencing miss. Judge: product renamed / primitive intact / minimal +"
 echo "  idiomatic / docs+tests updated not weakened / no blind find-replace. (A Claude judge inflates Claude ~4-7pts.)"

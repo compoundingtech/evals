@@ -16,16 +16,22 @@ echo "== compose personas (cos + worker; ding, no MCP) =="
 "$HERE/compose-persona.sh" worker "$SB" >/dev/null
 
 echo "== convoy add the worker (ding, auto — NO MCP) =="
+# Re-runnable: clear any stale registration first (convoy add errors on an existing identity, and that state can
+# survive a fresh `convoy init` — a real quirk the live run surfaced). Belt-and-suspenders; harmless on a clean net.
+"$CONVOY" remove cap-wk  --network "$NET" --yes >/dev/null 2>&1 || true
+"$CONVOY" remove cap-cos --network "$NET" --yes >/dev/null 2>&1 || true
 "$CONVOY" add worker --identity cap-wk --network "$NET" --dir "$SB/worker" --persona "$SB/personas-local/cap-wk.md" --yes
-
-echo "== seed the requester's kick into cap-cos's inbox (record the filename for the threaded-reply check) =="
-mkdir -p "$NET/cap-cos/inbox" "$NET/cap-cos/archive" "$NET/cap-req/inbox" "$NET/cap-req/archive"; printf 'available\n' > "$NET/cap-cos/status"
-ms=$(( $(date +%s) * 1000 )); sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-kickfn="${ms}-${sfx}.md"; sed -n '/^---$/,$p' "$HERE/kick.md" > "$NET/cap-cos/inbox/$kickfn"
-printf '%s\n' "$kickfn" > "$SB/.kick-filename"; echo "   seeded $NET/cap-cos/inbox/$kickfn"
 
 echo "== convoy add the cos (ding, bypass, PERMANENT — the respawn target) =="
 "$CONVOY" add cos --identity cap-cos --network "$NET" --dir "$SB/cos" --persona "$SB/personas-local/cap-cos.md" --yes
+
+# Seed the kick AFTER convoy add cos: pre-creating cap-cos's inbox dir makes `convoy add cos` think the identity
+# already exists (the live run surfaced this). ding delivers a kick that arrives after boot, so this is fine.
+echo "== seed the requester's kick into cap-cos's inbox (record the filename for the threaded-reply check) =="
+mkdir -p "$NET/cap-cos/inbox" "$NET/cap-cos/archive" "$NET/cap-req/inbox" "$NET/cap-req/archive"
+ms=$(( $(date +%s) * 1000 )); sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
+kickfn="${ms}-${sfx}.md"; sed -n '/^---$/,$p' "$HERE/kick.md" > "$NET/cap-cos/inbox/$kickfn"
+printf '%s\n' "$kickfn" > "$SB/.kick-filename"; echo "   seeded $NET/cap-cos/inbox/$kickfn"
 
 echo "== HOST with 'convoy up' (foreground supervisor + respawn; --json event stream captured) =="
 : > "$SB/.convoy-up.log"

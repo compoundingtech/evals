@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Wire one Poisoned-PR CODEX-cell agent. Codex wakes via a `ding` sidecar; pre-creates the coord dir +
+# Wire one Poisoned-PR CODEX-cell agent. Codex wakes via a `ding` sidecar; pre-creates the st dir +
 # pre-trusts the dir in ~/.codex/config.toml (before launch) so no first-run trust gate blocks.
 #   ./configure-codex-agent.sh <sup|rev> [SANDBOX]
 set -euo pipefail
@@ -24,18 +24,16 @@ command = "codex --dangerously-bypass-approvals-and-sandbox"
 tags = { role = "agent" }
 
 [sessions.codex.env]
-COORD_IDENTITY = "$id"
-COORD_ROOT = "$ROOT"
 ST_ROOT = "$ROOT"
 ST_AGENT = "$id"
 ST_IDENTITY = "$id"
 
 [sessions.ding]
-command = "coord ding $id-codex --identity $id"
+command = "st ding $id-codex --identity $id"
 tags = { role = "ding" }
 
 [sessions.ding.env]
-COORD_IDENTITY = "$id"
-COORD_ROOT = "$ROOT"
+ST_AGENT = "$id"
+ST_ROOT = "$ROOT"
 TOML
-echo "configured $id  (codex + ding, coord dir pre-created, pre-trusted)"
+echo "configured $id  (codex + ding, st dir pre-created, pre-trusted)"

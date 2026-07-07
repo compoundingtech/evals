@@ -15,7 +15,7 @@ case "$role" in
   *) echo "role must be sup|worker" >&2; exit 1 ;;
 esac
 sid="$(uuidgen | tr 'A-Z' 'a-z')"
-# Pre-create the FULL coord dir (inbox+archive+status) — boot ritual's `coord status` needs archive/.
+# Pre-create the FULL st dir (inbox+archive+status) — boot ritual's `st status` needs archive/.
 mkdir -p "$ROOT/$id/inbox" "$ROOT/$id/archive"; printf 'available\n' > "$ROOT/$id/status"
 mkdir -p "$d/.claude"
 printf '%s\n' "$sid" > "$d/.claude-session-id"
@@ -23,7 +23,7 @@ printf '%s\n' "$sid" > "$d/.claude-session-id"
 cat > "$d/.mcp.json" <<JSON
 {
   "mcpServers": {
-    "coord": { "type": "stdio", "command": "$(command -v coord || echo coord)", "args": ["mcp", "--channel"], "env": {} }
+    "st": { "type": "stdio", "command": "$(command -v st || echo st)", "args": ["mcp", "--channel"], "env": {} }
   }
 }
 JSON
@@ -31,7 +31,7 @@ JSON
 cat > "$d/.claude/settings.local.json" <<JSON
 {
   "\$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "enabledMcpjsonServers": ["coord"],
+  "enabledMcpjsonServers": ["st"],
   "enableAllProjectMcpServers": true,
   "hooks": {
     "SessionStart": [{ "hooks": [{ "type": "command", "command": "$HOOKS/session-start.sh", "async": true, "asyncRewake": true }] }],
@@ -51,10 +51,8 @@ tags = { role = "agent" }
 
 [sessions.claude.env]
 ST_AGENT = "$id"
-COORD_IDENTITY = "$id"
 ST_IDENTITY = "$id"
 ST_ROOT = "$ROOT"
-COORD_ROOT = "$ROOT"
 ANTHROPIC_BASE_URL = "http://127.0.0.1:11434"
 ANTHROPIC_AUTH_TOKEN = "ollama"
 ANTHROPIC_API_KEY = ""

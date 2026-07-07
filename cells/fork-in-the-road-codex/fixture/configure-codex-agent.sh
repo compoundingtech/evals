@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Wire one Fork-in-the-road CODEX-cell agent (full-Codex design panel: fdx-sup + fdx-a/b/c).
-# Codex has NO asyncRewake -> wakes via a `ding` SIDECAR. Pre-creates the full coord dir (ding dies on a
+# Codex has NO asyncRewake -> wakes via a `ding` SIDECAR. Pre-creates the full st dir (ding dies on a
 # missing folder), pre-trusts the dir in ~/.codex/config.toml (first-run trust gate), and sets a DISTINCT
 # per-dir git author = the agent id (the fixture fix — so commit authorship attributes cleanly to the
-# owning agent instead of the machine default). Codex persona = AGENTS.md (composed separately); coord MCP
+# owning agent instead of the machine default). Codex persona = AGENTS.md (composed separately); st MCP
 # is the global ~/.codex/config.toml registration (no per-agent .mcp.json).
 #   ./configure-codex-agent.sh <sup|a|b|c> [SANDBOX]
 set -euo pipefail
@@ -24,7 +24,7 @@ mkdir -p "$d"
 CFG=~/.codex/config.toml
 grep -qF "[projects.\"$d\"]" "$CFG" 2>/dev/null || printf '\n[projects."%s"]\ntrust_level = "trusted"\n' "$d" >> "$CFG"
 
-# Pre-create the FULL coord dir (inbox+archive+status) BEFORE launch so ding doesn't die on a missing folder.
+# Pre-create the FULL st dir (inbox+archive+status) BEFORE launch so ding doesn't die on a missing folder.
 mkdir -p "$ROOT/$id/inbox" "$ROOT/$id/archive"; printf 'available\n' > "$ROOT/$id/status"
 
 # FIXTURE FIX (now.md): distinct git author per agent, so runtime commits attribute to the owning
@@ -44,20 +44,18 @@ command = "codex --dangerously-bypass-approvals-and-sandbox"
 tags = { role = "agent" }
 
 [sessions.codex.env]
-COORD_IDENTITY = "$id"
-COORD_ROOT = "$ROOT"
 ST_ROOT = "$ROOT"
 ST_AGENT = "$id"
 ST_IDENTITY = "$id"
 
 # ding = Codex's wake path (no asyncRewake). Watches <id>'s inbox and pokes the <id>-codex session.
 [sessions.ding]
-command = "coord ding $id-codex --identity $id"
+command = "st ding $id-codex --identity $id"
 tags = { role = "ding" }
 
 [sessions.ding.env]
-COORD_IDENTITY = "$id"
-COORD_ROOT = "$ROOT"
+ST_AGENT = "$id"
+ST_ROOT = "$ROOT"
 TOML
 
-echo "configured $id  (codex + ding->$id-codex, coord dir pre-created, pre-trusted, git author=$id, ephemeral)"
+echo "configured $id  (codex + ding->$id-codex, st dir pre-created, pre-trusted, git author=$id, ephemeral)"

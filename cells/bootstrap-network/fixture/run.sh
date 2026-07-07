@@ -146,15 +146,19 @@ if [ -n "$GOT" ] && c "$SPEC" message read --json "$GOT" 2>/dev/null | grep -qE 
 else
   fail "CoS -> $SPEC message not delivered/read"
 fi
-# KILL-TEST: reply with NO --from — the sender must resolve from ST_AGENT alone.
-# If ST_AGENT is authoritative, the received message's from: is the specialist, not cos.
+# HB-3 KILL-TEST (re-targeted post-coord-kill — ST_AGENT is now the identity var, so a LEAKED PARENT ST_AGENT is
+# the risk surface: a host/CoS standing up a child must not let its own ST_AGENT become the child's). Leak a WRONG
+# parent identity (ST_AGENT=cos) into the child's send while the child names itself explicitly (--from $SPEC,
+# mirroring the explicit ST_AGENT st launch bakes into the child's pty.toml, Gate C). If the child's OWN identity
+# wins over the leaked parent, the received from: is $SPEC, not cos. (The definitive version — a host RESPAWNING a
+# child with a leaked host ST_AGENT — lives in the convoy-up capstone's respawn leg.)
 echo "got it, cos — $SPEC online and reporting for duty" \
-  | env ST_ROOT="$STR" ST_AGENT="$SPEC" "$BIN" message send cos --subject "re: hello from cos" >/dev/null 2>&1
+  | env ST_ROOT="$STR" ST_AGENT="cos" "$BIN" message send cos --from "$SPEC" --subject "re: hello from cos" >/dev/null 2>&1
 RN=$(c cos message ls 2>/dev/null | grep -E '^[0-9]{13}-' | head -1)
 if [ -n "$RN" ] && c cos message read --json "$RN" 2>/dev/null | grep -qE "\"from\":[[:space:]]*\"$SPEC\""; then
-  pass "$SPEC -> CoS reply delivered; from: $SPEC with no --from (ST_AGENT resolves the sender — no inherited identity wins)"
+  pass "$SPEC -> CoS from: $SPEC even with a leaked parent ST_AGENT=cos (the child's explicit identity wins — HB-3 dead: a host/parent identity can't override the child's own)"
 else
-  fail "reply mis-attributed or undelivered (HB-3 identity leak?)"
+  fail "HB-3 leak: a leaked parent ST_AGENT=cos overrode the child's own identity (from: was not $SPEC)"
 fi
 
 # minor CLI-ergonomics friction observed along the way

@@ -16,7 +16,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SB="${1:-${EVAL_SANDBOX:-./.sandbox}/docs}"
 STR="$SB/st-root"                                    # SELF-ISOLATED bus root (never the live network)
 export ST_ROOT="$STR"; export COORD_ROOT="$STR"      # st-launched agents inherit these -> isolated bus
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # per-run collision-proof pty prefix
+stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # per-run id + decoupled short PTY_ROOT
+export PTY_ROOT="$(stev_pty_root "$SB")"             # stev-retirement: st launch honors this verbatim (#69) -> every session in the run's isolated pty root
 stev_arm_teardown "$SB"                              # trap: teardown on crash/interrupt/early-exit
 
 [ -d "$SB/worker" ] || { echo "== sandbox absent — materializing =="; "$HERE/setup-sandbox.sh" "$SB"; }
@@ -40,7 +41,7 @@ echo "== 4/4  launch the supervisor last (st launch: doc-sup, bypass, coordinate
 
 echo
 echo "SPUN (Docs cell, isolated bus at $STR). sessions:"
-pty ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E "$(stev_run_prefix "$SB")|doc-sup-|doc-writer-" || pty ls
+pty --root "$PTY_ROOT" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'doc-sup|doc-writer' || pty --root "$PTY_ROOT" ls 2>/dev/null
 echo
 echo "OBSERVE the coord thread (ST_ROOT=$STR): request -> doc-sup delegate -> doc-writer read code+tests ->"
 echo "  write README/docs (surface the 3 gotchas) -> commit -> report -> doc-sup read-only verify (accurate?"

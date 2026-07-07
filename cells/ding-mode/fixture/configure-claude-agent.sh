@@ -27,9 +27,10 @@ case "$role" in
 esac
 persona="$SB/personas-local/$id.md"
 [ -f "$persona" ] || { echo "missing composed persona $persona — run compose-persona.sh $role first" >&2; exit 1; }
-pfx="$(stev_prefix "$SB" "$id")"     # stev-<cell>-<runid>-<id>
-sess="$id-$pfx"                       # agent pty session <identity>-<session-name>
-dingsess="$id-ding"                   # ding sidecar pty session (prefix=<id>, session-name=`ding`)
+# stev-retirement: NO collision-proof prefix, NO track_extra. The run's decoupled short PTY_ROOT (exported by
+# spin.sh, honored verbatim by st launch #69) physically isolates every session — the agent AND the `st ding`
+# sidecar — from the operator's global pty daemon, so a plain session name is fine and teardown just kills
+# everything in the run's PTY_ROOT.
 
 # Pre-create the FULL coord dir on the ISOLATED bus (inbox+archive+status) — the ding sidecar watches
 # inbox/, and the agent's `st` CLI ops resolve against it. So the boot ritual + delivery both work.
@@ -49,13 +50,12 @@ PY
 # ST_ROOT/COORD_ROOT from this process's env (exported by spin.sh) -> agent + ding bind the ISOLATED bus.
 ( cd "$d" && st launch claude --ding \
     --identity "$id" \
-    --session-name "$pfx" \
+    --session-name run \
     --permission-mode "$mode" \
     --persona "$persona" \
     --unattended )
 
-# Register BOTH resulting session names so teardown is zero-orphan (both outside our prefix stem).
-stev_track_extra "$SB" "$sess"
-stev_track_extra "$SB" "$dingsess"
+# (stev-retirement: no stev_track_extra — the agent session AND the `st ding` sidecar both live in the run's
+#  PTY_ROOT and are torn down by killing that root. The mid-launch-orphan class is gone by construction.)
 
-echo "launched $id  (DING MODE: no MCP; agent session=$sess + ding sidecar=$dingsess; --permission-mode $mode, isolated bus=$ROOT, persona=$persona)"
+echo "launched $id  (DING MODE: no MCP; pty root=${PTY_ROOT:-?}, agent session=$id-run + ding sidecar=$id-ding; --permission-mode $mode, isolated bus=$ROOT, persona=$persona)"

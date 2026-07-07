@@ -18,7 +18,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SB="${1:-${EVAL_SANDBOX:-./.sandbox}/tui-build}"
 STR="$SB/st-root"                                    # SELF-ISOLATED coordination bus (never the live network)
 export ST_ROOT="$STR"; export COORD_ROOT="$STR"      # st-launched agents inherit these -> isolated bus
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # per-run collision-proof pty prefix
+stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # per-run id + decoupled short PTY_ROOT
+export PTY_ROOT="$(stev_pty_root "$SB")"             # stev-retirement: st launch honors this verbatim (#69) -> every session in the run's isolated pty root
 stev_arm_teardown "$SB"                              # trap: teardown on crash/interrupt/early-exit
 
 [ -d "$SB/sup" ] || { echo "== sandbox absent — materializing =="; "$HERE/setup-sandbox.sh" "$SB"; }
@@ -41,7 +42,7 @@ echo "== 4/4  launch the supervisor last (st launch: tui-sup, bypass, integratio
 
 echo
 echo "SPUN (tui-build cell, isolated bus at $STR). sessions:"
-pty ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E "$(stev_run_prefix "$SB")|tui-(sup|tree|cards|ux)-" || pty ls 2>/dev/null || true
+pty --root "$PTY_ROOT" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'tui-(sup|tree|cards|ux)' || pty --root "$PTY_ROOT" ls 2>/dev/null || true
 echo
 echo "OBSERVE the coord thread: tui-sup builds the shared data layer (src/data/network.ts -> coord agents"
 echo "  --enrich --json, read-only) -> briefs tui-tree + tui-cards to wire their views to it -> briefs"

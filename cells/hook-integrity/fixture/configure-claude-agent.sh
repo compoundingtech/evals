@@ -28,9 +28,9 @@ id="hi-agent"; d="$SB/repo"
 persona="$SB/personas-local/$id.md"
 [ -f "$persona" ] || { echo "missing composed persona $persona — run setup-sandbox.sh first" >&2; exit 1; }
 stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # collision-proof pty prefix (per-SB runid); idempotent
-pfx="$(stev_prefix "$SB" "$id")"
-sname="$pfx-$leg"                     # pty key <id>-<sname>; distinct per leg + carries the runid
-sess="$id-$sname"
+# stev-retirement: NO collision-proof prefix, NO track_extra. Each leg runs in its OWN sandbox -> its own
+# decoupled short PTY_ROOT (run.sh exports it), so a plain per-leg session name (`$leg`) isolates the agent +
+# ding sidecar from the operator's pty daemon, and teardown kills the leg's whole PTY_ROOT.
 
 # Pre-create the FULL coord dir on the ISOLATED bus (inbox/archive/context/status already seeded by
 # setup-sandbox; mkdir -p is idempotent so the boot ritual doesn't rabbit-hole on a missing dir).
@@ -52,15 +52,13 @@ PY
 # whether the SessionStart hook fires (not permission/trust gates).
 ( cd "$d" && st launch claude $(stev_ding_flags) "${hooks_flag[@]}" \
     --identity "$id" \
-    --session-name "$sname" \
+    --session-name "$leg" \
     --permission-mode bypassPermissions \
     --persona "$persona" \
     --unattended )
 
-stev_track_extra "$SB" "$sess"        # exact resulting session name → zero-orphan teardown
-# Under --ding, also track the `st ding` sidecar (`<id>-ding`, outside our prefix) or it orphans at teardown.
-# The ding toggle is applied identically on BOTH legs, so the SessionStart hook stays the only on/off
-# variable — and under --ding this leg proves the hook fires with NO MCP: the MCP-hostile-host case.
-stev_ding_on && stev_track_extra "$SB" "$id-ding" || true
+# (stev-retirement: no stev_track_extra — the leg's PTY_ROOT holds the agent + ding sidecar; teardown kills
+#  the root. The --ding toggle is applied identically on BOTH legs, so the SessionStart hook stays the only
+#  on/off variable — and under --ding this leg proves the hook fires with NO MCP: the MCP-hostile-host case.)
 
-echo "launched $id  (leg=$leg, hooks=$hlabel; pty session=$sess, isolated bus=$ROOT)"
+echo "launched $id  (leg=$leg, hooks=$hlabel; pty root=${PTY_ROOT:-?}, session=$id-$leg$(stev_ding_on && echo " + $id-ding sidecar"), isolated bus=$ROOT)"

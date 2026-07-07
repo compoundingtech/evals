@@ -15,7 +15,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SB="${1:-${EVAL_SANDBOX:-./.sandbox}/restart-continuity}"
 STR="$SB/st-root"                                    # SELF-ISOLATED bus root (never the live network)
 export ST_ROOT="$STR"; export COORD_ROOT="$STR"      # st-launched agents + the injector inherit these
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # per-run collision-proof pty prefix
+stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # per-run id + decoupled short PTY_ROOT
+export PTY_ROOT="$(stev_pty_root "$SB")"             # stev-retirement: st launch honors this verbatim (#69) -> every session in the run's isolated pty root
 stev_arm_teardown "$SB"                              # trap: teardown on crash/interrupt/early-exit
 
 [ -d "$SB/ledger" ] || { echo "== sandbox absent — materializing =="; "$HERE/setup-sandbox.sh" "$SB"; }
@@ -45,7 +46,7 @@ echo "   restart-injector backgrounded (pid $!); log: $SB/.stev/injector.out ; e
 
 echo
 echo "SPUN (Restart-continuity cell, isolated bus at $STR). sessions:"
-pty ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E "$(stev_run_prefix "$SB")|rc-sup-|rc-dev-" || pty ls
+pty --root "$PTY_ROOT" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'rc-sup|rc-dev' || pty --root "$PTY_ROOT" ls 2>/dev/null
 echo
 echo "OBSERVE the coord thread (ST_ROOT=$STR): kick -> rc-sup delegate -> rc-dev process items 1..4 (per-item"
 echo "  commit) -> [INJECTED: cold restart of rc-dev after item 2] -> rc-dev resumes items 3..4 -> report ->"

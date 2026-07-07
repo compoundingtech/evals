@@ -40,8 +40,8 @@ stev_init hook-integrity "$SB_ON"; stev_init hook-integrity "$SB_OFF"
 echo "   on:  $SB_ON     off: $SB_OFF"
 
 echo "== 2/4  launch the probe agent in each leg (hooks ON vs --no-hooks) =="
-( export ST_ROOT="$SB_ON/st-root";  export COORD_ROOT="$ST_ROOT"; "$HERE/configure-claude-agent.sh" on  "$SB_ON" )
-( export ST_ROOT="$SB_OFF/st-root"; export COORD_ROOT="$ST_ROOT"; "$HERE/configure-claude-agent.sh" off "$SB_OFF" )
+( export ST_ROOT="$SB_ON/st-root";  export COORD_ROOT="$ST_ROOT"; export PTY_ROOT="$(stev_pty_root "$SB_ON")";  "$HERE/configure-claude-agent.sh" on  "$SB_ON" )
+( export ST_ROOT="$SB_OFF/st-root"; export COORD_ROOT="$ST_ROOT"; export PTY_ROOT="$(stev_pty_root "$SB_OFF")"; "$HERE/configure-claude-agent.sh" off "$SB_OFF" )
 
 echo "== 3/4  wait for the hooks-ON agent to receive + write the rehydrate token =="
 ON_FILE="$SB_ON/repo/HOOK_OK.txt"; WANT="REHYDRATE-$TOKEN"

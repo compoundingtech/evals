@@ -41,9 +41,9 @@ cat > "$d/.claude/settings.local.json" <<JSON
 JSON
 
 # pty.toml — the GLM env contract is the ONLY delta from a normal Claude cell.
-stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"; pfx="$(stev_prefix "$SB" "$id")"
+stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"   # stev-retirement: plain $id prefix (no stev_prefix/track_extra); the matrix driver must export the run's PTY_ROOT (as spin.sh does) so `pty up` isolates every session.
 cat > "$d/pty.toml" <<TOML
-prefix = "$pfx"
+prefix = "$id"
 
 [sessions.claude]
 command = "claude --permission-mode $perm --dangerously-load-development-channels server:st --model glm-5.2:cloud --resume $sid"

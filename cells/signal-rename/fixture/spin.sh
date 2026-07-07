@@ -15,7 +15,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SB="${1:-${EVAL_SANDBOX:-./.sandbox}/signal-rename}"
 STR="$SB/st-root"                                    # SELF-ISOLATED coordination bus (never the live network)
 export ST_ROOT="$STR"; export COORD_ROOT="$STR"      # st-launched agents inherit these -> isolated bus
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # per-run collision-proof pty prefix
+stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # per-run id + decoupled short PTY_ROOT
+export PTY_ROOT="$(stev_pty_root "$SB")"             # stev-retirement: st launch honors this verbatim (#69) -> every session in the run's isolated pty root
 stev_arm_teardown "$SB"                              # trap: teardown on crash/interrupt/early-exit
 
 [ -d "$SB/base" ] || { echo "== sandbox absent — materializing =="; "$HERE/setup-sandbox.sh" "$SB"; }
@@ -38,7 +39,7 @@ echo "== 4/4  launch the supervisor last (st launch: sig-sup, bypass, integratio
 
 echo
 echo "SPUN (signal-rename cell, isolated bus at $STR). sessions:"
-pty ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E "$(stev_run_prefix "$SB")|sig-(sup|base|relay|hub)-" || pty ls 2>/dev/null || true
+pty --root "$PTY_ROOT" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'sig-(sup|base|relay|hub)' || pty --root "$PTY_ROOT" ls 2>/dev/null || true
 echo
 echo "OBSERVE the coord thread: sig-sup sequences the cutover — briefs sig-base to rename @acme/signal->@acme/beacon"
 echo "  (+ the bin) FIRST with a compat/alias window; sig-base signals the consumers; then sig-relay + sig-hub bump"

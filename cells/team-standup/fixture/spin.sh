@@ -20,17 +20,11 @@ STR="$SB/st-root"
 W="$SB/taskflow"
 export ST_ROOT="$STR"; export COORD_ROOT="$STR"      # st-launched CoS (+ its stood-up worker) -> isolated bus
 HOOKS="${ST_HOOKS_DIR:?set ST_HOOKS_DIR to <smalltalk>/examples/claude-code/hooks (worker gate pre-stage)}"
-# Collision-proof per-run pty prefix (shared harness). The CoS is ours (st-launched with a stev session
-# name); the worker is st-launched by the CoS (named by its identity, outside our prefix), so we register
-# it for teardown. configure-claude-agent.sh also registers the EXACT CoS session name.
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"; stev_arm_teardown "$SB"
-COS_PREFIX="$(stev_prefix "$SB" cos)"; COS_SESSION="cos-${COS_PREFIX}"   # st launch: <identity>-<session-name>
-# The CoS stands up identity taskflow-dev via its OWN `st launch` (default session-name), so the pty key
-# is the identity joined to the harness name (outside our stev prefix). CONSTRUCT it from the id — a bare
-# hardcoded literal trips the no-PII gate, and the old repo-basename value never matched, so the worker
-# session orphaned every run. Register the EXACT constructed name for teardown.
-WORKER_ID="taskflow-dev"; WORKER_SESSION="${WORKER_ID}-claude"
-stev_track_extra "$SB" "$WORKER_SESSION"
+# stev-retirement: per-run decoupled short PTY_ROOT (shared harness). Exported BEFORE the CoS launches, so the
+# CoS's pty session — AND the worker the CoS stands up via its OWN `st launch` (which inherits PTY_ROOT from the
+# CoS process) — both land in the run's PTY_ROOT. Teardown kills that whole root, so no per-session tracking.
+stev_init "$(basename "$(dirname "$HERE")")" "$SB"; export PTY_ROOT="$(stev_pty_root "$SB")"; stev_arm_teardown "$SB"
+COS_SESSION="cos-run"   # st launch: <identity>-<session-name>
 
 [ -d "$W" ] || { echo "== sandbox absent — materializing =="; "$HERE/setup-sandbox.sh" "$SB"; }
 mkdir -p "$STR/cos/inbox" "$STR/cos/archive"         # so the kick can land before the CoS launches
@@ -90,7 +84,7 @@ echo "== 5/5  launch the CoS via st launch (bypass, spawn-capable) — LAST, aft
 
 echo
 echo "SPUN (TEAM-STANDUP P5, isolated bus at $STR). sessions:"
-pty ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E "$(stev_run_prefix "$SB")|cos-|taskflow-" || pty ls 2>/dev/null || true
+pty --root "$PTY_ROOT" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'cos|taskflow' || pty --root "$PTY_ROOT" ls 2>/dev/null || true
 echo
 echo "OBSERVE the loop (isolated bus at $STR; CoS pty session = $COS_SESSION):"
 echo "  cos boots -> reads Jordan's task -> \`st launch\` taskflow-dev -> records it in team.md"

@@ -13,9 +13,9 @@
 #      front-loaded), the pre-restart HEAD, and the done-items at restart time.
 #   3. COLD-restarts the worker: RC_RESTART=1 configure-claude-agent.sh dev —
 #      pty kill the session, wipe .claude-session-id + pty.toml (→ fresh transcript),
-#      relaunch the SAME identity/persona/repo/bus under a new collision-proof
-#      session name (stev_track_extra'd so teardown stays zero-orphan across the
-#      restart — point 4 of the pty-namespace contract).
+#      relaunch the SAME identity/persona/repo/bus under a new session name
+#      (`run-r<n>`) in the run's decoupled PTY_ROOT (exported below) — teardown
+#      stays zero-orphan by killing that whole root.
 #
 # Runs backgrounded by spin.sh (or standalone). Idempotent guard: injects exactly
 # ONE restart per run (a .stev/restart.done stamp).
@@ -32,6 +32,7 @@ L="$SB/ledger"
 # whether we were backgrounded by spin (env already set) or launched standalone.
 export ST_ROOT="${ST_ROOT:-$SB/st-root}"; export COORD_ROOT="${COORD_ROOT:-$ST_ROOT}"
 stev_init "$(basename "$(dirname "$HERE")")" "$SB"
+export PTY_ROOT="$(stev_pty_root "$SB")"   # stev-retirement: the cold relaunch (configure-claude-agent.sh) + its killed/new session land in the run's PTY_ROOT
 
 TRIGGER_AT="${TRIGGER_AT:-2}"
 POLL_SECS="${POLL_SECS:-3}"

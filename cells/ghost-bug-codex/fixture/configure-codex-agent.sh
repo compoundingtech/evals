@@ -23,9 +23,9 @@ grep -qF "[projects.\"$d\"]" "$CFG" 2>/dev/null || printf '\n[projects."%s"]\ntr
 # Pre-create the FULL coord dir (inbox+archive+status) BEFORE launch so ding doesn't die on a missing folder.
 mkdir -p "$ROOT/$id/inbox" "$ROOT/$id/archive"; printf 'available\n' > "$ROOT/$id/status"
 
-stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"; pfx="$(stev_prefix "$SB" "$id")"
+stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"   # stev-retirement: spin exports the run's PTY_ROOT; `pty up` lands every session (codex + ding) in it. Plain $id prefix, no stev_prefix/track_extra.
 cat > "$d/pty.toml" <<TOML
-prefix = "$pfx"
+prefix = "$id"
 
 [sessions.codex]
 command = "codex --dangerously-bypass-approvals-and-sandbox"
@@ -40,7 +40,7 @@ ST_IDENTITY = "$id"
 
 # ding = Codex's wake path (no asyncRewake). Watches <id>'s inbox and pokes the <id>-codex session.
 [sessions.ding]
-command = "coord ding $pfx-codex --identity $id"
+command = "coord ding $id-codex --identity $id"
 tags = { role = "ding" }
 
 [sessions.ding.env]

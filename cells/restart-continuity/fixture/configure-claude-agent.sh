@@ -38,21 +38,22 @@ case "$role" in
 esac
 persona="$SB/personas-local/$id.md"
 [ -f "$persona" ] || { echo "missing composed persona $persona — run compose-persona.sh $role first" >&2; exit 1; }
-pfx="$(stev_prefix "$SB" "$id")"     # stev-<cell>-<runid>-<id>
+# stev-retirement: NO collision-proof prefix, NO track_extra. The run's decoupled short PTY_ROOT (exported by
+# spin.sh AND by restart-injector.sh, honored verbatim by st launch #69) physically isolates every session from
+# the operator's global pty daemon; teardown just kills everything in the run's PTY_ROOT.
 
-# On a cold RESTART, tear down the old worker session + wipe the cold-boot state so
-# the relaunch is a genuine fresh boot with a distinct, collision-proof session name.
+# On a cold RESTART, tear down the old worker session (in the run's PTY_ROOT) + wipe the cold-boot state so the
+# relaunch is a genuine fresh boot with a distinct session name (`run-r<n>`, distinct from the killed `run`).
 if [ -n "$RC_RESTART" ]; then
-  oldsess="$id-$pfx"
-  echo "== COLD RESTART ($id, gen $RC_RESTART): killing $oldsess + wiping transcript/pty.toml =="
-  pty kill "$oldsess" >/dev/null 2>&1 || true
-  pty rm   "$oldsess" >/dev/null 2>&1 || true
+  pr="$(stev_pty_root "$SB")"; oldsess="$id-run"
+  echo "== COLD RESTART ($id, gen $RC_RESTART): killing $oldsess in PTY_ROOT $pr + wiping transcript/pty.toml =="
+  pty --root "$pr" kill "$oldsess" >/dev/null 2>&1 || true
+  pty --root "$pr" rm   "$oldsess" >/dev/null 2>&1 || true
   rm -f "$d/.claude-session-id" "$d/pty.toml" "$d/pty.toml.done"
-  sname="$pfx-r$RC_RESTART"          # new pty session-name → key <id>-<pfx>-r<n> (distinct from the killed one)
+  sname="run-r$RC_RESTART"          # new pty session-name → key <id>-run-r<n> (distinct from the killed <id>-run)
 else
-  sname="$pfx"
+  sname="run"
 fi
-sess="$id-$sname"                     # st launch names the pty session <identity>-<session-name>
 
 # Pre-create the FULL coord dir on the ISOLATED bus so the boot ritual doesn't rabbit-hole. On a
 # restart this is idempotent (dir already exists; the worker's inbox/archive carry the durable bus record).
@@ -77,9 +78,7 @@ PY
     --persona "$persona" \
     --unattended )
 
-# Register the EXACT resulting session name so teardown is zero-orphan (outside our prefix stem).
-stev_track_extra "$SB" "$sess"
-# Under --ding, also track the `st ding` sidecar (`<id>-ding`, outside our prefix) or it orphans at teardown.
-stev_ding_on && stev_track_extra "$SB" "$id-ding" || true
+# (stev-retirement: no stev_track_extra — every session (each restart generation) + the ding sidecar live in
+#  the run's PTY_ROOT and are torn down by killing that root. The mid-launch-orphan class is gone by construction.)
 
-echo "launched $id  (pty session=$sess, --permission-mode $mode, isolated bus=$ROOT, persona=$persona${RC_RESTART:+, COLD-RESTART gen $RC_RESTART})"
+echo "launched $id  (pty root=${PTY_ROOT:-?}, session=$id-$sname$(stev_ding_on && echo " + $id-ding sidecar"), --permission-mode $mode, isolated bus=$ROOT, persona=$persona${RC_RESTART:+, COLD-RESTART gen $RC_RESTART})"

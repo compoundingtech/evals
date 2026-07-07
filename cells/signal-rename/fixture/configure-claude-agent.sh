@@ -29,8 +29,10 @@ case "$role" in
 esac
 persona="$SB/personas-local/$id.md"
 [ -f "$persona" ] || { echo "missing composed persona $persona — run compose-persona.sh $role first" >&2; exit 1; }
-pfx="$(stev_prefix "$SB" "$id")"     # stev-<cell>-<runid>-<id>
-sess="$id-$pfx"                       # st launch names the pty session <identity>-<session-name>
+# stev-retirement: NO collision-proof prefix, NO track_extra. The run's decoupled short PTY_ROOT (exported by
+# spin.sh, honored verbatim by st launch #69) physically isolates every session — the agent AND the `st ding`
+# sidecar — from the operator's global pty daemon, so a plain session name is fine and teardown just kills
+# everything in the run's PTY_ROOT.
 
 # Pre-create the FULL coord dir on the ISOLATED bus so the boot ritual doesn't rabbit-hole for its own folder.
 mkdir -p "$ROOT/$id/inbox" "$ROOT/$id/archive"; printf 'available\n' > "$ROOT/$id/status"
@@ -46,20 +48,17 @@ e["hasTrustDialogAccepted"]=True; e["hasCompletedProjectOnboarding"]=True
 json.dump(d,open(p,"w"),indent=2)
 PY
 
-# Register the EXACT session name BEFORE launching, so a kill mid-launch (e.g. a wedged bootstrap under machine
-# load) still tears the session down — the post-launch position orphaned a session when configure was killed
-# mid-st-launch. The name is deterministic ($id-$pfx), known before the launch; registering an un-launched name
-# is harmless (teardown's pty kill on a missing session is a no-op).
-stev_track_extra "$SB" "$sess"
-stev_ding_on && stev_track_extra "$SB" "$id-ding" || true
+# (stev-retirement: no stev_track_extra — every session, incl. the ding sidecar, is in the run's PTY_ROOT and
+#  is torn down by killing that root. The mid-launch-orphan class the pre-launch registration guarded against
+#  is gone by construction — a kill mid-launch still leaves the session inside the run's PTY_ROOT.)
 
 # Launch via the real st launch; it inherits ST_ROOT/COORD_ROOT from this process (exported by spin.sh) ->
 # the agent binds the ISOLATED bus. --unattended bakes the startup auto-poker; --session-name is collision-proof.
 ( cd "$d" && st launch claude $(stev_ding_flags) \
     --identity "$id" \
-    --session-name "$pfx" \
+    --session-name run \
     --permission-mode "$mode" \
     --persona "$persona" \
     --unattended )
 
-echo "launched $id  (pty session=$sess, --permission-mode $mode, isolated bus=$ROOT, persona=$persona, asyncRewake)"
+echo "launched $id  (pty root=${PTY_ROOT:-?}, session=$id-run$(stev_ding_on && echo " + $id-ding sidecar"), --permission-mode $mode, isolated bus=$ROOT, persona=$persona, asyncRewake)"

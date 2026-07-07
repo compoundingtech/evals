@@ -16,7 +16,8 @@ SB="${1:-${EVAL_SANDBOX:-./.sandbox}/license-mixed}"
 STR="$SB/st-root"                                    # SELF-ISOLATED bus root (never the live network)
 export ST_ROOT="$STR"; export COORD_ROOT="$STR"      # st-launched agents inherit these -> isolated bus
 SUP_ID="${SUP_ID:-mix-sup}"; WORKER_ID="${WORKER_ID:-mix-worker}"
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # per-run collision-proof pty prefix
+stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # per-run id + decoupled short PTY_ROOT
+export PTY_ROOT="$(stev_pty_root "$SB")"             # stev-retirement: st launch honors this verbatim (#69) -> every session in the run's isolated pty root
 stev_arm_teardown "$SB"                              # trap: teardown on crash/interrupt/early-exit
 
 [ -d "$SB/worker" ] || { echo "== sandbox absent — materializing =="; "$HERE/setup-sandbox.sh" "$SB"; }
@@ -40,7 +41,7 @@ echo "== 4/4  launch the supervisor last (st launch: $SUP_ID, bypass, coordinate
 
 echo
 echo "SPUN (license-mit cell, isolated bus at $STR). sessions:"
-pty ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E "$(stev_run_prefix "$SB")|$SUP_ID-|$WORKER_ID-" || pty ls
+pty --root "$PTY_ROOT" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E "$SUP_ID|$WORKER_ID" || pty --root "$PTY_ROOT" ls 2>/dev/null
 echo
 echo "OBSERVE the loop (ST_ROOT=$STR): kick -> $SUP_ID delegates by message -> $WORKER_ID replaces LICENSE"
 echo "  with canonical MIT + commits -> $SUP_ID read-only verify (MIT? committed? tree clean? lane held?)"

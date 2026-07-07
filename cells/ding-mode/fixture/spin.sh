@@ -14,7 +14,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SB="${1:-${EVAL_SANDBOX:-./.sandbox}/ding-mode}"
 STR="$SB/st-root"                                    # SELF-ISOLATED bus root (never the live network)
 export ST_ROOT="$STR"; export COORD_ROOT="$STR"      # st-launched agents + ding sidecars inherit these
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # per-run collision-proof pty prefix
+stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # per-run id + decoupled short PTY_ROOT
+export PTY_ROOT="$(stev_pty_root "$SB")"             # stev-retirement: st launch honors this verbatim (#69) -> every session in the run's isolated pty root
 stev_arm_teardown "$SB"                              # trap: teardown on crash/interrupt/early-exit
 
 [ -d "$SB/widget" ] || { echo "== sandbox absent — materializing =="; "$HERE/setup-sandbox.sh" "$SB"; }
@@ -38,12 +39,12 @@ echo "== 4/4  launch the supervisor last (st launch claude --ding: dm-sup, bypas
 
 echo
 echo "SPUN (Ding-mode cell, isolated bus at $STR). sessions (agents + ding sidecars):"
-pty ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E "$(stev_run_prefix "$SB")|dm-sup|dm-dev" || pty ls
+pty --root "$PTY_ROOT" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'dm-sup|dm-dev' || pty --root "$PTY_ROOT" ls 2>/dev/null
 echo
 echo "OBSERVE the bus (ST_ROOT=$STR) — a fully NO-MCP loop: dm-sup boot-drains the kick via the st CLI ->"
 echo "  delegates to dm-dev over the bus -> dm-dev gets a [DING], reads via CLI, implements slugify + commits +"
 echo "  reports -> dm-sup verifies read-only -> confirms to eval-runner. Inbound = [DING] pokes; all ops = st CLI."
-echo "WATCH: the ding sidecars deliver; peek a session: pty tail dm-dev-$(stev_prefix "$SB" dm-dev) 2>/dev/null || true"
+echo "WATCH: the ding sidecars deliver; peek a session: pty --root $PTY_ROOT tail dm-dev-run 2>/dev/null || true"
 echo
 echo "GRADE after the loop settles:  $HERE/grade.sh \"$SB\""
 echo "TEARDOWN after grading:        bin/st-evals teardown \"$SB\"   (zero-orphan incl. the ding sidecars)"

@@ -15,7 +15,7 @@ SB="${1:-${EVAL_SANDBOX:-./.sandbox}/fork-in-the-road}"
 PROPOSERS="${2:-a b c}"
 STR="$SB/st-root"                                    # SELF-ISOLATED bus root (never the live network)
 export ST_ROOT="$STR"; export COORD_ROOT="$STR"      # st-launched agents inherit these -> isolated bus
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"; stev_arm_teardown "$SB"
+stev_init "$(basename "$(dirname "$HERE")")" "$SB"; export PTY_ROOT="$(stev_pty_root "$SB")"; stev_arm_teardown "$SB"  # stev-retirement: export the run's decoupled PTY_ROOT (#69) -> every session lands in it
 ROLES="sup $PROPOSERS"
 
 [ -d "$SB/sup" ] || { echo "== sandbox absent — materializing =="; "$HERE/setup-sandbox.sh" "$SB"; }
@@ -43,7 +43,7 @@ echo "== 4/4  launch the supervisor last (st launch: fd-sup, bypass, coordinate-
 ids="fd-sup"; for r in $PROPOSERS; do ids="$ids fd-$r"; done
 echo
 echo "SPUN (Fork-in-the-road cell, isolated bus at $STR). sessions:"
-pty ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E "$(stev_run_prefix "$SB")|fd-(sup|a|b|c)-" || pty ls
+pty --root "$PTY_ROOT" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'fd-(sup|a|b|c)' || pty --root "$PTY_ROOT" ls 2>/dev/null
 echo
 echo "OBSERVE (ST_ROOT=$STR): kick -> fd-sup decompose+assign distinct approaches -> proposers write PROPOSAL.md"
 echo "  (steelman+honest) -> debate over coord (real disagreement that updates) -> fd-sup synthesize"

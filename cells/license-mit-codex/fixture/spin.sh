@@ -7,7 +7,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/../../../bin/lib-harness.sh"
 SB="${1:-${EVAL_SANDBOX:-./.sandbox}/license-mit-codex}"
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"; stev_arm_teardown "$SB"
+stev_init "$(basename "$(dirname "$HERE")")" "$SB"; export PTY_ROOT="$(stev_pty_root "$SB")"; stev_arm_teardown "$SB"  # stev-retirement: export the run's decoupled PTY_ROOT (#69) -> `pty up` lands every session in it
 ROOT="${ST_ROOT:-${XDG_STATE_HOME:-$HOME/.local/state}/smalltalk}"
 
 echo "== 1/3  wire codex + ding for both =="
@@ -20,10 +20,10 @@ sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$ROOT/lmc-sup/inbox/${ms}-${sf
 echo "   seeded $ROOT/lmc-sup/inbox/${ms}-${sfx}.md"
 
 echo "== 3/3  launch — worker first, supervisor last =="
-for pair in "worker:$SB/worker" "sup:$SB/sup"; do d="${pair#*:}"; echo "   pty up in $d"; ( cd "$d" && pty up ); done
+for pair in "worker:$SB/worker" "sup:$SB/sup"; do d="${pair#*:}"; echo "   pty up in $d"; ( cd "$d" && pty --root "$PTY_ROOT" up ); done
 
 echo
-echo "SPUN (Codex license-mit cell). sessions:"; pty ls 2>/dev/null | grep -E "stev-license-mit-codex-" || pty ls 2>/dev/null || true
+echo "SPUN (Codex license-mit cell). sessions:"; pty --root "$PTY_ROOT" ls 2>/dev/null | grep -E 'lmc-(sup|worker)' || pty --root "$PTY_ROOT" ls 2>/dev/null || true
 echo "OBSERVE: kick -> lmc-sup delegate -> lmc-worker changes LICENSE->MIT + commits -> reports -> lmc-sup"
 echo "         verifies read-only -> confirms to eval-runner. HARD GATE: only lmc-worker commits to the widget repo."
 echo "Codex wake: ding wakes on NEW messages (no shepherd-poke); nudge lmc-sup to boot if it idles."

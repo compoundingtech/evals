@@ -35,9 +35,9 @@ if git -C "$d" rev-parse --git-dir >/dev/null 2>&1; then
   git -C "$d" config user.email "$id@eval.local"
 fi
 
-stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"; pfx="$(stev_prefix "$SB" "$id")"
+stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"   # stev-retirement: spin exports the run's PTY_ROOT; `pty up` lands every session (codex + ding) in it. Plain $id prefix, no stev_prefix/track_extra.
 cat > "$d/pty.toml" <<TOML
-prefix = "$pfx"
+prefix = "$id"
 
 [sessions.codex]
 command = "codex --dangerously-bypass-approvals-and-sandbox"
@@ -52,7 +52,7 @@ ST_IDENTITY = "$id"
 
 # ding = Codex's wake path (no asyncRewake). Watches <id>'s inbox and pokes the <id>-codex session.
 [sessions.ding]
-command = "coord ding $pfx-codex --identity $id"
+command = "coord ding $id-codex --identity $id"
 tags = { role = "ding" }
 
 [sessions.ding.env]

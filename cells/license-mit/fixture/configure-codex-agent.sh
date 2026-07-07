@@ -13,9 +13,9 @@ ROOT="${ST_ROOT:-${XDG_STATE_HOME:-$HOME/.local/state}/smalltalk}"
 # folder (it exited code 1 twice in the license-mit Mixed run before the dir existed).
 mkdir -p "$ROOT/$id/inbox" "$ROOT/$id/archive"; printf 'available\n' > "$ROOT/$id/status"
 
-stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"; pfx="$(stev_prefix "$SB" "$id")"
+stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"   # stev-retirement: plain $id prefix (no stev_prefix/track_extra); the matrix driver must export the run's PTY_ROOT (as spin.sh does) so `pty up` isolates every session.
 cat > "$d/pty.toml" <<TOML
-prefix = "$pfx"
+prefix = "$id"
 
 [sessions.codex]
 command = "codex --dangerously-bypass-approvals-and-sandbox"
@@ -26,7 +26,7 @@ COORD_IDENTITY = "$id"
 COORD_ROOT = "$ROOT"
 
 [sessions.ding]
-command = "coord ding $pfx-codex --identity $id"
+command = "coord ding $id-codex --identity $id"
 tags = { role = "ding" }
 
 [sessions.ding.env]

@@ -12,7 +12,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/../../../bin/lib-harness.sh"
 SB="${1:-${EVAL_SANDBOX:-./.sandbox}/fork-in-the-road-codex}"
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"; stev_arm_teardown "$SB"
+stev_init "$(basename "$(dirname "$HERE")")" "$SB"; export PTY_ROOT="$(stev_pty_root "$SB")"; stev_arm_teardown "$SB"  # stev-retirement: export the run's decoupled PTY_ROOT (#69) -> `pty up` lands every session in it
 PROPOSERS="${2:-a b c}"
 ROOT="${ST_ROOT:-${XDG_STATE_HOME:-$HOME/.local/state}/smalltalk}"
 ROLES="sup $PROPOSERS"
@@ -36,12 +36,12 @@ echo "   seeded $ROOT/fdx-sup/inbox/${ms}-${sfx}.md"
 echo "== 4/4  launch (pty up) — proposers first, supervisor last =="
 dir_for() { case "$1" in sup) echo "$SB/sup" ;; *) echo "$SB/$1" ;; esac; }
 for r in $PROPOSERS "sup"; do
-  d="$(dir_for "$r")"; echo "   pty up in $d"; ( cd "$d" && pty up )
+  d="$(dir_for "$r")"; echo "   pty up in $d"; ( cd "$d" && pty --root "$PTY_ROOT" up )
 done
 
 ids="fdx-sup"; for r in $PROPOSERS; do ids="$ids fdx-$r"; done
 echo
-echo "SPUN (Fork-in-the-road CODEX cell). sessions:"; pty ls 2>/dev/null | grep -E "fdx-(sup|a|b|c)-" || pty ls
+echo "SPUN (Fork-in-the-road CODEX cell). sessions:"; pty --root "$PTY_ROOT" ls 2>/dev/null | grep -E 'fdx-(sup|a|b|c)' || pty --root "$PTY_ROOT" ls 2>/dev/null
 echo
 echo "OBSERVE: kick -> fdx-sup decompose+assign distinct approaches -> proposers write PROPOSAL.md (steelman+honest)"
 echo "  -> debate over coord (real disagreement that updates) -> fdx-sup synthesize RECOMMENDATION.md + ESCALATE the"

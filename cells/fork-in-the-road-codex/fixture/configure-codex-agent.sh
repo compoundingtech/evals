@@ -35,7 +35,7 @@ if git -C "$d" rev-parse --git-dir >/dev/null 2>&1; then
   git -C "$d" config user.email "$id@eval.local"
 fi
 
-stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"   # stev-retirement: spin exports the run's PTY_ROOT; `pty up` lands every session (codex + ding) in it. Plain $id prefix, no stev_prefix/track_extra.
+stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"   # stev-retirement: spin exports the run's PTY_ROOT; `pty up` lands every session (codex + ding) in it. Plain $id prefix; no per-session teardown registration.
 cat > "$d/pty.toml" <<TOML
 prefix = "$id"
 

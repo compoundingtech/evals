@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # Launch one tui-build Claude eval agent via the REAL `st launch` (not a homegrown config writer).
-# `st launch` writes .mcp.json (server `st` = coord --channel), .claude/settings.local.json (asyncRewake
+# `st launch` writes .mcp.json (server `st`), .claude/settings.local.json (asyncRewake
 # + PreCompact + StopFailure hooks, enableAllProjectMcpServers, enabledMcpjsonServers:["st"]), the
 # session-id, pty.toml, installs the composed persona (--persona -> PERSONA.md + @PERSONA.md in CLAUDE.md),
 # and starts the pty session. We add the two things st launch does NOT do for an eval:
 #   1. ISOLATION (RISK 2): the isolated bus reaches the agent by ENV INHERITANCE — spin.sh exports
-#      ST_ROOT/COORD_ROOT before calling this, so `st launch` -> pty session -> claude -> the `st` MCP
+#      ST_ROOT before calling this, so `st launch` -> pty session -> claude -> the `st` MCP
 #      server all inherit the isolated root (the agent registers on $ST_ROOT, live bus untouched).
-#   2. ZERO-ORPHAN TEARDOWN (RISK 1): --session-name "$(stev_prefix ...)" makes the pty session name
-#      collision-proof (`<id>-stev-<cell>-<runid>-<id>`, never a bare `<id>-claude`); we register that EXACT
-#      name via stev_track_extra so `st-evals teardown` removes it.
-# TWO ROOTS (do not conflate): ST_ROOT/COORD_ROOT here is the isolated COORDINATION bus (where the team
+#   2. ZERO-ORPHAN TEARDOWN (RISK 1): spin.sh exports the run's decoupled PTY_ROOT and `st launch` honors it
+#      verbatim (smalltalk #69), so every pty session (agent, worker, ding sidecar) lands in that root; teardown
+#      removes the whole root — nothing to miss, nothing that can touch a live session.
+# TWO ROOTS (do not conflate): ST_ROOT here is the isolated COORDINATION bus (where the team
 # talks). The viz they BUILD reads its DATA from the frozen fixture ($SB/fixture/smalltalk) — a SEPARATE
 # root the personas pass explicitly at run time. This launcher only wires the coordination bus.
 # Permission POSTURE (the operator): SUPERVISOR = bypassPermissions (integration + git + runs both views);
@@ -21,7 +21,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/../../../bin/lib-harness.sh"
 role="$1"; SB="${2:-${EVAL_SANDBOX:-./.sandbox}/tui-build}"
 ROOT="${ST_ROOT:?spin.sh must export ST_ROOT to the isolated bus root ($SB/st-root) before launching}"
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # collision-proof pty prefix; idempotent (standalone-safe)
+stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # mint the run's decoupled PTY_ROOT (short, per-run); idempotent (standalone-safe)
 
 case "$role" in
   sup)   id="tui-sup";   d="$SB/sup";   mode="bypassPermissions" ;;   # integration lead; owns shared data layer
@@ -37,7 +37,7 @@ persona="$SB/personas-local/$id.md"
 # sidecar — from the operator's global pty daemon, so a plain session name is fine and teardown just kills
 # everything in the run's PTY_ROOT.
 
-# Pre-create the FULL coord dir on the ISOLATED bus (inbox+archive+status) so the boot ritual doesn't
+# Pre-create the FULL st dir on the ISOLATED bus (inbox+archive+status) so the boot ritual doesn't
 # rabbit-hole looking for its own folder.
 mkdir -p "$ROOT/$id/inbox" "$ROOT/$id/archive"; printf 'available\n' > "$ROOT/$id/status"
 
@@ -52,9 +52,9 @@ e["hasTrustDialogAccepted"]=True; e["hasCompletedProjectOnboarding"]=True
 json.dump(d,open(p,"w"),indent=2)
 PY
 
-# Launch via the real st launch. It inherits ST_ROOT/COORD_ROOT from this process's env (exported by
+# Launch via the real st launch. It inherits ST_ROOT from this process's env (exported by
 # spin.sh) -> the agent binds the ISOLATED coordination bus. --unattended bakes the startup auto-poker;
-# --session-name makes the pty session name collision-proof.
+# the run's decoupled PTY_ROOT keeps this session off the operator's global pty daemon.
 ( cd "$d" && st launch claude $(stev_ding_flags) \
     --identity "$id" \
     --session-name run \
@@ -62,7 +62,7 @@ PY
     --persona "$persona" \
     --unattended )
 
-# (stev-retirement: no stev_track_extra — every session, incl. the ding sidecar, is in the run's PTY_ROOT and
+# (stev-retirement: no per-session teardown registration — every session, incl. the ding sidecar, is in the run's PTY_ROOT and
 #  is torn down by killing that root. The mid-launch-orphan class is gone by construction.)
 
 echo "launched $id  (pty root=${PTY_ROOT:-?}, session=$id-run$(stev_ding_on && echo " + $id-ding sidecar"), --permission-mode $mode, isolated bus=$ROOT, persona=$persona, asyncRewake)"

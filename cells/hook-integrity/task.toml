@@ -44,7 +44,7 @@ posture  = "ephemeral: role=agent, no strategy=permanent. Two legs launched (hoo
 [launch]
 capability = "st launch claude (hooks ON: writes .claude/settings.local.json with SessionStart/PreCompact/StopFailure) vs st launch claude --no-hooks (skips it). MCP is ON in BOTH legs, so the SessionStart hook is the ONLY variable between them."
 legs       = "on)  st launch claude              → hook wired.   off) st launch claude --no-hooks → hook skipped (negative control)."
-isolation  = "each leg self-isolates: run.sh exports ST_ROOT/COORD_ROOT to that leg's $SB/st-root; st launch binds it via env inheritance; the live network is untouched. Collision-proof stev session names (<id>-<pfx>-<leg>), both stev_track_extra'd → zero-orphan teardown."
+isolation  = "each leg self-isolates: run.sh exports ST_ROOT to that leg's $SB/st-root; st launch binds it via env inheritance; the live network is untouched. Each leg also gets its own decoupled PTY_ROOT (run.sh exports it), so every session lands in it → zero-orphan teardown."
 single_command = "bin/st-evals run hook-integrity  (or cells/hook-integrity/fixture/run.sh). run.sh does gen-token → 2× setup → 2× launch → wait → grade(banner) → teardown."
 
 [isolation]

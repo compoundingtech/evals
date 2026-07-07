@@ -19,7 +19,7 @@ grep -qF "[projects.\"$d\"]" "$CFG" 2>/dev/null || printf '\n[projects."%s"]\ntr
 # Pre-create the FULL coord dir (inbox+archive+status) so the `ding` wake-sidecar doesn't die on a
 # missing folder and the boot ritual's status-set + inbox-drain don't rabbit-hole.
 mkdir -p "$ROOT/$id/inbox" "$ROOT/$id/archive"; printf 'available\n' > "$ROOT/$id/status"
-stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"   # stev-retirement: spin exports the run's PTY_ROOT; `pty up` lands every session (codex + ding) in it. Plain $id prefix, no stev_prefix/track_extra.
+stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"   # stev-retirement: spin exports the run's PTY_ROOT; `pty up` lands every session (codex + ding) in it. Plain $id prefix; no per-session teardown registration.
 cat > "$d/pty.toml" <<TOML
 prefix = "$id"
 

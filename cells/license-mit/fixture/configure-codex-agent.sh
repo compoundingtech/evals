@@ -13,7 +13,7 @@ ROOT="${ST_ROOT:-${XDG_STATE_HOME:-$HOME/.local/state}/smalltalk}"
 # folder (it exited code 1 twice in the license-mit Mixed run before the dir existed).
 mkdir -p "$ROOT/$id/inbox" "$ROOT/$id/archive"; printf 'available\n' > "$ROOT/$id/status"
 
-stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"   # stev-retirement: plain $id prefix (no stev_prefix/track_extra); the matrix driver must export the run's PTY_ROOT (as spin.sh does) so `pty up` isolates every session.
+stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"   # stev-retirement: plain $id prefix (no per-session teardown registration); the matrix driver must export the run's PTY_ROOT (as spin.sh does) so `pty up` isolates every session.
 cat > "$d/pty.toml" <<TOML
 prefix = "$id"
 

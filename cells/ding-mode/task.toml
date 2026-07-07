@@ -44,7 +44,7 @@ ding_mode = "CRUX: a --ding claude gets no MCP system-prompt. `st launch --ding`
 
 [launch]
 capability   = "st launch claude --ding (#58): no MCP wiring (.mcp.json skipped), channel off, an `st ding` sidecar per agent for inbox delivery, Claude hooks (SessionStart/PreCompact/StopFailure) still generated. Unattended delivery is load-bearing on #61 (DING-BUS.md auto-install) + #62 (sidecar survives the launch race) + #63 (sidecar targets the FQN <id>-<session> pty key, not the bare session-name) — all landed 2026-07-05; verified via a 0-poke autonomous loop-close."
-sessions     = "per agent: the claude session (<id>-<stev-prefix>) + a ding sidecar (<id>-ding). BOTH are stev_track_extra'd so teardown is zero-orphan."
+sessions     = "per agent: the claude session (<id>-run) + a ding sidecar (<id>-ding). BOTH land in the run's decoupled PTY_ROOT so teardown is zero-orphan."
 isolation    = "st launch bakes the isolated ST_ROOT into BOTH sessions' env -> agent + ding bind the isolated bus; the live network is untouched."
 known_gap    = "as of #58, .claude/settings.local.json still writes enabledMcpjsonServers:['st'] + enableAllProjectMcpServers even in ding mode (while .mcp.json is skipped) — a dangling MCP ref that should be dropped for a true no-MCP box. Flagged upstream; harmless in the isolated run (nothing to connect) but the NO-MCP grade gate asserts on .mcp.json absence, not settings keys."
 

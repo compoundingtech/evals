@@ -4,11 +4,11 @@
 # session-id, pty.toml, installs the composed persona (--persona), and starts the pty session. We add the two
 # things st launch does NOT do for an eval:
 #   1. ISOLATION: the isolated coordination bus reaches the agent by ENV INHERITANCE — spin.sh exports
-#      ST_ROOT/COORD_ROOT before calling this, so st launch -> pty session -> claude -> the `st` MCP server all
+#      ST_ROOT before calling this, so st launch -> pty session -> claude -> the `st` MCP server all
 #      inherit the isolated root (the agent registers on $ST_ROOT; the live bus is untouched).
-#   2. ZERO-ORPHAN TEARDOWN: --session-name "$(stev_prefix ...)" makes the pty session name collision-proof
-#      (`<id>-stev-<cell>-<runid>-<id>`, never a bare `<id>-claude`); stev_track_extra registers that EXACT name
-#      so `st-evals teardown` removes it.
+#   2. ZERO-ORPHAN TEARDOWN: spin.sh exports the run's decoupled PTY_ROOT and `st launch` honors it verbatim
+#      (smalltalk #69), so every pty session (agent, worker, ding sidecar) lands in that root; teardown removes
+#      the whole root — nothing to miss, nothing that can touch a live session.
 # Each agent's cwd = the repo it OWNS (sup -> signal-config; base -> signal; relay -> signal-relay; hub -> signal-hub).
 # Permission POSTURE: SUPERVISOR = bypassPermissions (integration + git + runs suites across the stack); product
 # workers = auto.
@@ -18,7 +18,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/../../../bin/lib-harness.sh"
 role="$1"; SB="${2:-${EVAL_SANDBOX:-./.sandbox}/signal-rename}"
 ROOT="${ST_ROOT:?spin.sh must export ST_ROOT to the isolated bus root ($SB/st-root) before launching}"
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # collision-proof pty prefix; idempotent (standalone-safe)
+stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # mint the run's decoupled PTY_ROOT (short, per-run); idempotent (standalone-safe)
 
 case "$role" in
   sup)   id="sig-sup";   d="$SB/sup";   mode="bypassPermissions" ;;   # integration lead; owns app.toml
@@ -34,7 +34,7 @@ persona="$SB/personas-local/$id.md"
 # sidecar — from the operator's global pty daemon, so a plain session name is fine and teardown just kills
 # everything in the run's PTY_ROOT.
 
-# Pre-create the FULL coord dir on the ISOLATED bus so the boot ritual doesn't rabbit-hole for its own folder.
+# Pre-create the FULL st dir on the ISOLATED bus so the boot ritual doesn't rabbit-hole for its own folder.
 mkdir -p "$ROOT/$id/inbox" "$ROOT/$id/archive"; printf 'available\n' > "$ROOT/$id/status"
 
 # Pre-trust the folder for Claude Code (skip the workspace-trust gate). --unattended also auto-pokes startup
@@ -48,12 +48,13 @@ e["hasTrustDialogAccepted"]=True; e["hasCompletedProjectOnboarding"]=True
 json.dump(d,open(p,"w"),indent=2)
 PY
 
-# (stev-retirement: no stev_track_extra — every session, incl. the ding sidecar, is in the run's PTY_ROOT and
+# (stev-retirement: no per-session teardown registration — every session, incl. the ding sidecar, is in the run's PTY_ROOT and
 #  is torn down by killing that root. The mid-launch-orphan class the pre-launch registration guarded against
 #  is gone by construction — a kill mid-launch still leaves the session inside the run's PTY_ROOT.)
 
-# Launch via the real st launch; it inherits ST_ROOT/COORD_ROOT from this process (exported by spin.sh) ->
-# the agent binds the ISOLATED bus. --unattended bakes the startup auto-poker; --session-name is collision-proof.
+# Launch via the real st launch; it inherits ST_ROOT from this process (exported by spin.sh) ->
+# the agent binds the ISOLATED bus. --unattended bakes the startup auto-poker; the run's decoupled PTY_ROOT
+# keeps this session off the operator's global pty daemon.
 ( cd "$d" && st launch claude $(stev_ding_flags) \
     --identity "$id" \
     --session-name run \

@@ -41,7 +41,7 @@ cat > "$d/.claude/settings.local.json" <<JSON
 JSON
 
 # pty.toml — the GLM env contract is the ONLY delta from a normal Claude cell.
-stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"   # stev-retirement: plain $id prefix (no stev_prefix/track_extra); the matrix driver must export the run's PTY_ROOT (as spin.sh does) so `pty up` isolates every session.
+stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"   # stev-retirement: plain $id prefix (no per-session teardown registration); the matrix driver must export the run's PTY_ROOT (as spin.sh does) so `pty up` isolates every session.
 cat > "$d/pty.toml" <<TOML
 prefix = "$id"
 

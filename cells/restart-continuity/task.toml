@@ -52,7 +52,7 @@ substrate_as_is = "DELIBERATE: neither persona mentions restarts/resuming/reconc
 mechanism = "fixture/restart-injector.sh (backgrounded by spin.sh) polls the ledger git log; when >=2 `feat: item` commits land it COLD-restarts rc-dev — pty kill the session, rm .claude-session-id + pty.toml (fresh transcript), relaunch the SAME identity/persona/repo/bus under a new collision-proof session-name via `st launch` (RC_RESTART path in configure-claude-agent.sh)."
 cold_vs_warm = "COLD (primary): fresh transcript — the agent must reconstruct purely from durable artifacts; maps onto the boot ritual; reproducible; same identity => git author preserved => isolation attribution holds. Warm (pty restart, replay context) is a weaker v2 secondary observation."
 not_a_rescue = "the injected restart + its mechanical startup gates are SCENARIO pokes, not rescues — exactly like ghost-bug planting a bug. A rescue = a HUMAN telling the agent what was done / un-sticking it (the headline metric = 0)."
-zero_orphan  = "the relaunched session is stev_track_extra'd (a distinct session-name outside the run prefix) so teardown removes it too — zero orphans ACROSS the restart is itself verified."
+zero_orphan  = "the relaunched session lands in the run's decoupled PTY_ROOT (like every session in the run) so teardown removes it too — zero orphans ACROSS the restart is itself verified."
 
 # ISOLATION — the HARD GATE, checked before anything else.
 [isolation]

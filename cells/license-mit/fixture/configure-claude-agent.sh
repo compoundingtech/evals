@@ -4,8 +4,9 @@
 # enableAllProjectMcpServers, enabledMcpjsonServers:["st"]), the session-id, pty.toml, installs the
 # composed persona (--persona -> PERSONA.md + @PERSONA.md), and starts the pty session. We add the two
 # eval-only things: ISOLATION (spin.sh exports ST_ROOT -> st launch bakes/inherits it -> agent binds the
-# isolated bus) and ZERO-ORPHAN teardown (--session-name "$(stev_prefix)" -> collision-proof pty name;
-# stev_track_extra the EXACT name). Plus deterministic startup hygiene (isolated coord dir + folder pre-trust).
+# isolated bus) and ZERO-ORPHAN teardown (spin.sh exports the run's decoupled PTY_ROOT, honored verbatim by
+# st launch #69, so every session lands in it and teardown removes the whole root). Plus deterministic startup
+# hygiene (isolated st dir + folder pre-trust).
 # Posture mirrors the walked ghost-bug reference: SUPERVISOR = bypassPermissions, WORKER = auto.
 #   ./configure-claude-agent.sh <sup|worker> [SANDBOX]   # ST_ROOT must be exported (spin.sh does this)
 set -euo pipefail
@@ -14,7 +15,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 role="$1"; SB="${2:-${EVAL_SANDBOX:-./.sandbox}/license-mixed}"
 ROOT="${ST_ROOT:?spin.sh must export ST_ROOT to the isolated bus root ($SB/st-root) before launching}"
 SUP_ID="${SUP_ID:-mix-sup}"; WORKER_ID="${WORKER_ID:-mix-worker}"
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # collision-proof pty prefix; idempotent (standalone-safe)
+stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # mint the run's decoupled PTY_ROOT (short, per-run); idempotent (standalone-safe)
 
 case "$role" in
   sup)    id="$SUP_ID";    d="$SB/sup";    mode="bypassPermissions" ;;   # coordinate-only
@@ -28,7 +29,7 @@ persona="$SB/personas-local/$id.md"
 # sidecar — from the operator's global pty daemon, so a plain session name is fine and teardown just kills
 # everything in the run's PTY_ROOT.
 
-# Pre-create the FULL coord dir on the ISOLATED bus so the boot ritual doesn't rabbit-hole.
+# Pre-create the FULL st dir on the ISOLATED bus so the boot ritual doesn't rabbit-hole.
 mkdir -p "$ROOT/$id/inbox" "$ROOT/$id/archive"; printf 'available\n' > "$ROOT/$id/status"
 
 # Pre-trust the folder (deterministic; --unattended also auto-pokes the startup gates).
@@ -41,7 +42,7 @@ e["hasTrustDialogAccepted"]=True; e["hasCompletedProjectOnboarding"]=True
 json.dump(d,open(p,"w"),indent=2)
 PY
 
-# Launch via the real st launch. It inherits ST_ROOT/COORD_ROOT from this process (exported by spin.sh)
+# Launch via the real st launch. It inherits ST_ROOT from this process (exported by spin.sh)
 # and (post-#52) bakes ST_ROOT into the generated pty.toml env -> the agent binds the ISOLATED bus.
 ( cd "$d" && st launch claude $(stev_ding_flags) \
     --identity "$id" \
@@ -50,7 +51,7 @@ PY
     --persona "$persona" \
     --unattended )
 
-# (stev-retirement: no stev_track_extra — every session, incl. the ding sidecar, is in the run's PTY_ROOT and
+# (stev-retirement: no per-session teardown registration — every session, incl. the ding sidecar, is in the run's PTY_ROOT and
 #  is torn down by killing that root. The mid-launch-orphan class is gone by construction.)
 
 echo "launched $id  (pty root=${PTY_ROOT:-?}, session=$id-run$(stev_ding_on && echo " + $id-ding sidecar"), --permission-mode $mode, isolated bus=$ROOT, persona=$persona, asyncRewake)"

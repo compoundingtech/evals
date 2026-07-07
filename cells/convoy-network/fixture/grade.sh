@@ -37,9 +37,12 @@ if grep -q 'Convoy.app\|/Applications/Convoy' "$LOG" 2>/dev/null; then no "the h
 else ok "hosted by 'convoy up' (CLI); no Convoy.app invocation in the host log — no app dependency"; fi
 
 echo "== RESPAWN (hard — the genuinely-new gate: the host brought the crashed PERMANENT agent back) =="
-if grep '"type":"respawn"' "$LOG" 2>/dev/null | grep '"identity":"cap-cos"' | grep -q '"ok":true'; then
-  ok "convoy up RESPAWNED cap-cos (the permanent agent) after the injected crash (respawn event, ok:true) — the host OWNS respawn (not the fixture)"
-elif [ -f "$SB/.kill.log" ]; then no "cap-cos was crashed but convoy up emitted NO successful respawn event — the host did not bring the permanent agent back"
+# convoy up's respawn event labels identity/session by the RESPAWNED pty-session-id (not the logical 'cap-cos' —
+# a schema finding flagged to convoy), so match a successful respawn of a CRASHED (reason:exited) session: the
+# cell crashes exactly ONE permanent session (the cos), so an exited-respawn is unambiguously it.
+if grep '"type":"respawn"' "$LOG" 2>/dev/null | grep '"reason":"exited"' | grep -q '"ok":true'; then
+  ok "convoy up RESPAWNED the crashed permanent cos (respawn event, reason:exited, ok:true) — the host OWNS respawn (not the fixture)"
+elif [ -f "$SB/.kill.log" ]; then no "cap-cos was crashed but convoy up emitted NO successful exited-respawn event — the host did not bring the permanent agent back"
 else wn "no crash was injected (kill-injector didn't run) — the respawn gate was not exercised"; fi
 
 echo "== LOOP CLOSED (held-out — a THREADED reply reached the requester with the answer) =="

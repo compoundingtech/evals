@@ -17,13 +17,12 @@ for _ in $(seq 1 60); do
   grep -lqRE '^from:[[:space:]]*cap-cos' "$NET/cap-wk/inbox" "$NET/cap-wk/archive" 2>/dev/null && break
   sleep 2
 done
-# Find the PERMANENT cos claude session + its pid in convoy's per-network pty root, and CRASH the process.
+# CRASH the PERMANENT cos session in convoy's per-network pty root. `pty kill <session>` IS the crash trigger
+# (convoy PR #11: it leaves an EXITED gone-record + strips the permanent tag, which convoy up's permanence-memory
+# remembers → the reconcile respawns it). NB: pre-PR-#11, `pty kill` REMOVED the record so the reconcile couldn't
+# see it to respawn — the bug the live run caught; the live respawn PROOF therefore needs a PR-#11 convoy binary.
 # (session name CONSTRUCTED as ${cosid}-claude — never a bare *-claude literal, which the PII grep-gate forbids.)
 cosid="cap-cos"; cossess="${cosid}-claude"
-line="$(pty --root "$PR" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E "${cossess}.*\[permanent\]" | head -1)"
-pid="$(printf '%s\n' "$line" | grep -oE 'pid: [0-9]+' | grep -oE '[0-9]+' | head -1)"
-if [ -n "${pid:-}" ]; then
-  kill -TERM "$pid" 2>/dev/null || true; kill -KILL "$pid" 2>/dev/null || true
-fi
-printf 'crashed %s (pid %s) at %s\n' "$cossess" "${pid:-?}" "$(date +%s)" > "$SB/.kill.log"
+pty --root "$PR" kill "$cossess" >/dev/null 2>&1 || true
+printf 'crashed %s at %s\n' "$cossess" "$(date +%s)" > "$SB/.kill.log"
 echo "INJECTED: crashed the PERMANENT cos session (pid ${pid:-?}) in $PR. convoy up must RESPAWN it next reconcile; grade after the loop settles."

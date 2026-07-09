@@ -12,7 +12,9 @@ case "$role" in
   fix) id="gbx-fix"; dir="$WORKER_REPO";   rolefile="$PZ/specialist.md" ;;
   *) echo "role must be sup|fix" >&2; exit 1 ;;
 esac
-out="$dir/AGENTS.md"; mkdir -p "$dir"
+# Standalone persona file passed to `convoy add --persona` (which writes the agent's AGENTS.md +
+# the codex rig). Mirrors the Claude cells' personas-local/<id>.md layout.
+out="$SB/personas-local/$id.md"; mkdir -p "$SB/personas-local" "$dir"
 
 if [ "$role" = "sup" ]; then
 cat > "$out" <<LANE

@@ -108,12 +108,18 @@ stev_ding_flags() { stev_ding_on && printf -- '--ding' || true; }
 # (e.g. hook-integrity needs MCP on both legs). Default = ding (no MCP).
 stev_mcp_on() { case "${EVAL_MCP:-}" in 1|true|TRUE|yes|YES|on|ON) return 0 ;; *) return 1 ;; esac; }
 
-# stev_convoy_add <id> <dir> <mode> <persona> : launch ONE eval agent via REAL convoy on the isolated
-# network ($ST_ROOT). Pre-trusts the folder (skip Claude's workspace-trust gate), derives the convoy role
-# from the permission mode (bypassPermissions → supervisor / spawn-capable; else → worker), and `convoy
-# add`s it (ding by default; --mcp iff EVAL_MCP=1). ST_ROOT must be the isolated network (spin.sh exports it).
+# stev_convoy_add <id> <dir> <mode> <persona> [harness] : launch ONE eval agent via REAL convoy on the
+# isolated network ($ST_ROOT). Pre-trusts the folder (skip Claude's workspace-trust gate), derives the
+# convoy role from the permission mode (bypassPermissions → supervisor / spawn-capable; else → worker),
+# and `convoy add`s it (ding by default; --mcp iff EVAL_MCP=1). ST_ROOT must be the isolated network
+# (spin.sh exports it). `harness` (default claude; codex for the full-Codex cells) is emitted in the
+# SPACE form `--harness codex` — NEVER `--harness=codex`, which convoy silently ignores → falls back to
+# claude (a "thought it ran codex, actually ran claude" false-harness bug). convoy add --harness codex is
+# correct-by-construction: it writes the codex rig (codex session + AGENTS.md from --persona + a `st ding`
+# wake sidecar since Codex has no asyncRewake + ~/.codex/config.toml pre-trust).
 stev_convoy_add() {
-  local id="$1" d="$2" mode="$3" persona="$4"
+  local id="$1" d="$2" mode="$3" persona="$4" harness="${5:-claude}"
+  case "$harness" in claude|codex) ;; *) echo "stev_convoy_add: harness must be claude|codex (got '$harness')" >&2; return 2 ;; esac
   local NET="${ST_ROOT:?stev_convoy_add: export ST_ROOT to the isolated convoy network first}"
   [ -f "$persona" ] || { echo "stev_convoy_add: missing composed persona $persona — compose it first" >&2; return 1; }
   local conv_role=worker; [ "$mode" = "bypassPermissions" ] && conv_role=supervisor
@@ -126,12 +132,13 @@ e=d.setdefault("projects",{}).setdefault(sys.argv[1],{})
 e["hasTrustDialogAccepted"]=True; e["hasCompletedProjectOnboarding"]=True
 json.dump(d,open(p,"w"),indent=2)
 PY
+  # SPACE form only — never `--harness=$harness` (convoy silently ignores the equals form → falls back to claude).
   if stev_mcp_on; then
-    convoy add "$conv_role" --identity "$id" --network "$NET" --dir "$d" --persona "$persona" --permission-mode "$mode" --mcp
+    convoy add "$conv_role" --identity "$id" --network "$NET" --dir "$d" --persona "$persona" --permission-mode "$mode" --harness "$harness" --mcp
   else
-    convoy add "$conv_role" --identity "$id" --network "$NET" --dir "$d" --persona "$persona" --permission-mode "$mode"
+    convoy add "$conv_role" --identity "$id" --network "$NET" --dir "$d" --persona "$persona" --permission-mode "$mode" --harness "$harness"
   fi
-  echo "launched $id  (convoy add $conv_role, $(stev_mcp_on && echo MCP || echo 'ding / no MCP'), net=$NET, --permission-mode $mode, persona=$persona)"
+  echo "launched $id  (convoy add $conv_role/$harness, $(stev_mcp_on && echo MCP || echo 'ding / no MCP'), net=$NET, --permission-mode $mode, persona=$persona)"
 }
 
 # stev_convoy_init <NET> : create a fresh isolated convoy network (idempotent — wipes any prior run's net).

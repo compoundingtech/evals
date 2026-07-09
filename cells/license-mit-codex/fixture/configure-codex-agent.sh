@@ -1,44 +1,19 @@
 #!/usr/bin/env bash
-# Wire one license-mit CODEX-cell agent (full-Codex team: lmc-sup + lmc-worker). Codex wakes via a
-# `ding` sidecar; pre-creates the st dir + pre-trusts the dir in ~/.codex/config.toml (before launch)
-# so no first-run trust gate blocks. The pty prefix comes from the shared stev harness (collision-proof,
-# torn down per run) — never a bare id.
-#   ./configure-codex-agent.sh <sup|worker> [SANDBOX]
+# Launch one license-mit CODEX-cell eval agent via REAL convoy (`--harness codex`, ding-default, no MCP).
+# `stev_convoy_add … codex` (lib-harness) does the pre-trust + `convoy add --harness codex` — correct-by-
+# construction: codex session + AGENTS.md from --persona + a `st ding` wake sidecar + ~/.codex pre-trust,
+# all on the ISOLATED network ($ST_ROOT, exported by spin.sh). Retires the hand-rolled pty.toml wiring.
+# Permission POSTURE (Nathan's rule): SUPERVISOR = bypassPermissions (spawn-capable); WORKER = auto.
+#   ./configure-codex-agent.sh <sup|worker> [SANDBOX]   # spin.sh must export ST_ROOT=$NET first
 set -euo pipefail
-STEV_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$STEV_HERE/../../../bin/lib-harness.sh"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/../../../bin/lib-harness.sh"
 role="$1"; SB="${2:-${EVAL_SANDBOX:-./.sandbox}/license-mit-codex}"
-ROOT="$SB/st-root"   # SELF-ISOLATE the bus root (UNCONDITIONAL, matches spin.sh — never the operator's prod root)
+
 case "$role" in
-  sup)    id="lmc-sup";    d="$SB/sup" ;;      # coordinate-only, owns NO product repo (structural isolation)
-  worker) id="lmc-worker"; d="$SB/worker" ;;   # owns the widget repo
+  sup)    id="lmc-sup";    d="$SB/sup";    mode="bypassPermissions" ;;   # coordinate-only, owns NO product repo
+  worker) id="lmc-worker"; d="$SB/worker"; mode="auto" ;;                # owns the widget repo
   *) echo "role must be sup|worker" >&2; exit 1 ;;
 esac
-mkdir -p "$d"
-CFG=~/.codex/config.toml
-grep -qF "[projects.\"$d\"]" "$CFG" 2>/dev/null || printf '\n[projects."%s"]\ntrust_level = "trusted"\n' "$d" >> "$CFG"
-# Pre-create the FULL st dir (inbox+archive+status) so the `ding` wake-sidecar doesn't die on a
-# missing folder and the boot ritual's status-set + inbox-drain don't rabbit-hole.
-mkdir -p "$ROOT/$id/inbox" "$ROOT/$id/archive"; printf 'available\n' > "$ROOT/$id/status"
-stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"   # stev-retirement: spin exports the run's PTY_ROOT; `pty up` lands every session (codex + ding) in it. Plain $id prefix; no per-session teardown registration.
-cat > "$d/pty.toml" <<TOML
-prefix = "$id"
 
-[sessions.codex]
-command = "codex --dangerously-bypass-approvals-and-sandbox"
-tags = { role = "agent" }
-
-[sessions.codex.env]
-ST_ROOT = "$ROOT"
-ST_AGENT = "$id"
-ST_IDENTITY = "$id"
-
-# ding = Codex's wake path (no asyncRewake). It watches <id>'s inbox and pokes the codex session.
-[sessions.ding]
-command = "st ding $id-codex --identity $id"
-tags = { role = "ding" }
-
-[sessions.ding.env]
-ST_AGENT = "$id"
-ST_ROOT = "$ROOT"
-TOML
-echo "configured $id  (codex + ding->$id-codex, st dir pre-created, pre-trusted, ephemeral role=agent)"
+stev_convoy_add "$id" "$d" "$mode" "$SB/personas-local/$id.md" codex

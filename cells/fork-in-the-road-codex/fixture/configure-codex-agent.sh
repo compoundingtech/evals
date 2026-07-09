@@ -1,61 +1,30 @@
 #!/usr/bin/env bash
-# Wire one Fork-in-the-road CODEX-cell agent (full-Codex design panel: fdx-sup + fdx-a/b/c).
-# Codex has NO asyncRewake -> wakes via a `ding` SIDECAR. Pre-creates the full st dir (ding dies on a
-# missing folder), pre-trusts the dir in ~/.codex/config.toml (first-run trust gate), and sets a DISTINCT
-# per-dir git author = the agent id (the fixture fix — so commit authorship attributes cleanly to the
-# owning agent instead of the machine default). Codex persona = AGENTS.md (composed separately); st MCP
-# is the global ~/.codex/config.toml registration (no per-agent .mcp.json).
-#   ./configure-codex-agent.sh <sup|a|b|c> [SANDBOX]
+# Launch one Fork-in-the-road CODEX-cell eval agent via REAL convoy (`--harness codex`, ding-default, no
+# MCP): fdx-sup (coordinate-only) + fdx-a/b/c (each champions one approach). `stev_convoy_add … codex`
+# (lib-harness) does the pre-trust + `convoy add --harness codex` — correct-by-construction: codex session
+# + AGENTS.md from --persona + a `st ding` wake sidecar + ~/.codex pre-trust, all on the ISOLATED network
+# ($ST_ROOT, exported by spin.sh). Still sets a DISTINCT per-dir git author = the agent id (fixture fix, so
+# runtime commits attribute to the owning identity, not the machine default). Retires the hand-rolled wiring.
+# Permission POSTURE: SUPERVISOR = bypassPermissions (spawn-capable); PROPOSERS = auto.
+#   ./configure-codex-agent.sh <sup|a|b|c> [SANDBOX]   # spin.sh must export ST_ROOT=$NET first
 set -euo pipefail
-STEV_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$STEV_HERE/../../../bin/lib-harness.sh"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/../../../bin/lib-harness.sh"
 role="$1"; SB="${2:-${EVAL_SANDBOX:-./.sandbox}/fork-in-the-road-codex}"
-ROOT="$SB/st-root"   # SELF-ISOLATE the bus root (UNCONDITIONAL, matches spin.sh — never the operator's prod root)
 
 case "$role" in
-  sup) id="fdx-sup"; d="$SB/sup" ;;   # coordinate-only; writes RECOMMENDATION.md in its own dir
-  a)   id="fdx-a";   d="$SB/a" ;;      # champions one approach; writes PROPOSAL.md in its own dir
-  b)   id="fdx-b";   d="$SB/b" ;;
-  c)   id="fdx-c";   d="$SB/c" ;;
+  sup) id="fdx-sup"; d="$SB/sup"; mode="bypassPermissions" ;;   # coordinate-only; writes RECOMMENDATION.md in its own dir
+  a)   id="fdx-a";   d="$SB/a";   mode="auto" ;;                # champions one approach; writes PROPOSAL.md in its own dir
+  b)   id="fdx-b";   d="$SB/b";   mode="auto" ;;
+  c)   id="fdx-c";   d="$SB/c";   mode="auto" ;;
   *) echo "role must be sup|a|b|c" >&2; exit 1 ;;
 esac
-mkdir -p "$d"
 
-# Pre-trust the dir for Codex (avoids the first-run directory-trust gate blocking unattended launch).
-CFG=~/.codex/config.toml
-grep -qF "[projects.\"$d\"]" "$CFG" 2>/dev/null || printf '\n[projects."%s"]\ntrust_level = "trusted"\n' "$d" >> "$CFG"
-
-# Pre-create the FULL st dir (inbox+archive+status) BEFORE launch so ding doesn't die on a missing folder.
-mkdir -p "$ROOT/$id/inbox" "$ROOT/$id/archive"; printf 'available\n' > "$ROOT/$id/status"
-
-# FIXTURE FIX (now.md): distinct git author per agent, so runtime commits attribute to the owning
-# identity (the Claude cell all committed as the machine default). setup-sandbox.sh git-inits first, so
-# the repo exists here; guard defensively anyway.
+# FIXTURE FIX: distinct git author per agent, so runtime commits attribute to the owning identity
+# (setup-sandbox.sh git-inits first; guard defensively).
 if git -C "$d" rev-parse --git-dir >/dev/null 2>&1; then
-  git -C "$d" config user.name "$id"
+  git -C "$d" config user.name  "$id"
   git -C "$d" config user.email "$id@eval.local"
 fi
 
-stev_init "$(basename "$(dirname "$STEV_HERE")")" "$SB"   # stev-retirement: spin exports the run's PTY_ROOT; `pty up` lands every session (codex + ding) in it. Plain $id prefix; no per-session teardown registration.
-cat > "$d/pty.toml" <<TOML
-prefix = "$id"
-
-[sessions.codex]
-command = "codex --dangerously-bypass-approvals-and-sandbox"
-tags = { role = "agent" }
-
-[sessions.codex.env]
-ST_ROOT = "$ROOT"
-ST_AGENT = "$id"
-ST_IDENTITY = "$id"
-
-# ding = Codex's wake path (no asyncRewake). Watches <id>'s inbox and pokes the <id>-codex session.
-[sessions.ding]
-command = "st ding $id-codex --identity $id"
-tags = { role = "ding" }
-
-[sessions.ding.env]
-ST_AGENT = "$id"
-ST_ROOT = "$ROOT"
-TOML
-
-echo "configured $id  (codex + ding->$id-codex, st dir pre-created, pre-trusted, git author=$id, ephemeral)"
+stev_convoy_add "$id" "$d" "$mode" "$SB/personas-local/$id.md" codex

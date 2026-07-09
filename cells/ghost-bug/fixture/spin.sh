@@ -1,51 +1,56 @@
 #!/usr/bin/env bash
-# Spin the Ghost-bug (debug) Claude cell via the REAL `st launch`: gb-sup (bypass, coordinate-only) +
-# gb-fix (auto, owns labelkit). Run AFTER setup-sandbox.sh (auto-materializes if the sandbox is absent).
-# SELF-ISOLATING: creates + exports an isolated bus root ($SB/st-root) so nothing touches the operator's
-# live network — the st-launched agents inherit ST_ROOT from this process (verified: RISK 2).
-# Composes personas (standalone files for --persona), launches worker first + supervisor last, and seeds
-# the hermetic bug-report kick into gb-sup's inbox. Claude agents auto-wake via st launch's asyncRewake hook.
+# Spin the Ghost-bug (debug) Claude cell via REAL convoy (ding-default, no MCP): gb-sup (bypass,
+# coordinate-only) + gb-fix (auto, owns labelkit). Run AFTER setup-sandbox.sh (auto-materializes if the
+# sandbox is absent). SELF-ISOLATING: `convoy init`s an isolated network at $SB/st-root so nothing touches
+# the operator's live convoy — every session (agent + ding sidecar) lands under $NET/pty. Composes
+# personas (standalone files for --persona), launches worker first + supervisor last, THEN seeds the
+# hermetic bug-report kick into gb-sup's inbox — its `st ding` sidecar (created by convoy add) delivers it.
 #
 #   ./spin.sh [SANDBOX]        # sandbox defaults to ${EVAL_SANDBOX:-./.sandbox}/ghost-bug
-#   needs: PERSONAS_DIR (bin/ensure-personas.sh provisions it). No external ST_ROOT / ST_HOOKS_DIR needed —
-#          spin owns the isolated root and st launch wires its own boot hooks.
+#   needs: PERSONAS_DIR (bin/ensure-personas.sh provisions it). No external ST_ROOT/ST_HOOKS_DIR needed —
+#          spin owns the isolated network and `convoy add` wires each agent's boot hooks itself.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/../../../bin/lib-harness.sh"
 SB="${1:-${EVAL_SANDBOX:-./.sandbox}/ghost-bug}"
-STR="$SB/st-root"                                    # SELF-ISOLATED bus root (never the live network)
-export ST_ROOT="$STR"      # st-launched agents inherit these -> isolated bus
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # per-run id + decoupled short PTY_ROOT
-export PTY_ROOT="$(stev_pty_root "$SB")"             # stev-retirement: st launch honors this verbatim (#69) -> every session in the run's isolated pty root
-stev_arm_teardown "$SB"                              # trap: teardown kills the run's PTY_ROOT on crash/interrupt/early-exit
+NET="$SB/st-root"                                   # SELF-ISOLATED convoy network (never the live one)
+export ST_ROOT="$NET"                               # bus root; convoy places sessions under $NET/pty
 
 [ -d "$SB/worker" ] || { echo "== sandbox absent — materializing =="; "$HERE/setup-sandbox.sh" "$SB"; }
-mkdir -p "$STR/gb-sup/inbox" "$STR/gb-sup/archive"   # so the kick can land before gb-sup launches
 
-echo "== 1/4  compose personas (standalone files for st launch --persona) =="
+# teardown: convoy down on CRASH/Ctrl-C/early-exit; LEAVE the team up on a clean spin (agents run async).
+STEV_NET="$NET"
+trap 'rc=$?; [ "$rc" = 0 ] || { echo "== spin rc=$rc — tearing down the isolated net ==" >&2; stev_convoy_teardown "$STEV_NET"; }' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+echo "== 1/5  convoy init the isolated network ($NET) =="
+stev_convoy_init "$NET"
+
+echo "== 2/5  compose personas (standalone files for --persona) =="
 "$HERE/compose-persona.sh" sup "$SB"
 "$HERE/compose-persona.sh" fix "$SB"
 
-echo "== 2/4  launch the worker first (st launch: gb-fix, auto, owns labelkit) =="
+echo "== 3/5  launch the worker first (convoy add: gb-fix, auto, owns labelkit) =="
 "$HERE/configure-claude-agent.sh" fix "$SB"
 
-echo "== 3/4  seed the hermetic kick into gb-sup's inbox (boot-time ms; strip HTML header) =="
-ms=$(( $(date +%s) * 1000 ))
-sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$STR/gb-sup/inbox/${ms}-${sfx}.md"
-echo "   seeded $STR/gb-sup/inbox/${ms}-${sfx}.md"
-
-echo "== 4/4  launch the supervisor last (st launch: gb-sup, bypass, coordinate-only) =="
+echo "== 4/5  launch the supervisor (convoy add: gb-sup, bypass) — creates its inbox + ding sidecar =="
 "$HERE/configure-claude-agent.sh" sup "$SB"
 
+echo "== 5/5  seed the hermetic kick into gb-sup's inbox; the ding sidecar delivers it (boot-time ms) =="
+mkdir -p "$NET/gb-sup/inbox"
+ms=$(( $(date +%s) * 1000 ))
+sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
+sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$NET/gb-sup/inbox/${ms}-${sfx}.md"
+echo "   seeded $NET/gb-sup/inbox/${ms}-${sfx}.md"
+
 echo
-echo "SPUN (Ghost-bug cell, isolated bus at $STR). sessions:"
-pty --root "$PTY_ROOT" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'gb-sup|gb-fix' || pty --root "$PTY_ROOT" ls 2>/dev/null
+echo "SPUN (Ghost-bug cell, isolated convoy net at $NET). members:"
+convoy ls "$NET" 2>/dev/null | grep -E 'gb-sup|gb-fix' || convoy ls "$NET" 2>/dev/null
 echo
-echo "OBSERVE the message thread (ST_ROOT=$STR): kick -> gb-sup delegate -> gb-fix reproduce+root-cause+fix+"
+echo "OBSERVE the thread (ST_ROOT=$NET): kick -> gb-sup delegate -> gb-fix reproduce+root-cause+fix+"
 echo "  regression-test+report -> gb-sup read-only verify (root-cause not band-aid? regression test would-fail-"
 echo "  on-old? suite green?) -> confirm to eval-runner."
-echo "WAKE: Claude auto-wakes via st launch's asyncRewake hook. If an agent idles on a delivered message, poke"
-echo "  by hand (a tracked HB-4 poke): pty send <session> --with-delay 0.4 --seq key:ctrl+u --seq 'read your inbox and proceed' --seq key:return"
+echo "WAKE: agents wake via convoy's ding sidecar. To HOST + supervise + respawn on death: convoy up \"$NET\""
 echo
-echo "TEARDOWN after grading:  bin/st-evals teardown \"$SB\""
+echo "TEARDOWN after grading:  convoy down \"$NET\"   (then rm -rf \"$SB\")"

@@ -94,7 +94,62 @@ stev_ding_on() {
 # UNQUOTED into an `st launch` line — off = empty = a normal MCP-mode launch
 # (byte-identical to before the toggle existed, so MCP-mode never regresses); on
 # = the no-MCP + `st ding` sidecar shape.
+# LEGACY: kept only for reference. The suite launches via REAL convoy now (see stev_convoy_add) — convoy
+# add is DING by default (no MCP), matching the ding-only reality, so this toggle is inverted below.
 stev_ding_flags() { stev_ding_on && printf -- '--ding' || true; }
+
+# --- convoy launch (replaces the removed `st launch`) -----------------------
+# The suite spins agents via REAL convoy. `convoy add` is correct-by-construction: it writes DING-BUS.md +
+# CLAUDE.md, the boot hooks (asyncRewake/PreCompact/StopFailure), pty.toml, installs the composed persona
+# (--persona), starts the pty session AND a `st ding` wake sidecar — all on the ISOLATED network ($ST_ROOT,
+# which spin.sh points at $SB/st-root). DING by default (no MCP), matching the ding-only reality.
+
+# stev_mcp_on : true iff a cell FORCES MCP (EVAL_MCP=1) — the exception, for a cell that genuinely tests MCP
+# (e.g. hook-integrity needs MCP on both legs). Default = ding (no MCP).
+stev_mcp_on() { case "${EVAL_MCP:-}" in 1|true|TRUE|yes|YES|on|ON) return 0 ;; *) return 1 ;; esac; }
+
+# stev_convoy_add <id> <dir> <mode> <persona> : launch ONE eval agent via REAL convoy on the isolated
+# network ($ST_ROOT). Pre-trusts the folder (skip Claude's workspace-trust gate), derives the convoy role
+# from the permission mode (bypassPermissions → supervisor / spawn-capable; else → worker), and `convoy
+# add`s it (ding by default; --mcp iff EVAL_MCP=1). ST_ROOT must be the isolated network (spin.sh exports it).
+stev_convoy_add() {
+  local id="$1" d="$2" mode="$3" persona="$4"
+  local NET="${ST_ROOT:?stev_convoy_add: export ST_ROOT to the isolated convoy network first}"
+  [ -f "$persona" ] || { echo "stev_convoy_add: missing composed persona $persona — compose it first" >&2; return 1; }
+  local conv_role=worker; [ "$mode" = "bypassPermissions" ] && conv_role=supervisor
+  # pre-trust the folder for Claude Code (deterministic; belt-and-suspenders with convoy's unattended launch)
+  python3 - "$d" <<'PY'
+import json,os,sys
+p=os.path.expanduser("~/.claude.json")
+d=json.load(open(p)) if os.path.exists(p) else {}
+e=d.setdefault("projects",{}).setdefault(sys.argv[1],{})
+e["hasTrustDialogAccepted"]=True; e["hasCompletedProjectOnboarding"]=True
+json.dump(d,open(p,"w"),indent=2)
+PY
+  if stev_mcp_on; then
+    convoy add "$conv_role" --identity "$id" --network "$NET" --dir "$d" --persona "$persona" --permission-mode "$mode" --mcp
+  else
+    convoy add "$conv_role" --identity "$id" --network "$NET" --dir "$d" --persona "$persona" --permission-mode "$mode"
+  fi
+  echo "launched $id  (convoy add $conv_role, $(stev_mcp_on && echo MCP || echo 'ding / no MCP'), net=$NET, --permission-mode $mode, persona=$persona)"
+}
+
+# stev_convoy_init <NET> : create a fresh isolated convoy network (idempotent — wipes any prior run's net).
+# Also guards the pty socket-path length (unix sockets cap ~104 bytes; $NET/pty/silber.<id>.ding.sock must fit).
+stev_convoy_init() {
+  local NET="$1"
+  [ "${#NET}" -le 70 ] || { echo "stev_convoy_init: NET path too long for the pty socket limit ($NET) — use a shorter EVAL_SANDBOX" >&2; return 2; }
+  rm -rf "$NET"; convoy init "$NET" >/dev/null
+}
+
+# stev_convoy_teardown <NET> : tear the isolated network down (convoy down is the only path that kills
+# sessions) + remove it. Idempotent.
+stev_convoy_teardown() {
+  local NET="$1"
+  [ -n "$NET" ] || return 0
+  convoy down "$NET" --force >/dev/null 2>&1 || true
+  rm -rf "$NET" 2>/dev/null || true
+}
 
 # --- teardown ---------------------------------------------------------------
 

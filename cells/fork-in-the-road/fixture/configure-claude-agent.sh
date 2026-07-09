@@ -1,20 +1,13 @@
 #!/usr/bin/env bash
-# Launch one Fork-in-the-road Claude eval agent (sup|a|b|c) via the REAL `st launch`. st launch writes
-# .mcp.json (server `st`), .claude/settings.local.json (asyncRewake/PreCompact/StopFailure hooks +
-# enableAllProjectMcpServers + enabledMcpjsonServers:["st"]), session-id, pty.toml, installs the composed
-# persona (--persona), and starts the pty session. We add the eval-only bits: ISOLATION (spin.sh exports
-# ST_ROOT -> st launch bakes/inherits it -> the agent binds the isolated bus) + ZERO-ORPHAN teardown (spin.sh
-# exports the run's decoupled PTY_ROOT, honored verbatim by st launch #69, so every session lands in it and
-# teardown removes the whole root) + isolated st dir + folder pre-trust.
-# Posture (the operator): SUPERVISOR = bypassPermissions; PROPOSERS = auto.
-#   ./configure-claude-agent.sh <sup|a|b|c> [SANDBOX]   # ST_ROOT must be exported (spin.sh does this)
+# Launch one fork in the road Claude eval agent via REAL convoy (ding-default, no MCP — the removed `st launch` is
+# gone). `stev_convoy_add` (lib-harness) does pre-trust + `convoy add` (correct-by-construction:
+# hooks/pty.toml/persona/ding sidecar) on the ISOLATED network ($ST_ROOT, exported by spin.sh).
+# Permission POSTURE (Nathan's rule): SUPERVISOR = bypassPermissions (spawn-capable); WORKER = auto.
+#   ./configure-claude-agent.sh <role> [SANDBOX]   # spin.sh must export ST_ROOT=$NET first
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/../../../bin/lib-harness.sh"
 role="$1"; SB="${2:-${EVAL_SANDBOX:-./.sandbox}/fork-in-the-road}"
-ROOT="${ST_ROOT:?spin.sh must export ST_ROOT to the isolated bus root ($SB/st-root) before launching}"
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # mint the run's decoupled PTY_ROOT (short, per-run); idempotent (standalone-safe)
-
 case "$role" in
   sup) id="fd-sup"; d="$SB/sup"; mode="bypassPermissions" ;;   # coordinate-only, synthesizes RECOMMENDATION.md
   a)   id="fd-a";   d="$SB/a";   mode="auto" ;;
@@ -22,36 +15,5 @@ case "$role" in
   c)   id="fd-c";   d="$SB/c";   mode="auto" ;;
   *) echo "role must be sup|a|b|c" >&2; exit 1 ;;
 esac
-persona="$SB/personas-local/$id.md"
-[ -f "$persona" ] || { echo "missing composed persona $persona — run compose-persona.sh $role first" >&2; exit 1; }
-# stev-retirement: NO collision-proof prefix, NO track_extra. The run's decoupled short PTY_ROOT (exported by
-# spin.sh, honored verbatim by st launch #69) physically isolates every session — the agent AND the `st ding`
-# sidecar — from the operator's global pty daemon, so a plain session name is fine and teardown just kills
-# everything in the run's PTY_ROOT.
 
-# Pre-create the FULL st dir on the ISOLATED bus so the boot ritual doesn't rabbit-hole.
-mkdir -p "$ROOT/$id/inbox" "$ROOT/$id/archive"; printf 'available\n' > "$ROOT/$id/status"
-
-# Pre-trust the folder (deterministic; --unattended also auto-pokes the startup gates).
-python3 - "$d" <<'PY'
-import json,os,sys
-p=os.path.expanduser("~/.claude.json")
-d=json.load(open(p)) if os.path.exists(p) else {}
-e=d.setdefault("projects",{}).setdefault(sys.argv[1],{})
-e["hasTrustDialogAccepted"]=True; e["hasCompletedProjectOnboarding"]=True
-json.dump(d,open(p,"w"),indent=2)
-PY
-
-# Launch via the real st launch. It inherits ST_ROOT from this process (exported by spin.sh)
-# and (post-#52) bakes ST_ROOT into the generated pty.toml env -> the agent binds the ISOLATED bus.
-( cd "$d" && st launch claude $(stev_ding_flags) \
-    --identity "$id" \
-    --session-name run \
-    --permission-mode "$mode" \
-    --persona "$persona" \
-    --unattended )
-
-# (stev-retirement: no per-session teardown registration — every session, incl. the ding sidecar, is in the run's PTY_ROOT and
-#  is torn down by killing that root. The mid-launch-orphan class is gone by construction.)
-
-echo "launched $id  (pty root=${PTY_ROOT:-?}, session=$id-run$(stev_ding_on && echo " + $id-ding sidecar"), --permission-mode $mode, isolated bus=$ROOT, persona=$persona, asyncRewake)"
+stev_convoy_add "$id" "$d" "$mode" "$SB/personas-local/$id.md"

@@ -1,50 +1,41 @@
 #!/usr/bin/env bash
-# Spin the DING-MODE (no-MCP participation) Claude cell via the REAL `st launch claude --ding`: BOTH agents
-# join the network WITHOUT MCP — dm-sup (bypass, coordinate-only) + dm-dev (auto, owns widget), each with an
-# `st ding` sidecar for inbox delivery + the `st` CLI for all bus ops. Run AFTER setup-sandbox.sh (auto-materializes).
-#
-# SELF-ISOLATING: creates + exports an isolated bus root ($SB/st-root); st launch bakes it into every session's
-# env (agent + ding) so nothing touches the operator's live network.
-#
+# Spin the DING-MODE (no-MCP participation) Claude cell via REAL convoy (`convoy add`, ding-default): BOTH
+# agents join WITHOUT MCP — dm-sup (bypass, coordinate-only) + dm-dev (auto, owns widget), each with an
+# `st ding` sidecar + the `st` CLI for all bus ops. Run AFTER setup-sandbox.sh (auto-materializes).
+# SELF-ISOLATING: `convoy init`s an isolated network at $SB/st-root; convoy add lands every session under $NET/pty.
 #   ./spin.sh [SANDBOX]        # sandbox defaults to ${EVAL_SANDBOX:-./.sandbox}/ding-mode
-#   needs: PERSONAS_DIR (bin/ensure-personas.sh provisions it). No external ST_ROOT / ST_HOOKS_DIR needed.
+#   needs: PERSONAS_DIR (bin/ensure-personas.sh provisions it).
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/../../../bin/lib-harness.sh"
 SB="${1:-${EVAL_SANDBOX:-./.sandbox}/ding-mode}"
-STR="$SB/st-root"                                    # SELF-ISOLATED bus root (never the live network)
-export ST_ROOT="$STR"      # st-launched agents + ding sidecars inherit these
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"   # per-run id + decoupled short PTY_ROOT
-export PTY_ROOT="$(stev_pty_root "$SB")"             # stev-retirement: st launch honors this verbatim (#69) -> every session in the run's isolated pty root
-stev_arm_teardown "$SB"                              # trap: teardown on crash/interrupt/early-exit
+NET="$SB/st-root"; export ST_ROOT="$NET"            # SELF-ISOLATED convoy network (never the live one)
 
 [ -d "$SB/widget" ] || { echo "== sandbox absent — materializing =="; "$HERE/setup-sandbox.sh" "$SB"; }
-mkdir -p "$STR/dm-sup/inbox" "$STR/dm-sup/archive"   # so the kick can land before dm-sup launches
 
-echo "== 1/4  compose ding-mode personas (bus contract now auto-installed by --ding as DING-BUS.md, #61) =="
+STEV_NET="$NET"
+trap 'rc=$?; [ "$rc" = 0 ] || { echo "== spin rc=$rc — tearing down the isolated net ==" >&2; stev_convoy_teardown "$STEV_NET"; }' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+echo "== 1/4  convoy init the isolated network ($NET) =="
+stev_convoy_init "$NET"
+echo "== 2/4  compose ding-mode personas (convoy add installs the bus contract as DING-BUS.md) =="
 "$HERE/compose-persona.sh" sup "$SB"
 "$HERE/compose-persona.sh" dev "$SB"
-
-echo "== 2/4  launch the worker first (st launch claude --ding: dm-dev, auto, owns widget, NO MCP) =="
+echo "== 3/4  launch the worker first (convoy add: dm-dev, auto, owns widget), then the supervisor (dm-sup, bypass) =="
 "$HERE/configure-claude-agent.sh" dev "$SB"
-
-echo "== 3/4  seed the hermetic kick into dm-sup's inbox (boot-time ms; strip HTML header) =="
-ms=$(( $(date +%s) * 1000 ))
-sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$STR/dm-sup/inbox/${ms}-${sfx}.md"
-echo "   seeded $STR/dm-sup/inbox/${ms}-${sfx}.md"
-
-echo "== 4/4  launch the supervisor last (st launch claude --ding: dm-sup, bypass, coordinate-only, NO MCP) =="
 "$HERE/configure-claude-agent.sh" sup "$SB"
+echo "== 4/4  seed the hermetic kick into dm-sup's inbox; its ding sidecar delivers it =="
+mkdir -p "$NET/dm-sup/inbox"
+ms=$(( $(date +%s) * 1000 )); sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
+sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$NET/dm-sup/inbox/${ms}-${sfx}.md"
+echo "   seeded $NET/dm-sup/inbox/${ms}-${sfx}.md"
 
 echo
-echo "SPUN (Ding-mode cell, isolated bus at $STR). sessions (agents + ding sidecars):"
-pty --root "$PTY_ROOT" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'dm-sup|dm-dev' || pty --root "$PTY_ROOT" ls 2>/dev/null
-echo
-echo "OBSERVE the bus (ST_ROOT=$STR) — a fully NO-MCP loop: dm-sup boot-drains the kick via the st CLI ->"
-echo "  delegates to dm-dev over the bus -> dm-dev gets a [DING], reads via CLI, implements slugify + commits +"
-echo "  reports -> dm-sup verifies read-only -> confirms to eval-runner. Inbound = [DING] pokes; all ops = st CLI."
-echo "WATCH: the ding sidecars deliver; peek a session: pty --root $PTY_ROOT tail dm-dev-run 2>/dev/null || true"
-echo
+echo "SPUN (Ding-mode cell, isolated convoy net $NET). members:"; convoy ls "$NET" 2>/dev/null | grep -E 'dm-sup|dm-dev' || convoy ls "$NET" 2>/dev/null
+echo "OBSERVE (ST_ROOT=$NET) — a fully NO-MCP loop: dm-sup boot-drains the kick via the st CLI -> delegates to"
+echo "  dm-dev over the bus -> dm-dev gets a [DING], reads via CLI, implements slugify + commits + reports ->"
+echo "  dm-sup verifies read-only -> confirms to eval-runner. Inbound = [DING] pokes; all ops = st CLI."
 echo "GRADE after the loop settles:  $HERE/grade.sh \"$SB\""
-echo "TEARDOWN after grading:        bin/st-evals teardown \"$SB\"   (zero-orphan incl. the ding sidecars)"
+echo "TEARDOWN after grading:        convoy down \"$NET\"   (then rm -rf \"$SB\")"

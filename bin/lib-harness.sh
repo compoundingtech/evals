@@ -133,10 +133,13 @@ e["hasTrustDialogAccepted"]=True; e["hasCompletedProjectOnboarding"]=True
 json.dump(d,open(p,"w"),indent=2)
 PY
   # SPACE form only — never `--harness=$harness` (convoy silently ignores the equals form → falls back to claude).
+  # NOTE: convoy derives the permission posture from the ROLE (worker/supervisor) and always launches the
+  # session bypassPermissions; it does NOT take --permission-mode (convoy #30/#31 rejects it loudly). $mode is
+  # kept only to pick conv_role above.
   if stev_mcp_on; then
-    convoy add "$conv_role" --identity "$id" --network "$NET" --dir "$d" --persona "$persona" --permission-mode "$mode" --harness "$harness" --mcp
+    convoy add "$conv_role" --identity "$id" --network "$NET" --dir "$d" --persona "$persona" --harness "$harness" --mcp
   else
-    convoy add "$conv_role" --identity "$id" --network "$NET" --dir "$d" --persona "$persona" --permission-mode "$mode" --harness "$harness"
+    convoy add "$conv_role" --identity "$id" --network "$NET" --dir "$d" --persona "$persona" --harness "$harness"
   fi
   echo "launched $id  (convoy add $conv_role/$harness, $(stev_mcp_on && echo MCP || echo 'ding / no MCP'), net=$NET, --permission-mode $mode, persona=$persona)"
 }

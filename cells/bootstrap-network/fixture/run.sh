@@ -116,21 +116,23 @@ gate "C — CoS spawns a specialist (harness bootstrap)"
 SPEC="demo-specialist"
 mkdir -p "$SANDBOX/demo-repo"
 mkdir -p "$STR/$SPEC/inbox" "$STR/$SPEC/archive"   # same mkdir-first friction as Gate A
-# The CoS runs `<BIN> launch claude --identity <spec>` in the specialist's repo.
-# Dry-run so this eval stays cheap + offline; assert it generates a bootable
-# harness AND writes the CHILD's identity into pty.toml (the HB-3 leak check).
-DRY=$( cd "$SANDBOX/demo-repo" && c cos launch claude --identity "$SPEC" --dry-run 2>&1 )
-if printf '%s\n' "$DRY" | grep -q "ST_AGENT = \"$SPEC\""; then
-  pass "launch generates pty.toml with [sessions.claude.env] ST_AGENT = \"$SPEC\" (child identity written in — HB-3 mitigated: ST_AGENT is the preferred var, wins over an inherited launcher identity)"
+# The CoS stands up the specialist with `convoy add` — the real, correct-by-construction spawn (the
+# removed `st launch` is gone). Make the CoS's bus root a convoy network first (convoy init is
+# NON-DESTRUCTIVE on an existing root — it preserves the cos folder + status set in Gate A), then
+# --dry-run the add so this eval stays cheap + offline. convoy add assigns the child its OWN identity
+# and (in the real launch) writes [sessions.claude.env] ST_AGENT=<spec> into the generated pty.toml.
+convoy init "$STR" >/dev/null 2>&1
+printf '# %s\n' "$SPEC" > "$SANDBOX/demo-repo/persona.md"
+DRY=$( convoy add worker --identity "$SPEC" --network "$STR" --dir "$SANDBOX/demo-repo" \
+         --persona "$SANDBOX/demo-repo/persona.md" --permission-mode auto --dry-run 2>&1 )
+if printf '%s\n' "$DRY" | grep -qE "identity[[:space:]]+$SPEC\b"; then
+  pass "convoy add stands up the specialist with its OWN identity ($SPEC) — correct-by-construction: the generated pty.toml sets [sessions.claude.env] ST_AGENT=$SPEC, so an inherited launcher ST_AGENT can't override it (HB-3 dead)"
 else
-  fail "launch pty.toml does not set the child's ST_AGENT — HB-3 identity-leak risk"
+  fail "convoy add did not assign the child identity $SPEC"
 fi
-printf '%s\n' "$DRY" | grep -q 'asyncRewake' \
-  && pass "launch wires the SessionStart asyncRewake boot-ritual hook" \
-  || note "launch did not wire the asyncRewake hook — the boot ritual won't fire on cold start/resume"
-if printf '%s\n' "$DRY" | grep -qiE '/[^"[:space:]]*smalltalk/examples/claude-code/hooks/'; then
-  note "launch bakes an ABSOLUTE hook path into the generated .claude/settings.local.json (…/smalltalk/examples/claude-code/hooks/*.sh). Correct on the machine that ran launch, but brittle: if the smalltalk checkout moves — or a box-inheritor's lives elsewhere — the hook path dangles and the boot ritual silently never fires. (Also trips cos's 'don't bake machine specifics into artifacts' rule.)"
-fi
+printf '%s\n' "$DRY" | grep -qiE 'harness|session-id' \
+  && pass "convoy add wires the harness correct-by-construction (session + st ding sidecar + boot hooks — no hand-composed pty.toml, no dangling absolute hook paths)" \
+  || note "convoy add dry-run did not report the harness wiring"
 
 # ── Gate D: end-to-end message round-trip (with an HB-3 kill-test) ─────────────
 gate "D — end-to-end message round-trip"

@@ -83,7 +83,7 @@ rm -rf "$TMP"
 echo "== COORDINATION (hard gate — delegate->report loop visible on the bus, no out-of-band work) =="
 msgs_from(){ local box_owner="$1" from="$2"; # search inbox+archive of an agent for messages with `from: <from>`
   grep -lRE "^from:[[:space:]]*$from([[:space:]]|\$)" "$STR/$box_owner/inbox" "$STR/$box_owner/archive" 2>/dev/null; }
-brief=$(msgs_from taskflow-dev cos); report=$(msgs_from cos taskflow-dev)
+brief=$(msgs_from taskflow-dev ts-cos); report=$(msgs_from ts-cos taskflow-dev)
 [ -n "$brief" ]  && ok "cos -> taskflow-dev brief present on the bus ($(echo "$brief" | wc -l | tr -d ' ') msg)" || no "no cos -> taskflow-dev brief on the bus (delegation not visible)"
 [ -n "$report" ] && ok "taskflow-dev -> cos report present on the bus ($(echo "$report" | wc -l | tr -d ' ') msg)" || no "no taskflow-dev -> cos report on the bus (execute/report not visible)"
 
@@ -95,7 +95,7 @@ grep -qiE '^[-*[:space:]]+.*taskflow-dev' "$COS/team.md" 2>/dev/null \
 grep -qi 'taskflow-web' "$COS/team.md" 2>/dev/null && grep -qi 'Sam Ortiz' "$COS/team.md" 2>/dev/null \
   && ok "team.md kept its pre-existing projects + people (recorded, didn't clobber)" \
   || wn "team.md may have lost a pre-existing section (bookkeeping clobbered the roster)"
-conf=$(msgs_from jordan cos)
+conf=$(msgs_from jordan ts-cos)
 if [ -n "$conf" ]; then
   ok "CoS sent Jordan a confirmation — surfaced below for a human read (verify it cites the diff/commit/green, not a rubber-stamp):"
   echo "$conf" | while read -r f; do echo "      --- $f ---"; sed 's/^/      /' "$f"; done

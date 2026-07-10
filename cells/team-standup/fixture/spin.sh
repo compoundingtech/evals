@@ -1,100 +1,44 @@
 #!/usr/bin/env bash
-# Spin TEAM-STANDUP P5 — the LIVE proof (CoS delegates -> specialist executes -> CoS walks) via the REAL
-# `st launch`. The SPINNER st-launches the CoS (the same command that onboards a chief-of-staff —
-# onboarding.md documents it), so the eval dogfoods the whole launch surface. The CoS then stands up
-# taskflow-dev ITSELF via `st launch` during the run (that IS the P5 test — untouched).
-# SELF-ISOLATING: creates + exports an isolated bus root ($SB/st-root) so nothing touches the live network;
-# the st-launched CoS (and the worker it stands up) inherit ST_ROOT from this process.
-# Composes personas, pre-stages the worker's Claude harness startup-gates (so the CoS's stood-up specialist
-# doesn't stall — the CoS's own `st launch` still installs the persona + boots it), seeds the hermetic
-# kick, and launches the CoS LAST (after the kick lands).
-#
-#   ./spin.sh [SANDBOX]
-#   needs: PERSONAS_DIR (bin/ensure-personas.sh provisions it) + ST_HOOKS_DIR (the worker gate pre-stage the
-#          CoS's stood-up specialist relies on). No external ST_ROOT — spin owns the isolated root.
+# Spin TEAM-STANDUP P5 — the LIVE proof (CoS delegates -> specialist executes -> CoS walks) via REAL convoy
+# (`convoy add`, ding-default). The spinner convoy-adds the CoS (the same command that onboards a chief-of-
+# staff); the CoS then stands up taskflow-dev ITSELF via `convoy add` during the run (that IS the P5 test).
+# SELF-ISOLATING: `convoy init`s an isolated network at $SB/st-root; the CoS's `convoy add` inherits its
+# ST_ROOT (=$NET) so the stood-up specialist lands on the SAME isolated net. convoy add wires the specialist's
+# pre-trust + hooks + ding sidecar itself, so no manual harness pre-staging is needed.
+#   ./spin.sh [SANDBOX]        # needs PERSONAS_DIR (bin/ensure-personas.sh provisions it)
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/../../../bin/lib-harness.sh"
 SB="${1:-${EVAL_SANDBOX:-./.sandbox}/team-standup}"
-STR="$SB/st-root"
+NET="$SB/st-root"; export ST_ROOT="$NET"
 W="$SB/taskflow"
-export ST_ROOT="$STR"      # st-launched CoS (+ its stood-up worker) -> isolated bus
-HOOKS="${ST_HOOKS_DIR:?set ST_HOOKS_DIR to <smalltalk>/examples/claude-code/hooks (worker gate pre-stage)}"
-# stev-retirement: per-run decoupled short PTY_ROOT (shared harness). Exported BEFORE the CoS launches, so the
-# CoS's pty session — AND the worker the CoS stands up via its OWN `st launch` (which inherits PTY_ROOT from the
-# CoS process) — both land in the run's PTY_ROOT. Teardown kills that whole root, so no per-session tracking.
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"; export PTY_ROOT="$(stev_pty_root "$SB")"; stev_arm_teardown "$SB"
-COS_SESSION="cos-run"   # st launch: <identity>-<session-name>
 
 [ -d "$W" ] || { echo "== sandbox absent — materializing =="; "$HERE/setup-sandbox.sh" "$SB"; }
-mkdir -p "$STR/cos/inbox" "$STR/cos/archive"         # so the kick can land before the CoS launches
 
-echo "== 1/5  compose CoS + specialist personas (standalone files for st launch --persona) =="
+STEV_NET="$NET"
+trap 'rc=$?; [ "$rc" = 0 ] || { echo "== spin rc=$rc — tearing down the isolated net ==" >&2; stev_convoy_teardown "$STEV_NET"; }' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+echo "== 1/4  convoy init the isolated network ($NET) =="
+stev_convoy_init "$NET"
+echo "== 2/4  compose CoS + specialist personas (standalone files for --persona) =="
 "$HERE/compose-persona.sh" cos "$SB"
 "$HERE/compose-persona.sh" taskflow-dev "$SB"
-
-echo "== 2/5  pre-stage the worker's Claude harness startup-gates =="
-# FRICTION (recorded): when the CoS stands up the specialist via `st launch`, st launch writes the child's
-# pty.toml + .mcp.json + persona + boot hooks, but historically did NOT pre-trust the child's folder — so a
-# freshly stood-up specialist could hit the folder-trust + MCP-enable startup gates and stall until a pty
-# poke. We pre-stage exactly those gates here (the same harness infra every cell stages); the CoS's live
-# `st launch` still installs the persona, generates pty.toml (ST_AGENT=taskflow-dev), and boots the worker
-# — the graded acts (spawn, brief, walk) are untouched. (Candidate to trim during the E2E ×2 live run once
-# `st launch --unattended` hands-off standup is confirmed end-to-end — flagged to cos.)
-python3 - "$W" <<'PY'
-import json,os,sys
-p=os.path.expanduser("~/.claude.json"); d=json.load(open(p)) if os.path.exists(p) else {}
-e=d.setdefault("projects",{}).setdefault(sys.argv[1],{})
-e["hasTrustDialogAccepted"]=True; e["hasCompletedProjectOnboarding"]=True
-json.dump(d,open(p,"w"),indent=2)
-PY
-mkdir -p "$W/.claude"
-# MODE-AWARE (ding toggle): the MCP-enable keys are staged ONLY in MCP-mode. In ding-mode the whole tree must
-# be no-MCP — the CoS stands up the worker with --ding (per its bus contract) so st launch writes no .mcp.json,
-# and staging enableAllProjectMcpServers here would be a latent MCP-affordance (a silent false-negative on the
-# no-MCP grade). So under --ding we stage hooks + trust only, no MCP-enable.
-if stev_ding_on; then MCP_ENABLE=""; MODE_NOTE="ding: hooks only, NO MCP-enable"; else
-  MCP_ENABLE='  "enabledMcpjsonServers": ["st"],
-  "enableAllProjectMcpServers": true,'
-  MODE_NOTE="MCP-enable"
-fi
-cat > "$W/.claude/settings.local.json" <<JSON
-{
-  "\$schema": "https://json.schemastore.org/claude-code-settings.json",
-$MCP_ENABLE
-  "hooks": {
-    "SessionStart": [{ "hooks": [{ "type": "command", "command": "$HOOKS/session-start.sh", "async": true, "asyncRewake": true }] }],
-    "StopFailure": [{ "hooks": [{ "type": "command", "command": "$HOOKS/stop-failure.sh" }] }]
-  }
-}
-JSON
-echo "   pre-trusted $W + staged .claude/settings.local.json (asyncRewake + $MODE_NOTE)"
-
-echo "== 3/5  pre-create jordan on the sandbox bus (the CoS confirms back to them) =="
-mkdir -p "$STR/jordan/inbox" "$STR/jordan/archive"; printf 'available\n' > "$STR/jordan/status"
-
-echo "== 4/5  seed the delegated task into the CoS inbox (boot-time ms; strip HTML header) =="
-ms=$(( $(date +%s) * 1000 ))
-sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$STR/cos/inbox/${ms}-${sfx}.md"
-echo "   seeded $STR/cos/inbox/${ms}-${sfx}.md"
-
-echo "== 5/5  launch the CoS via st launch (bypass, spawn-capable) — LAST, after the kick landed =="
+echo "== 3/4  pre-create jordan on the isolated bus (the CoS confirms back to them) =="
+mkdir -p "$NET/jordan/inbox" "$NET/jordan/archive"; printf 'available\n' > "$NET/jordan/status"
+echo "== 4/4  launch the CoS (convoy add: ts-cos, bypass, spawn-capable) — creates its inbox + ding sidecar =="
 "$HERE/configure-claude-agent.sh" "$SB"
+echo "   seed the delegated task into ts-cos's inbox; its ding sidecar delivers it =="
+mkdir -p "$NET/ts-cos/inbox"
+ms=$(( $(date +%s) * 1000 )); sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
+sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$NET/ts-cos/inbox/${ms}-${sfx}.md"
+echo "   seeded $NET/ts-cos/inbox/${ms}-${sfx}.md"
 
 echo
-echo "SPUN (TEAM-STANDUP P5, isolated bus at $STR). sessions:"
-pty --root "$PTY_ROOT" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E 'cos|taskflow' || pty --root "$PTY_ROOT" ls 2>/dev/null || true
-echo
-echo "OBSERVE the loop (isolated bus at $STR; CoS pty session = $COS_SESSION):"
-echo "  cos boots -> reads Jordan's task -> \`st launch\` taskflow-dev -> records it in team.md"
-echo "   -> briefs taskflow-dev over the bus -> taskflow-dev adds completeTask + test, commits, reports"
-echo "   -> cos WALKS read-only (behaves? test real? green? lane held?) -> records done -> confirms to jordan"
-echo
-echo "WAKE: Claude auto-wakes via st launch's asyncRewake hook (wired for both). If either idles on a"
-echo "  delivered message, poke by hand (a tracked HB-4 poke). The CoS session is $COS_SESSION; the"
-echo "  stood-up specialist's session is named by st launch from its identity (taskflow-dev):"
-echo "    pty send $COS_SESSION --with-delay 0.4 --seq key:ctrl+u --seq 'read your inbox and proceed' --seq key:return"
-echo
+echo "SPUN (TEAM-STANDUP P5, isolated convoy net $NET). members:"; convoy ls "$NET" 2>/dev/null | grep -E 'cos|taskflow' || convoy ls "$NET" 2>/dev/null
+echo "OBSERVE (ST_ROOT=$NET): ts-cos boots -> reads Jordan's task -> \`convoy add\` taskflow-dev -> records it in team.md"
+echo "  -> briefs taskflow-dev over the bus -> taskflow-dev adds completeTask + test, commits, reports"
+echo "  -> cos WALKS read-only (behaves? test real? green? lane held?) -> records done -> confirms to jordan."
 echo "GRADE when the loop closes:  fixture/grade.sh \"$SB\""
-echo "TEARDOWN after grading:  bin/st-evals teardown \"$SB\""
+echo "TEARDOWN after grading:      convoy down \"$NET\"   (then rm -rf \"$SB\")"

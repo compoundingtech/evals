@@ -30,9 +30,7 @@ SB="${1:-${EVAL_SANDBOX:-./.sandbox}/restart-continuity}"
 L="$SB/ledger"
 # Self-isolate to the run's bus root so the cold relaunch binds the ISOLATED bus (never the live network),
 # whether we were backgrounded by spin (env already set) or launched standalone.
-export ST_ROOT="${ST_ROOT:-$SB/st-root}"
-stev_init "$(basename "$(dirname "$HERE")")" "$SB"
-export PTY_ROOT="$(stev_pty_root "$SB")"   # stev-retirement: the cold relaunch (configure-claude-agent.sh) + its killed/new session land in the run's PTY_ROOT
+export ST_ROOT="${ST_ROOT:-$SB/st-root}"   # the isolated convoy net; the cold relaunch (pty restart of rc-dev's agent session) binds it
 
 TRIGGER_AT="${TRIGGER_AT:-2}"
 POLL_SECS="${POLL_SECS:-3}"

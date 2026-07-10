@@ -25,7 +25,7 @@ PERSONA_PATH="$SB/personas-local/taskflow-dev.md"
 PZ="${PERSONAS_DIR:?set PERSONAS_DIR to a checkout of github.com/compoundingtech/personas (bin/ensure-personas.sh clones it pinned)}"
 
 case "$role" in
-  cos)          id="cos";          dir="$SB/cos";           rolefile="$PZ/chief-of-staff.md" ;;
+  cos)          id="ts-cos";       dir="$SB/cos";           rolefile="$PZ/chief-of-staff.md" ;;
   taskflow-dev) id="taskflow-dev"; dir="$SB/personas-local"; rolefile="$PZ/specialist.md" ;;
   *) echo "role must be cos|taskflow-dev" >&2; exit 1 ;;
 esac
@@ -36,7 +36,7 @@ if [ "$role" = "cos" ]; then
 cat > "$out" <<LANE
 # cos — interviewed Chief of Staff (TEAM-STANDUP · P5 live proof)
 
-You are \`cos\` on smalltalk — the interviewed chief-of-staff for your principal **Jordan**.
+You are \`ts-cos\` on smalltalk — the interviewed chief-of-staff for your principal **Jordan**.
 Your roster lives in \`team.md\` (in this directory); Jordan's projects include the \`taskflow\` backend.
 
 **A task from Jordan is already in your inbox** — a small, concrete, in-scope, reversible piece of work on
@@ -50,11 +50,12 @@ work to them over the bus, and walk their result** — you do NOT write the code
   specialist's work after they report (\`git -C $WORKER_REPO log/show/diff\`, read source, run \`npm test\`).
 - **All coordination flows over the bus** — your smalltalk messaging tools, or the \`st\` CLI, whichever your
   bus contract gives you. No out-of-band work.
-- **Stand up the specialist (lazily, on this first work for taskflow).** From \`$WORKER_REPO\`, use \`st launch\`
-  to stand up a Claude specialist: identity \`taskflow-dev\`, permission-mode \`auto\`, \`--unattended\`, and its
-  persona at \`$PERSONA_PATH\`. **Wire it onto the bus the way your own bus contract tells you to** — that is how
-  your specialist lands on the SAME bus you are on, whatever bus mode you are running (do not assume a mode; follow
-  your contract). Confirm it comes online (\`st agents\` lists it), then **record it under
+- **Stand up the specialist (lazily, on this first work for taskflow).** Use \`convoy add\` — the way your
+  DING-BUS contract says to stand up a child agent — to bring up a Claude specialist on YOUR network:
+  \`convoy add worker --identity taskflow-dev --network "$ST_ROOT" --dir "$WORKER_REPO" --persona "$PERSONA_PATH" --permission-mode auto\`
+  (pass \`--network "$ST_ROOT"\` — your isolated net — so the specialist AND its ding sidecar stay on your bus).
+  It lands on the SAME isolated bus you are on (convoy targets your \`$ST_ROOT\`) and convoy writes its bus
+  contract + boots it — you do NOT hand-wire pty/hooks. Confirm it comes online (\`st agents\` lists it), then **record it under
   \`## agents\` in your \`team.md\`** (append — do not clobber the projects/people already there).
 - **Delegate a clear, self-contained brief to \`taskflow-dev\` over the bus.** Relay Jordan's task: it owns
   \`taskflow\` at \`$WORKER_REPO\`; implement \`completeTask(id)\` per Jordan's spec — mark the task done and

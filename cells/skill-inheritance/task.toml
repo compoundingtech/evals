@@ -1,0 +1,58 @@
+# skill-inheritance — a convoy worker inherits user-brought Claude Code skills (project + plugin union).
+id    = "skill-inheritance"
+title = "A convoy-launched worker inherits and USES skills the user brought — across project + plugin scopes, as a union"
+tier  = 1
+axes  = ["isolation", "task-success", "autonomy", "coordination"]
+
+evaluates = """
+Whether a worker stood up by REAL convoy (`convoy add`) inherits the same Claude Code skill-loading a normal
+claude session gets — i.e. the skills a user brings actually LOAD and are USABLE inside a convoy worker, as a
+UNION across scopes. Proven on real state for the two scopes that live OUTSIDE the config dir (so no auth and
+no personal-skill pollution is needed):
+  • PROJECT scope — <repo>/.claude/skills/evalskill-project, auto-loaded because convoy launches the worker
+    with --dir <repo>. No injection.
+  • PLUGIN scope  — a standalone local plugin (evalpkg) loaded via `claude --plugin-dir`, injected into the
+    worker's launch command (convoy add doesn't pass claude flags through, so the fixture edits convoy's
+    pty.toml + the live session JSON and cold-restarts). Plugin skills are namespaced (evalpkg:evalskill-plugin).
+Both firing = the worker sees skills from BOTH scopes at once (union; different names coexist).
+"""
+
+[setup]
+worker_repo = "${EVAL_SANDBOX:-./.sandbox}/skill-inheritance/repo (si-agent; carries the project-scope skill under .claude/skills)"
+plugin      = "${EVAL_SANDBOX:-./.sandbox}/skill-inheritance/plugin/evalpkg (local plugin, loaded via --plugin-dir; path never revealed to the worker)"
+secret      = "each skill's per-run token lives ONLY in its SKILL.md body — never in the kick — so a sentinel bearing the right token proves that skill actually loaded + fired (it was unobtainable otherwise; the plugin token especially, since its path is hidden)."
+
+[grader]
+mechanical = """
+fixture/grade.sh — REAL STATE only. Hard gates: PROJECT scope inherited (repo/SKILL_PROJECT.txt == the
+project skill's secret token); PLUGIN scope inherited / UNION (repo/SKILL_PLUGIN.txt == the plugin skill's
+secret token); ISOLATION (no si-agent session in the global/prod pty|convoy root; NO evalskill-* under
+~/.claude/skills; no evalpkg cached under ~/.claude/plugins). Soft: negative control (no sentinel for a
+non-existent skill) + transcript corroboration that the Skill tool fired.
+"""
+hermetic = "isolated convoy net at $SB/st-root; per-run secret tokens; the sentinel files ARE the ground truth. Worker runs with its DEFAULT config dir (auths via the keychain like any prod worker) — the test never touches ~/.claude/skills."
+
+[deferred]
+# What this cell deliberately does NOT prove yet, and why — so the scope is honest.
+personal_scope = """
+PERSONAL scope (~/.claude/skills) inheritance is DEFERRED. That skills dir is inseparable from the Claude
+config dir, and proving it in isolation would require relocating CLAUDE_CONFIG_DIR to a throwaway — but a
+relocated config dir cannot authenticate (the OAuth token is keychain-locked, not in config files), so the
+worker never runs. Proving it would require handling the principal's raw bearer token, which we will not do
+for a test. NOTE: a convoy worker with its DEFAULT config dir DOES see ~/.claude/skills normally — this cell
+just doesn't prove that leg in isolation without polluting the principal's real personal skills.
+"""
+override = """
+Same-name PRECEDENCE override is DEFERRED with the personal leg. Finding: plugin skills are NAMESPACED
+(evalpkg:evalskill-plugin) and are EXCLUDED from the precedence chain, so project-vs-plugin can never
+override — they coexist. The real same-name order is Enterprise > Personal > Project > Bundled; the only
+meaningful, buildable override (Personal > Project) needs personal scope, which is auth-gated as above.
+"""
+future_unblock = """
+A DEDICATED TEST api key (ANTHROPIC_API_KEY) can auth a throwaway CLAUDE_CONFIG_DIR WITHOUT the keychain;
+drop the synthetic skill under $THROWAWAY/skills and the personal-scope + Personal>Project override legs
+become testable with zero credential handling.
+"""
+
+[reuse]
+note = "Reusable by convoy doctor as a sharp check: 'a convoy worker inherits the user's brought skills (project + plugin), not a stripped-down session.' Own evals cell; doctor consumes it, does not fold it into another check."

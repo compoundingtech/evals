@@ -109,7 +109,8 @@ stev_ding_flags() { stev_ding_on && printf -- '--ding' || true; }
 stev_mcp_on() { case "${EVAL_MCP:-}" in 1|true|TRUE|yes|YES|on|ON) return 0 ;; *) return 1 ;; esac; }
 
 # stev_convoy_add <id> <dir> <mode> <persona> [harness] : launch ONE eval agent via REAL convoy on the
-# isolated network ($ST_ROOT). Pre-trusts the folder (skip Claude's workspace-trust gate), derives the
+# isolated network ($ST_ROOT). Does NOT pre-trust the folder — convoy-core batch-pre-trusts every member's
+# --dir before any boot (the CENTRAL fix for the multi-spawn workspace-trust race; see the body). Derives the
 # convoy role from the permission mode (bypassPermissions → supervisor / spawn-capable; else → worker),
 # and `convoy add`s it (ding by default; --mcp iff EVAL_MCP=1). ST_ROOT must be the isolated network
 # (spin.sh exports it). `harness` (default claude; codex for the full-Codex cells) is emitted in the
@@ -123,15 +124,13 @@ stev_convoy_add() {
   local NET="${ST_ROOT:?stev_convoy_add: export ST_ROOT to the isolated convoy network first}"
   [ -f "$persona" ] || { echo "stev_convoy_add: missing composed persona $persona — compose it first" >&2; return 1; }
   local conv_role=worker; [ "$mode" = "bypassPermissions" ] && conv_role=supervisor
-  # pre-trust the folder for Claude Code (deterministic; belt-and-suspenders with convoy's unattended launch)
-  python3 - "$d" <<'PY'
-import json,os,sys
-p=os.path.expanduser("~/.claude.json")
-d=json.load(open(p)) if os.path.exists(p) else {}
-e=d.setdefault("projects",{}).setdefault(sys.argv[1],{})
-e["hasTrustDialogAccepted"]=True; e["hasCompletedProjectOnboarding"]=True
-json.dump(d,open(p,"w"),indent=2)
-PY
+  # NO per-add workspace-trust write here (deliberate — the CENTRAL fix for the multi-spawn trust race).
+  # convoy-core batch-pre-trusts every member's --dir BEFORE any session boots — covering bare `convoy add` —
+  # so the harness must NOT also pre-trust: a per-add write lost-updates against sibling boots and RE-OPENS the
+  # race (the clobbered agent silently stalls on the workspace-trust dialog and the grade flakes). If a cell
+  # flakes on the trust dialog after the convoy-core fix, that's a convoy-core pre-trust GAP to FIX, not to
+  # paper over here (integrity over convenience). Removed the old inline per-add pre-trust; see the
+  # pretrust-multispawn-race sweep.
   # SPACE form only — never `--harness=$harness` (convoy silently ignores the equals form → falls back to claude).
   # NOTE: convoy derives the permission posture from the ROLE (worker/supervisor) and always launches the
   # session bypassPermissions; it does NOT take --permission-mode (convoy #30/#31 rejects it loudly). $mode is

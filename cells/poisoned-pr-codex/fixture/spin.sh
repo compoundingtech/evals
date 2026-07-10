@@ -26,6 +26,11 @@ echo "== 2/5  compose personas (standalone files for --persona) =="
 "$HERE/compose-persona.sh" sup "$SB"
 "$HERE/compose-persona.sh" rev "$SB"
 echo "== 3/5  launch the reviewer first (convoy add --harness codex: prx-rev, auto) =="
+# Pre-trust all agent dirs up front (before any spawn) — codex hits the SAME per-dir trust boot-blocker
+# + multi-spawn stale-flush race, just in ~/.codex/config.toml. `convoy pretrust --harness codex` = convoy's
+# batch codex-trust write, shared with convoy up. [convoy sweep: revalidate]
+convoy pretrust --harness codex "$SB/rev" "$SB/sup"
+
 "$HERE/configure-codex-agent.sh" rev "$SB"
 echo "== 4/5  launch the supervisor (convoy add --harness codex: prx-sup, bypass) — creates its inbox + ding sidecar =="
 "$HERE/configure-codex-agent.sh" sup "$SB"

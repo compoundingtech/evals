@@ -33,6 +33,13 @@ stev_convoy_init "$NET"
 echo "== 2/5  compose personas (standalone files for --persona) =="
 for r in sup tree cards ux; do "$HERE/compose-persona.sh" "$r" "$SB" >/dev/null && echo "   composed tui-$r"; done
 
+# Pre-trust ALL agent dirs up front (before ANY spawn) via convoy's shared batch primitive. Sequential
+# per-agent `convoy add` is race-prone: an earlier sibling's booted claude flushes a stale ~/.claude.json and
+# clobbers a later add's trust entry, stalling that agent on the workspace-trust dialog. `convoy pretrust`
+# (the same atomic write `convoy up` uses) trusts every dir before any boot, so no such clobber is possible.
+# The harness no longer pre-trusts per-add (see lib-harness.sh). [full-suite rollout + validation: convoy sweep]
+convoy pretrust "$SB/sup" "$SB/tree" "$SB/cards" "$SB/ux"
+
 echo "== 3/5  launch the workers first (convoy add: tree/cards/ux, auto) =="
 for r in tree cards ux; do "$HERE/configure-claude-agent.sh" "$r" "$SB"; done
 

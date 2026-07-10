@@ -24,6 +24,11 @@ echo "== 2/5  compose personas (standalone files for --persona) =="
 "$HERE/compose-persona.sh" sup "$SB"
 "$HERE/compose-persona.sh" dev "$SB"
 echo "== 3/5  launch the worker first (convoy add: rc-dev, auto, owns ledger), then the supervisor (rc-sup, bypass) =="
+# Pre-trust all agent dirs up front (before any spawn) so no earlier sibling's booted claude can stale-flush
+# ~/.claude.json and clobber a later add's trust entry (workspace-trust stall). convoy pretrust = convoy's
+# batch write, shared with convoy up; the harness no longer pre-trusts per-add (see lib-harness.sh). [convoy sweep: revalidate]
+convoy pretrust "$SB/ledger" "$SB/sup"
+
 "$HERE/configure-claude-agent.sh" dev "$SB"
 "$HERE/configure-claude-agent.sh" sup "$SB"
 echo "== 4/5  seed the hermetic kick into rc-sup's inbox; its ding sidecar delivers it =="

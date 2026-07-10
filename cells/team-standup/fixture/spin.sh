@@ -27,6 +27,12 @@ echo "== 2/4  compose CoS + specialist personas (standalone files for --persona)
 "$HERE/compose-persona.sh" taskflow-dev "$SB"
 echo "== 3/4  pre-create jordan on the isolated bus (the CoS confirms back to them) =="
 mkdir -p "$NET/jordan/inbox" "$NET/jordan/archive"; printf 'available\n' > "$NET/jordan/status"
+# Pre-trust the CoS dir AND the specialist's KNOWN dir up front (before any boot) via convoy's shared batch
+# primitive, so when the CoS does its runtime `convoy add taskflow-dev` the dir is already trusted — no
+# workspace-trust stall (which an earlier sibling's stale ~/.claude.json flush would otherwise cause). The
+# harness no longer pre-trusts per-add (see lib-harness.sh). [full-suite rollout + validation: convoy sweep]
+convoy pretrust "$SB/cos" "$SB/taskflow"
+
 echo "== 4/4  launch the CoS (convoy add: ts-cos, bypass, spawn-capable) — creates its inbox + ding sidecar =="
 "$HERE/configure-claude-agent.sh" "$SB"
 echo "   seed the delegated task into ts-cos's inbox; its ding sidecar delivers it =="

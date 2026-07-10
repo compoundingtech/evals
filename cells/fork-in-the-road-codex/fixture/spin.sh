@@ -30,6 +30,11 @@ echo "== 2/4  compose AGENTS.md personas (standalone files for --persona) =="
 for r in $ROLES; do "$HERE/compose-persona.sh" "$r" "$SB"; done
 
 echo "== 3/4  launch proposers first, supervisor last (convoy add --harness codex; sets each agent's ding sidecar) =="
+# Pre-trust all agent dirs up front (before any spawn) — codex hits the SAME per-dir trust boot-blocker
+# + multi-spawn stale-flush race, just in ~/.codex/config.toml. `convoy pretrust --harness codex` = convoy's
+# batch codex-trust write, shared with convoy up. [convoy sweep: revalidate]
+convoy pretrust --harness codex "$SB/a" "$SB/b" "$SB/c" "$SB/sup"
+
 for r in $PROPOSERS "sup"; do "$HERE/configure-codex-agent.sh" "$r" "$SB"; done
 
 echo "== 4/4  seed the hermetic design kick into fdx-sup's inbox; its ding sidecar delivers it =="

@@ -51,7 +51,7 @@ done
 
 echo "== POSITIVE — a real-harness VANISHED crash AND a nonzero/crash EXIT both ding cos AND the supervisor =="
 positive cd-wk  "VANISHED (real $H worker, daemon death)"
-positive cd-oom "CRASH-EXIT (nonzero exit 137 — the OOM/crash exit-code gate)"
+positive cd-oom "CRASH-EXIT (synthetic worker, nonzero exit 137 — proves the exitCode!=0 gate branch; a real Case-A OOM lands here too via pty #72)"
 
 echo "== NEGATIVE control (hard — a DETECTED clean worker exit (code 0) must be SILENT) =="
 # cd-clean must have been a worker convoy up actually WATCHES — a non-permanent convoy agent (ptyfile.session

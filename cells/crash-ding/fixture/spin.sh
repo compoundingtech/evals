@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
-# Spin the crash-ding WORKER scenario for ONE harness (codex|claude). convoy up (feat/worker-oom-ding, PR #40)
-# dings on a NON-PERMANENT worker whose session dies "hard": workerCrashed() = status "vanished" || (status
-# exited && exitCode != 0) — so a nonzero OR null exit (an OOM/crash) dings, a clean exit 0 stays SILENT. This
-# cell proves all three gate outcomes, with a REAL harness worker for the harness-agnostic crash + deterministic
-# synthetic workers for the exit-code gate (a real agent can't be scripted to exit(N), and its child-SIGKILL is
-# flaky on this pty — records exit 0 or null; see the report to convoy-claude):
+# Spin the crash-ding WORKER scenario for ONE harness (codex|claude). convoy up dings on a NON-PERMANENT worker
+# whose session dies "hard": workerCrashed() = status "vanished" || (status exited && exitCode != 0) — a vanished
+# session OR a nonzero exit dings, a clean exit 0 stays SILENT. Proven with a REAL harness worker for the harness-
+# agnostic VANISHED path + a deterministic synthetic worker for the exit-code branch (a real agent can't be
+# scripted to exit(N)). OOM SCOPE (reconciled w/ pty-claude + convoy-claude; pty #72 merged): Case A = the
+# worker's OWN pty-spawned process OOM-killed -> node-pty signal=9 -> pty #72 records exitCode 137 -> the same
+# nonzero branch cd-oom proves -> dings (no convoy change). Case B = a grandchild OOM'd while the pty-spawned
+# parent reaps it and exits 0 -> byte-identical to a clean exit -> SILENT, a documented blind spot (OS-level).
 #   cd-cos + cd-sup (--permanent) = the ding recipients.
-#   cd-wk  (NON-perm REAL --harness worker) crashed VANISHED (SIGKILL the pty daemon)          -> ding.
-#   cd-oom (NON-perm synthetic worker, exit 137 — the crash/OOM exit-code shape)               -> ding.
-#   cd-clean (NON-perm synthetic worker, exit 0)                                               -> SILENT (negative).
+#   cd-wk  (NON-perm REAL --harness worker) crashed VANISHED (SIGKILL the pty daemon)              -> ding.
+#   cd-oom (NON-perm SYNTHETIC worker, exit 137 — proves exitCode!=0; Case-A OOM lands here via #72) -> ding.
+#   cd-clean (NON-perm synthetic worker, exit 0)                                                   -> SILENT (negative).
 #   ./spin.sh <codex|claude> [SANDBOX_BASE]        # needs CONVOY_BIN (convoy with the worker-crash ding)
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -36,7 +38,8 @@ crash_vanish() {
   printf 'crashed cd-wk (vanished, daemon %s) at %s\n' "$dpid" "$(date +%s)" >> "$SB/.crash.log"
 }
 # A synthetic NON-permanent convoy worker (ptyfile.session via `pty up`) that runs then exits <code>. Deterministic:
-# exit 0 = a clean finish (silent); a nonzero code = a crashed/OOM'd worker (workerCrashed -> ding).
+# exit 0 = a clean finish (silent); a nonzero code = an abnormal/crash exit (workerCrashed -> ding). A real Case-A
+# OOM reaches this SAME nonzero branch via pty #72 (signal 9 -> exitCode 137).
 spawn_synth() { # <id> <exitcode>
   local id="$1" code="$2"
   local d="$SB/$id"                          # SEPARATE line: $id must be the local, not an outer var
@@ -78,7 +81,7 @@ echo "== 4/6  HOST (continuous convoy up, fast reconcile, bg) + spawn the synthe
 echo $! > "$SB/.up.pid"
 wait_up cd-wk 40 || { echo "cd-wk never came up"; exit 1; }
 sleep 2
-spawn_synth cd-oom   137      # crashed/OOM worker: nonzero exit -> should ding
+spawn_synth cd-oom   137      # abnormal-exit worker: nonzero exit -> should ding (Case-A OOM lands here via #72)
 spawn_synth cd-clean 0        # clean finish: exit 0 -> should stay silent
 snap before
 

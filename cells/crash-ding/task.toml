@@ -18,20 +18,28 @@ ding on a routine exit is as bad as a missed crash.
 
 [setup]
 net       = "${EVAL_SANDBOX:-/tmp}/cd-<harness>/net  (isolated convoy network; never the live one)"
-members   = "cd-cos (cos, --permanent) + cd-sup (supervisor, --permanent) = the ding recipients (the permanent orchestrator tier; convoy has no spawner/owner tag in v1, so a worker crash dings cos + ALL permanent supervisors, not a single owner). cd-wk + cd-oom = two NON-permanent REAL workers (--harness codex|claude), crashed via the two hard-death modes. cd-clean = the negative control: a NON-permanent synthetic worker that exits 0."
+members   = "cd-cos (cos, --permanent) + cd-sup (supervisor, --permanent) = the ding recipients (the permanent orchestrator tier; convoy has no spawner/owner tag in v1, so a worker crash dings cos + ALL permanent supervisors, not a single owner). cd-wk = a NON-permanent REAL worker (--harness codex|claude) crashed VANISHED (the harness-agnostic path); cd-oom = a NON-permanent SYNTHETIC worker that exits 137 (proves the nonzero-exit gate branch deterministically — a real harness worker can't be scripted to exit(N)). cd-clean = the negative control: a NON-permanent synthetic worker that exits 0."
 harnesses = "RUN TWICE: workers as codex, then as claude. BOTH must ding on crash (the harness-agnostic path must actually be harness-agnostic — a claude-only ding is a FAIL)."
 
 [scenario]
 crash = """
-workerCrashed() = status "vanished" || (status exited && exitCode != 0) — a nonzero OR null exit dings (OOM
-catch), a clean exit 0 stays silent. Proven with a REAL harness worker for the crash + deterministic synthetic
-workers for the exit-code gate: cd-wk (real codex|claude worker) is crashed VANISHED (SIGKILL the pty DAEMON so
-no exit is recorded); cd-oom (synthetic worker) EXITS 137 (a nonzero/abnormal exit — the same `exitCode != 0`
-gate branch a null/OOM exit hits). FINDING (reported to convoy-claude): a real harness worker CAN'T be scripted
-to exit(N), and SIGKILL of its harness child is FLAKY on this pty — it records exit 0 (silent) about as often as
-null, and killing the child tends to take the daemon with it (recorded as exit 0). So the reliable real-worker
-crash is the daemon-vanish; the nonzero exit-code gate is proven deterministically via the synthetic worker.
-NON-permanent -> convoy up detects gone + DINGS, no respawn.
+workerCrashed() = status "vanished" || (status exited && exitCode != 0) — a vanished session OR a nonzero exit
+dings, a clean exit 0 stays silent. The cell proves all three gate outcomes:
+  cd-wk    (real codex|claude worker) crashed VANISHED — SIGKILL the pty DAEMON so no exit record is written.
+  cd-oom   (SYNTHETIC worker) EXITS 137 — a nonzero/abnormal exit, deterministically hitting the `exitCode != 0`
+           branch. It proves that branch FIRES; it is NOT itself an OOM (see the A/B scope below).
+  cd-clean (synthetic worker) EXITS 0 — silent.
+OOM SCOPE (reconciled with pty-claude + convoy-claude; pty PR #72 merged). An exit record can't by itself name a
+signal, so "does the gate catch an OOM?" splits in two:
+  Case A — the worker's OWN pty-spawned process is OOM/SIGKILL-killed. node-pty reports signal=9; pty #72 now
+    surfaces exitCode = 128+9 = 137 (previously the signal was dropped and it recorded exit 0). So a real Case-A
+    OOM lands on the SAME nonzero branch cd-oom proves -> convoy dings, with NO convoy change. The common case.
+  Case B — a grandchild is OOM-killed while the pty-spawned PARENT reaps it and exits 0. node-pty sees exit 0 /
+    no signal, byte-identical to a clean finish -> SILENT. A DOCUMENTED BLIND SPOT, not a pty bug: catching it
+    needs OS-level detection (dmesg / cgroup memory.events), tracked as a follow-up.
+Why synthetic for the exit-code branch: a real harness worker can't be scripted to exit(N), so cd-oom is a
+synthetic exit-137 worker that hits the branch deterministically; cd-wk (a real worker) exercises the harness-
+agnostic VANISHED path. NON-permanent -> convoy up detects gone + DINGS, no respawn.
 """
 negative = "cd-clean is a hand-written pty.toml worker (`sleep; exit 0`) carrying the ptyfile.session tag + ST_AGENT + NO strategy=permanent — exactly what convoy up keys a worker on. It exits 0 (a clean finish); convoy up marks it seen but sends NO ding. The grader ALSO asserts cd-clean was a DETECTED convoy worker (ptyfile.session + non-permanent + exit 0) so the silence is provably 'gated as clean', not 'invisible' (no false pass)."
 
@@ -56,4 +64,4 @@ exit produced NONE. Not a mocked event, not a log scrape, not convoy's injected-
 """
 
 [reuse]
-note = "Crash-injection + convoy up hosting adapted from the convoy-network capstone. v1 dings cos + ALL permanent supervisors (no owner tag yet); targeting the specific OWNING supervisor is a convoy follow-up (needs a spawned-by tag). A secondary permanent-agent crash case (crash:/flapping: dings, validated separately) exists in git history."
+note = "Crash-injection + convoy up hosting adapted from the convoy-network capstone. v1 dings cos + ALL permanent supervisors (no owner tag yet); targeting the specific OWNING supervisor is a convoy follow-up (needs a spawned-by tag). A secondary permanent-agent crash case (crash:/flapping: dings, validated separately) exists in git history. FOLLOW-UPS: (1) now that pty #72 surfaces exitCode 137 on a direct signal death, prove Case A with a REAL SIGKILL'd worker (record 137) and retire the synthetic-only exit-137 — pty's tests/exit-signal.test.ts is the reference repro (spawn `sh -c 'exec sleep 300'` so the pty-spawned process IS the target, pgrep -P the daemon, kill -9 the leaf, assert exitCode 137 / signal 9). (2) Case B (a reaped-grandchild OOM under a surviving parent = exit 0) is not gate-reachable and needs OS-level detection (dmesg / cgroup memory.events)."

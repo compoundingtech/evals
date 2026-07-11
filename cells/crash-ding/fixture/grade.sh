@@ -33,20 +33,34 @@ any_ding_for() { # <id>
   return 1
 }
 
-echo "== REAL CRASH (hard — convoy up saw cd-wk's non-permanent session die) =="
-if grep -qE '"type":"worker_crash".*"(session|identity)":"(silber\.)?cd-wk' "$SB/.events.log" 2>/dev/null; then ok "convoy up recorded a worker_crash for cd-wk (real session death, detect-only, no respawn)"
-else no "no worker_crash event for cd-wk — the worker crash was not detected (crash-injection / non-permanent detection wrong)"; fi
+# assert a worker's crash dinged BOTH cos and the supervisor
+positive() { # <worker-id> <label>
+  local id="$1" label="$2" c=1 s=1
+  inbox_has_worker_ding cd-cos "$id" && c=0; inbox_has_worker_ding cd-sup "$id" && s=0
+  if [ "$c" = 0 ] && [ "$s" = 0 ]; then ok "$label ($id): a REAL \"worker crash: $id\" ding FROM convoy-up is in BOTH cd-cos's and cd-sup's inbox"
+  elif [ "$c" = 0 ]; then no "$label ($id): ding reached cd-cos but NOT cd-sup (supervisor not notified)"
+  elif [ "$s" = 0 ]; then no "$label ($id): ding reached cd-sup but NOT cd-cos"
+  else no "$label ($id): NO worker-crash ding delivered — the crash->ding path did not fire for harness $H"; fi
+}
 
-echo "== POSITIVE (hard — the worker crash dinged cos AND the supervisor) =="
-cos=1; sup=1; inbox_has_worker_ding cd-cos cd-wk && cos=0; inbox_has_worker_ding cd-sup cd-wk && sup=0
-if [ "$cos" = 0 ] && [ "$sup" = 0 ]; then ok "a REAL \"worker crash: cd-wk\" ding FROM convoy-up is in BOTH cd-cos's and cd-sup's inbox (whole permanent tier notified)"
-elif [ "$cos" = 0 ]; then no "worker-crash ding reached cd-cos but NOT cd-sup (the supervisor was not notified)"
-elif [ "$sup" = 0 ]; then no "worker-crash ding reached cd-sup but NOT cd-cos"
-else no "NO worker-crash ding delivered after cd-wk crashed — the worker crash->ding path did not fire for harness $H"; fi
+echo "== REAL CRASH (hard — convoy up saw both non-permanent workers die) =="
+for id in cd-wk cd-oom; do
+  if grep -qE '"type":"worker_crash".*"(session|identity)":"(silber\.)?'"$id"'' "$SB/.events.log" 2>/dev/null; then ok "convoy up recorded a worker_crash for $id (real session death, detect-only, no respawn)"
+  else no "no worker_crash event for $id — the crash was not detected (crash-injection / non-permanent detection wrong)"; fi
+done
 
-echo "== NEGATIVE control (hard — a clean worker exit (code 0) must be SILENT) =="
+echo "== POSITIVE — a real-harness VANISHED crash AND a nonzero/crash EXIT both ding cos AND the supervisor =="
+positive cd-wk  "VANISHED (real $H worker, daemon death)"
+positive cd-oom "CRASH-EXIT (nonzero exit 137 — the OOM/crash exit-code gate)"
+
+echo "== NEGATIVE control (hard — a DETECTED clean worker exit (code 0) must be SILENT) =="
+# cd-clean must have been a worker convoy up actually WATCHES — a non-permanent convoy agent (ptyfile.session
+# tag) that exited 0 — else "no ding" would be a false pass (invisible, not gated). convoy-claude flagged that
+# the ptyfile.session tag is what tick() keys on.
+detected="$(python3 -c "import json;d=json.load(open('$SB/.clean.json'));t=d.get('tags',{});print(1 if t.get('ptyfile.session') is not None and t.get('strategy')!='permanent' and d.get('exitCode')==0 else 0)" 2>/dev/null || echo 0)"
 if any_ding_for cd-clean; then no "FALSE DING: cd-clean exited 0 (clean finish) but got a \"worker crash\" ding — convoy dinged on a routine exit"
-else ok "the clean-exit worker cd-clean produced NO ding (exit 0 = silent; the gate distinguishes crash from clean finish)"; fi
+elif [ "$detected" = 1 ]; then ok "cd-clean was a DETECTED convoy worker (ptyfile.session set, non-permanent, exited 0) yet produced NO ding — the gate correctly distinguishes a crash from a clean finish"
+else no "NEGATIVE UNVERIFIED: cd-clean produced no ding but wasn't confirmed a detected convoy worker (ptyfile.session/non-permanent/exit0) — silence could be invisibility, a false pass"; fi
 
 echo "== ISOLATION (hard — nothing leaked to the global pty root) =="
 leak="$(pty ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -c 'cd-\(cos\|sup\|wk\|clean\)' || true)"

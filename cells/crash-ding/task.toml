@@ -1,0 +1,49 @@
+# crash-ding — convoy up dings the orchestrators when a NON-PERMANENT WORKER crashes, harness-agnostic (codex + claude).
+id    = "crash-ding"
+title = "A crashed non-permanent worker's session death produces a real crash ding to cos + the supervisor tier — for BOTH codex and claude — and a clean worker exit stays SILENT"
+tier  = 1
+axes  = ["isolation", "task-success", "autonomy", "coordination"]
+
+evaluates = """
+The events/notifications path: when a supervised NON-PERMANENT worker CRASHES (its pty session dies with a
+nonzero exit or vanishes), `convoy up`'s reconcile loop sends an immediate `st message` (ding) to the
+orchestrator tier (cos + all permanent supervisors) so a supervisor learns its worker died without polling —
+detect-only, NO respawn (workers are ephemeral / Nomad). Harness-agnostic by construction: it keys on the pty
+SESSION dying, so the SAME edge fires for a real Codex worker AND a real Claude worker. Two halves, both hard:
+(a) a real worker crash -> a REAL ding (an actual st message on the bus, from convoy-up, subject "worker crash:
+<id>", naming the worker) reaches cos AND the supervisor; (b) a CLEAN worker exit (code 0 = the worker finished
+its task) produces NO ding — a supervisor spammed on every clean finish stops trusting the signal, so a false
+ding on a routine exit is as bad as a missed crash.
+"""
+
+[setup]
+net       = "${EVAL_SANDBOX:-/tmp}/cd-<harness>/net  (isolated convoy network; never the live one)"
+members   = "cd-cos (cos, --permanent) + cd-sup (supervisor, --permanent) = the ding recipients (the permanent orchestrator tier; convoy has no spawner/owner tag in v1, so a worker crash dings cos + ALL permanent supervisors, not a single owner). cd-wk = the crash target: a NON-permanent REAL worker, --harness codex|claude. cd-clean = the negative control: a NON-permanent synthetic worker that exits 0."
+harnesses = "RUN TWICE: cd-wk as codex, then as claude. BOTH must ding on crash (the harness-agnostic path must actually be harness-agnostic — a claude-only ding is a FAIL)."
+
+[scenario]
+crash = "Kill cd-wk's harness CHILD process so the command exits nonzero / the session vanishes (workerCrashed = vanished || exitCode != 0). The worker is NON-permanent, so convoy up detects it gone + DINGS but does NOT respawn it."
+negative = "cd-clean is a hand-written pty.toml worker (`sleep; exit 0`) carrying the ptyfile.session tag + ST_AGENT + NO strategy=permanent — exactly what convoy up keys a worker on. It exits 0 (a clean finish); convoy up marks it seen but sends NO ding. (convoy add can't make a clean-exit worker — it always spawns a harness — hence the synthetic session; the gate it exercises, exitCode==0, is harness-independent.)"
+
+[grader]
+mechanical = """
+fixture/grade.sh <harness> — REAL bus state, never a log-only claim. Hard gates:
+  REAL CRASH — a worker_crash event for cd-wk (its non-permanent session actually died).
+  POSITIVE — a "worker crash: cd-wk" ding FROM convoy-up in BOTH cd-cos's AND cd-sup's inbox (asserted from the
+    delivered inbox files, not the event log).
+  NEGATIVE — cd-clean (clean exit 0) produced NO "worker crash: cd-clean" ding in ANY inbox (a false ding = FAIL).
+  ISOLATION — nothing in the global/prod pty root.
+fixture/run.sh runs BOTH harnesses; a pass requires both (claude-only ding = FAIL).
+"""
+hermetic = "isolated convoy net per harness; the delivered ding message files on the bus ARE the ground truth."
+
+[integrity]
+note = """
+PASS = a REAL worker crash (session verifiably died) produced a REAL ding (an actual st-message file) to the
+REAL orchestrators (cos + supervisor), for a REAL codex worker AND a REAL claude worker — and a clean worker
+exit produced NONE. Not a mocked event, not a log scrape, not convoy's injected-runner unit tests. A false PASS
+(asserting from the event log, missing the codex leg, or tolerating a clean-exit ding) is worse than a FAIL.
+"""
+
+[reuse]
+note = "Crash-injection + convoy up hosting adapted from the convoy-network capstone. v1 dings cos + ALL permanent supervisors (no owner tag yet); targeting the specific OWNING supervisor is a convoy follow-up (needs a spawned-by tag). A secondary permanent-agent crash case (crash:/flapping: dings, validated separately) exists in git history."

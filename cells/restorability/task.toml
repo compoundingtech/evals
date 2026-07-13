@@ -1,82 +1,85 @@
-# Cell: restorability — an agent RESTORES WITHOUT `--resume`/`--session-id`: a COLD relaunch (no session pin, no
-# transcript replay) comes back FUNCTIONAL by rehydrating from durable state (now.md + git + bus), and — the sharp
-# part — does NOT inherit stale session state (a stuck CC input-queue) the way a `--resume` restore does.
+# Cell: restorability — an agent RESTORES WITHOUT `--resume`/`--session-id`. A `convoy reload` (kill + respawn
+# from the stored pty.toml command = fresh transcript, NO --resume) comes back FUNCTIONAL by reconstructing its
+# working state from now.md (via the SessionStart hook) + git + bus — and, the sharp part, inherits NO stale
+# session state (a stuck CC input-queue) the way a `--resume` restore does.
 #
-# WHY THIS EXISTS (Nathan mandate). The reboot migration's default is session-PRESERVING (`--resume <pinned-sid>`;
-# see the `resumability` cell). A real incident exposed the dark side: a `--resume` respawn RESTORED a stuck Claude
-# Code input-queue (a poke that kept replaying after its message was archived), so the agent came back but wedged.
-# The mandate: prove agents can restore WITHOUT `--resume`/`--session-id` — a clean cold boot that rebuilds context
-# from the durable substrate — so agents don't DEPEND on `--resume` (and its queue-cruft) to survive a restart.
+# WHY THIS EXISTS (Nathan mandate). The reboot default is being moved OFF session-preservation (`--resume`). A real
+# incident exposed why: a `--resume` respawn RESTORED a stuck Claude Code input-queue (a poke that kept replaying
+# after its message was archived), so the agent came back but wedged. `convoy reload` already respawns from the
+# stored pty.toml command — NO --resume, fresh transcript — so the ONLY way state survives is externalization
+# (now.md). This cell is the held-out SUITE form of that guarantee.
+#
+# RELATION TO EXISTING PROOF: convoy's `doctor` CHECK 4 (checkStateExternalization / "restartability thesis")
+# ALREADY proves the core mechanism (seed now.md -> convoy reload no-resume -> SessionStart hook reconstructs ->
+# agent acts). That is a per-setup READINESS check. This cell is the GRADED, held-out eval-suite regression guard
+# for the same guarantee, and ADDS the incident-derived assertion doctor does not: no stuck-queue inheritance.
 id    = "restorability"
-title = "An agent restores WITHOUT --resume/--session-id: a cold relaunch rehydrates from durable state (now.md + git + bus) and inherits NO stuck session-queue"
+title = "An agent restores WITHOUT --resume/--session-id: convoy reload (fresh transcript) reconstructs work-state from now.md and inherits NO stuck session-queue"
 tier  = 1
 axes  = ["isolation", "task-success", "autonomy", "coordination"]
 
 evaluates = """
-Two guarantees, one about the MECHANISM and one about the BEHAVIOR, that together make a session-less restore
-safe enough that an agent need not rely on `--resume`:
+Whether an agent cold-restarted with NO --resume/--session-id survives — reconstructing its working state purely
+from externalized durable substrate — and does so WITHOUT inheriting stale session state. Two halves:
 
-(a) MECHANISM (deterministic, `st launch --dry-run`, no live agent): a no-resume relaunch produces a claude
-    command that OMITS `--resume` AND omits `--session-id` — a genuinely fresh process, not a resumed one — while
-    the durable substrate the fresh process must rehydrate from is present: an INJECTED now.md (the SessionStart
-    hook feeds the agent's working state) plus git + the bus inbox. Complements `resumability` (which proves the
-    `--resume` DEFAULT) by proving the OPT-OUT (`--fresh` / no-resume) is a real, self-sufficient path.
+(a) RECONSTRUCTION (the restartability thesis, mirrors convoy doctor CHECK 4 as a held-out suite cell): spawn a
+    real agent; externalize a resume-task into now.md; COLD-restart it via `convoy reload` (kill + respawn from the
+    stored pty.toml command — NO --resume, fresh transcript, so externalization is the ONLY path back); assert the
+    cold-booted agent picks up now.md via the SessionStart hook and ACTS on the task (writes its token), 0 human
+    rescues. If the hook is blocked or now.md is empty/absent, reconstruction silently never happens — a real gap.
 
-(b) BEHAVIOR (live headline, rides the box): an agent COLD-restarted with NO `--resume`/`--session-id` (fresh
-    transcript) comes back and (i) reconstructs its working state from now.md + git + bus with 0 human rescues,
-    AND (ii) does NOT inherit a stuck input-queue — a pre-restart queued/pending poke does NOT replay after the
-    cold boot (the exact failure a `--resume` restore reproduces). The negative control is the discriminator: a
-    matched `--resume` restore of the same wedged session DOES carry the stuck queue; the no-resume restore does
-    not. That contrast is the whole point — it quantifies why no-resume is the safer restore.
+(b) NO STUCK-QUEUE (the incident-derived novel gate): a poke that was queued/pending BEFORE the restart (whose
+    message is already archived) must NOT replay to the cold-booted agent. A `convoy reload` (no --resume, fresh
+    transcript) inherently drops the CC input-queue; the MATCHED NEGATIVE CONTROL — the same session brought back
+    WITH --resume — DOES replay the stuck poke. The contrast (reload=clean vs --resume=carries-it) is the whole
+    point: it quantifies why the no-resume path is the safer restore. (This is the exact failure the cos incident
+    hit: a --resume respawn replayed an archived poke every turn.)
 
-If the no-resume launch secretly kept `--session-id`, or the fresh agent could not rehydrate (empty/absent now.md),
-or the cold boot still inherited the stuck queue, the mandate fails and we've found a real gap.
+A false PASS — a "reload" that secretly resumed, reconstruction asserted without a real now.md injection, or a
+control that cannot actually detect the stuck queue — is worse than a FAIL.
 """
 
 [setup]
-work_dir = "${EVAL_SANDBOX:-./.sandbox}/restorability/work  (an agent cwd with a PINNED .claude-session-id + a now.md working-state file + a git repo + a bus inbox holding one already-archived poke = the 'stuck queue' seed)"
-seed = "now.md carries a durable working-state token (what the agent was mid-doing); the bus inbox holds a message that is ARCHIVED (handled) — the seed for the stuck-queue replay a --resume restore would carry but a cold boot must not."
-substrate = "DELIBERATE: durable state lives ONLY in now.md + git + the bus (no transcript). A cold-restored agent has nothing but these to rehydrate from — exactly the reboot-without-resume path."
-builder = "fixture/setup-sandbox.sh (deterministic; validates the pinned session-id + non-empty now.md + green repo on build)"
-hooks = "the SessionStart now.md-injection hook (smalltalk) must be present so the cold boot gets its working state — HARD DEPENDENCY on the now.md write-side + injection hardening (smalltalk restorability-hooks work)."
+work_dir = "${EVAL_SANDBOX:-/tmp}/restorability/net  (isolated convoy network; a real worker agent + a now.md seeded with a resume-task token + a bus inbox holding one ARCHIVED poke = the stuck-queue seed)"
+mechanism = "convoy reload <id> — kills + respawns the agent from its STORED pty.toml command (NO --resume, fresh transcript). This is the real reboot restart path; `st launch` is retired. Unlike `pty restart`, reload never ATTACHes, so it works even from inside a pty (and it dodges the pty-restart env-leak that caused the incident)."
+seed = "now.md = a durable resume-task ('run this exact command, then stand by'); bus inbox = a message that is already ARCHIVED (handled) — the seed a --resume restore would replay but a cold reload must not."
+hooks = "HARD DEPENDENCY on the SessionStart now.md-injection hook + the write-side (Stop-flush) that keeps now.md fresh (smalltalk restorability-hooks work). Without the hook firing, cold reconstruction can't happen — the cell NAMES that cause on failure."
+builder = "fixture/setup-sandbox.sh (deterministic; validates a green worker dir + non-empty now.md + the archived-poke seed on build)"
 
 [scenario]
-mechanism = """
-Deterministic `st launch --dry-run` probes (no live agent, runs anywhere):
-  NO-RESUME  — the no-resume/--fresh launch command OMITS `--resume` AND `--session-id` (a fresh process).
-  PIN-INTACT — `.claude-session-id` is UNCHANGED after the no-resume probe (opt-out is one-off, not a one-way door).
-  REHYDRATE  — the launch injects now.md (the SessionStart hook is wired) so the fresh process has its state.
+reconstruct = """
+Spawn worker via `convoy add` under an isolated net; wait available; write now.md with a resume-task (echo a
+unique token to a log). `convoy reload <id>` (no --resume). Assert the cold agent reconstructs from now.md via
+the SessionStart hook and writes the token — 0 rescues. Mirrors convoy doctor checkStateExternalization, but as a
+graded held-out cell (the SUITE regression guard, not a per-setup readiness check).
 """
-behavior = """
-Live (rides the box): the agent is COLD-restarted with NO --resume/--session-id (kill session; rm
-.claude-session-id + pty.toml so there is NO pin and NO transcript; relaunch the SAME identity/persona/repo/bus
-under a fresh session-name — the restart-continuity RC_RESTART mechanism, but asserting the launch carried no
---resume). Then:
-  FUNCTIONAL — the cold agent knows now.md's working-state token in-context (rehydrated from durable state), 0 rescues.
-  NO-STUCK-QUEUE — a pre-restart queued/archived poke does NOT replay to the cold agent (no phantom re-poke).
+no_stuck_queue = """
+Before the reload, archive a poke in the agent's inbox (a handled message). After the no-resume reload, assert
+that archived poke does NOT replay to the cold agent (no phantom re-poke). NEGATIVE CONTROL: bring the SAME
+session back WITH --resume and show the stuck poke DOES replay — proving the test can detect it and that no-resume
+is what avoids it.
 """
-negative = "MATCHED --resume control: restore the SAME wedged session WITH --resume; it DOES carry the stuck queue (the poke replays). The contrast (no-resume clean vs --resume carries-it) is the headline."
 
 [grader]
 mechanical = """
-fixture/grade.sh — deterministic mechanism gates + behavioral gates:
-  NO-RESUME (hard)   — the no-resume --dry-run command contains neither `--resume` nor `--session-id`.
-  PIN-INTACT (hard)  — `.claude-session-id` unchanged after the no-resume probe.
-  REHYDRATE (hard)   — now.md is injected into the fresh launch (hook wired) and is non-empty.
-  FUNCTIONAL (hard, live) — cold agent demonstrates knowledge of now.md's token with 0 human rescues.
-  NO-STUCK-QUEUE (hard, live) — no phantom re-poke reaches the cold agent post-restart.
-  CONTRAST (hard) — the --resume control DID carry the stuck queue (proves the test can detect it).
+fixture/grade.sh — REAL run state, never a log-only claim. Hard gates:
+  NO-RESUME    — the reload respawn command carried NO --resume/--session-id (assert from the actual respawn, not a claim).
+  RECONSTRUCT  — the cold agent wrote its now.md resume-task token (reconstructed from durable state, 0 rescues).
+  HOOK-FIRED   — the SessionStart hook injected now.md (else NAME the blocker, per doctor's hookBlockerFix).
+  NO-STUCK-QUEUE — the pre-archived poke did NOT replay to the cold agent.
+  CONTRAST     — the --resume control DID replay the stuck poke (the discriminator works).
+  ISOLATION    — same identity across reload => same git author; nothing leaked to the global pty root.
 """
-hermetic = "isolated sandbox; the injected restart + startup gates are SCENARIO pokes, not rescues (headline metric = 0 rescues)."
+hermetic = "isolated convoy net; the injected reload + startup gates are SCENARIO pokes, not rescues (headline = 0 rescues)."
 
 [integrity]
 note = """
-PASS = a real cold relaunch with NO --resume/--session-id came back functional from now.md+git+bus AND did not
-inherit the stuck queue, while the matched --resume control DID inherit it. Not a mocked launch, not a log scrape.
-A false PASS (the no-resume command secretly keeps --session-id; asserting rehydration without a real now.md
-injection; or a control that can't actually detect the stuck queue) is worse than a FAIL.
+PASS = a real no-resume `convoy reload` came back functional by reconstructing now.md (SessionStart hook fired)
+AND did not inherit the stuck queue, while the matched --resume control DID inherit it. Not a mocked reload, not a
+log scrape. The negative control (the --resume replay) must actually fire, or the no-stuck-queue gate is vacuous.
 """
 
 [dependency]
-smalltalk = "SessionStart now.md-injection hook + the write-side (Stop-flush) that keeps now.md fresh — the ENABLER. This eval is the PROOF that the no-resume path works once those hooks are solid; they should land together."
-reuse = "Cold-restart mechanism adapted from restart-continuity (RC_RESTART: rm .claude-session-id + pty.toml, relaunch same identity). Deterministic --dry-run probe adapted from resumability. The stuck-queue assertion is new — it is the incident (a --resume respawn replayed an archived poke) turned into a gate."
+convoy = "convoy reload = the no-resume cold-restart mechanism (respawns from stored pty.toml). Ties to convoy doctor CHECK 4 (checkStateExternalization) — this cell is its held-out suite form + the stuck-queue extension. Also relevant: convoy's SAFE-RESPAWN follow-up (a name-preserving clean-env respawn so nobody hand-rolls pty restart)."
+smalltalk = "SessionStart now.md-injection hook + Stop-flush write-side = the ENABLER; this eval is the PROOF the no-resume path works once those are solid."
+reuse = "Cold-restart-without-resume + now.md reconstruction: convoy doctor checkStateExternalization (suite.ts). Team/isolation scaffolding: restart-continuity. The stuck-queue gate is new — the cos incident turned into an assertion."

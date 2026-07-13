@@ -26,7 +26,18 @@ cp "$SB/.token" "$P/token.txt"
 resolve_smalltalk() {
   if [ -n "${SMALLTALK_REPO:-}" ] && [ -d "$SMALLTALK_REPO" ]; then printf '%s\n' "$SMALLTALK_REPO"; return 0; fi
   local stbin; stbin="$(command -v st 2>/dev/null)" || return 1
-  local real; real="$(readlink -f "$stbin" 2>/dev/null || realpath "$stbin" 2>/dev/null || printf '%s' "$stbin")"
+  # Canonicalize fully (follows intermediate DIR symlinks too — e.g. an npm-linked package dir -> the dev
+  # checkout — so we resolve to the smalltalk source of truth, matching what the hook owner manages).
+  local real; real="$(readlink -f "$stbin" 2>/dev/null || realpath "$stbin" 2>/dev/null)"
+  if [ -z "$real" ]; then
+    # Portable last resort where NEITHER readlink -f NOR realpath exists (stock BSD/macOS): follow the
+    # final-component symlink chain by hand. (Won't traverse dir symlinks; use SMALLTALK_REPO to be explicit.)
+    local t; real="$stbin"
+    while [ -L "$real" ]; do
+      t="$(readlink "$real")"
+      case "$t" in /*) real="$t" ;; *) real="$(dirname "$real")/$t" ;; esac
+    done
+  fi
   printf '%s\n' "$(cd "$(dirname "$real")/.." && pwd)"
 }
 SMREPO="$(resolve_smalltalk || true)"

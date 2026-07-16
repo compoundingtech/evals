@@ -1,0 +1,51 @@
+# Cell: clean-compose — convoy composes an agent INTO a repo WITHOUT polluting it. `convoy add --dir <repo>`
+# writes its rig (CLAUDE.local.md + PERSONA.md + DING-BUS.md + pty.toml + .claude/settings.local.json) into the
+# repo, but must add ZERO working-tree pollution: `git status --porcelain` in the repo stays EMPTY (every written
+# file is .git/info/exclude-d). Deterministic (no LLM) — grades which files convoy wrote, not any agent behavior.
+#
+# WHY THIS EXISTS (Nathan mandate). "We can work in convoy WITHOUT polluting the repo." A composed agent dropping
+# untracked files into a real product repo shows up in the developer's `git status`, risks accidental commits, and
+# breaks the illusion that convoy is invisible to the repo. convoy USED to leak `pty.toml` +
+# `.claude/settings.local.json` (it excluded only PERSONA.md/DING-BUS.md/CLAUDE.local.md). convoy #51 (a609204,
+# "clean worktree") added the missing excludes. This cell is the held-out, deterministic REGRESSION GUARD for that
+# guarantee — GREEN today, and it FAILS the moment a convoy change re-dirties a composed repo.
+id    = "clean-compose"
+title = "convoy composes an agent into a repo with ZERO working-tree pollution (git status --porcelain stays empty)"
+tier  = 1
+axes  = ["isolation", "task-success"]
+
+evaluates = """
+Whether `convoy add --dir <repo>` composes an agent into an existing git repo WITHOUT polluting its working tree.
+Deterministic + box-free: materialize a clean-committed throwaway repo (its own CLAUDE.md + a project skill),
+`convoy add` an agent into it on an isolated net, then assert `git status --porcelain` in the repo is EMPTY. All
+of convoy's written artifacts must be excluded (via .git/info/exclude); a single leaked file (a `?? pty.toml`) is
+a FAIL. Mutation-valid: a synthetic-dirt file is planted and MUST turn porcelain non-empty, so the gate can never
+vacuously pass. Isolation hard-gate: the compose leaks no session into the operator's global pty/convoy root.
+"""
+
+[setup]
+work_dir = "${EVAL_SANDBOX:-/tmp}/cc  (SHORT path — the pty unix-socket path is limited ~90 bytes; a deep $NET/pty/silber.<id>.ding.sock must fit; use /tmp, NOT a long scratchpad). A throwaway repo at $SB/repo with its OWN CLAUDE.md + a project skill, committed CLEAN."
+mechanism = "convoy add --identity ccw --dir <repo> --network <isolated net> --harness claude. convoy writes CLAUDE.local.md + PERSONA.md + DING-BUS.md + pty.toml + .claude/settings.local.json into the repo; ALL must be in .git/info/exclude so git status --porcelain stays empty. Torn down with convoy down --force."
+builder = "fixture/setup-sandbox.sh (clean committed repo). fixture/probe.sh (isolated compose + porcelain capture + a synthetic-dirt mutation check). fixture/grade.sh (asserts)."
+
+[grader]
+mechanical = """
+fixture/grade.sh — REAL repo state, never a self-report. Hard gates (deterministic):
+  CLEAN-COMPOSE  — `git status --porcelain` in the repo is EMPTY after `convoy add` (no tracked/untracked pollution).
+                   A leak NAMES the offending files (RED before convoy #51 on pty.toml + .claude/settings.local.json).
+  MUTATION-VALID — a planted synthetic-dirt file MUST make porcelain non-empty (the gate has teeth; a dirty repo
+                   cannot pass). Proves the CLEAN-COMPOSE assertion is non-vacuous.
+  ISOLATION      — no `ccw` session in the operator's global pty/convoy root (isolated net only).
+Context (info): lists every file convoy wrote and whether each is excluded (!!) or leaks (??).
+"""
+
+[integrity]
+note = """
+PASS = convoy really composed into the repo and left `git status --porcelain` EMPTY, with the porcelain gate
+proven non-vacuous (synthetic dirt is detected). Not a self-report — the real repo state after a real `convoy add`.
+A cell that always returns empty (e.g. a broken porcelain call) is caught by the MUTATION-VALID gate.
+"""
+
+[dependency]
+convoy = "convoy add --dir writes its rig into the repo; the .git/info/exclude coverage (all 5 artifacts) is the guarantee. Fixed in convoy #51 (a609204, 'clean worktree'). This cell is the held-out regression guard; it goes RED if a convoy change stops excluding any written artifact."
+reuse = "Isolated convoy-add + teardown scaffolding: lib-harness (stev_convoy_init/teardown) + the restart-continuity/restorability isolation pattern. Repo+skill fixture shape: skill-inheritance (#10). Sibling: compose-config-load (proves the composed repo's CLAUDE.md + skills still LOAD)."

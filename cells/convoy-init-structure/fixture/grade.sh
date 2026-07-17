@@ -26,6 +26,12 @@ for d in smalltalk pty worktrees; do
                                        || no "<net>/$d/ MISSING — convoy init did not create it (redesign piece not landed / regressed)"
 done
 
+echo "== NAMED NETWORKS (hard gate, redesign #2) — a bare name resolves under <state>/convoy/<name>/; a path is used as-is =="
+grep -q '^named_net=yes' "$P/shape.txt" && ok "a bare NAME resolves under <state-home>/convoy/<name>/ (named networks live)" \
+                                        || no "a bare name did NOT create <state>/convoy/<name>/ — named networks (#2) not landed"
+grep -q '^path_as_is=yes' "$P/shape.txt" && ok "an explicit PATH is used as-is" \
+                                         || no "an explicit path was not used as-is"
+
 echo "== CONFIG RECORDED (hard gate) — init recorded the network config =="
 cfg="$(sed -n 's/^config_recorded=//p' "$P/shape.txt")"
 [ -n "$cfg" ] && [ "$cfg" != "no" ] && ok "network config recorded ($cfg)" \

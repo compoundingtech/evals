@@ -28,7 +28,14 @@ echo "== run the REAL convoy init <net> (isolated) =="
   git -C "$(dirname "$cvr")/.." rev-parse --short HEAD 2>/dev/null | sed 's/^/convoy_git_sha=/'
   git -C "$(dirname "$cvr")/.." diff --quiet 2>/dev/null && echo "convoy_worktree=clean" || echo "convoy_worktree=DIRTY (may be ahead of the committed SHA — redesign piece in progress)"
 } > "$P/convoy-version.txt" 2>/dev/null || true
-convoy init "$NET" > "$P/init.out" 2>&1; echo "   init rc=$?"
+convoy init "$NET" > "$P/init.out" 2>&1; echo "   init rc=$? (path used as-is => $NET)"
+
+# NAMED NETWORKS (#2): a bare NAME resolves under <state-home>/convoy/<name>/. Isolate via a redirected state home
+# (XDG_STATE_HOME) so we never touch the operator's real ~/.local/state/convoy. (A bare `convoy init` with no arg
+# hits the real state home and is NOT isolatable — so we test the bare-NAME form, which is.)
+XDG="$SB/xdg"; mkdir -p "$XDG"
+XDG_STATE_HOME="$XDG" convoy init nettest >> "$P/init.out" 2>&1
+NAMED="$XDG/convoy/nettest"
 
 echo "== capture the on-disk shape convoy init produced =="
 # Full tree (2 levels) for the human + the grader's context.
@@ -38,6 +45,9 @@ echo "== capture the on-disk shape convoy init produced =="
   for d in smalltalk pty worktrees; do
     [ -d "$NET/$d" ] && echo "has_$d=yes" || echo "has_$d=no"
   done
+  # NAMED NETWORKS (#2): a bare name -> <state-home>/convoy/<name>/ ; a path -> used as-is.
+  [ -d "$NAMED" ] && echo "named_net=yes" || echo "named_net=no"
+  [ -d "$NET" ] && echo "path_as_is=yes" || echo "path_as_is=no"
   # config recorded: some network-config artifact exists (exact filename TBD w/ convoy-claude — accept a few).
   cfg=""; for f in convoy.toml config.toml network.toml convoy.json .convoy.toml; do [ -f "$NET/$f" ] && cfg="$f"; done
   [ -n "$cfg" ] && echo "config_recorded=$cfg" || echo "config_recorded=no"
@@ -46,8 +56,9 @@ echo "== capture the on-disk shape convoy init produced =="
 } > "$P/shape.txt"
 sed 's/^/     /' "$P/shape.txt"
 
-echo "== teardown the isolated net =="
+echo "== teardown the isolated nets =="
 stev_convoy_teardown "$NET" >/dev/null 2>&1 || true
+stev_convoy_teardown "$NAMED" >/dev/null 2>&1 || true
 
 echo "== probe artifacts in $P/ =="; ls -1 "$P" | sed 's/^/     /'
 echo "GRADE:  $HERE/grade.sh \"$SB\""

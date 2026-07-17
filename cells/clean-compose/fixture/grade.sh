@@ -4,10 +4,12 @@
 # `git status --porcelain` in the repo must be EMPTY after `convoy add`. Mutation-valid: a repo left dirty MUST
 # fail (proven by the synthetic-dirt probe). Never a self-report — grades the real repo state probe.sh captured.
 #
-# Regression guard: convoy USED to leak `pty.toml` + `.claude/settings.local.json` into the working tree (it
-# excluded only PERSONA.md/DING-BUS.md/CLAUDE.local.md). convoy #51 (a609204, "clean worktree") added the missing
-# .git/info/exclude entries, so this cell is now GREEN. It is the DURABLE GUARD: it FAILS the moment convoy
-# regresses that fix, and can never silently pass (the mutation arm proves the porcelain check has teeth).
+# Regression guard: convoy USED to leak `pty.toml` + `.claude/settings.local.json` into the working tree. convoy
+# #51 (a609204, "clean worktree") started excluding the rig files (PERSONA.md/DING-BUS.md/CLAUDE.local.md) but
+# MISSED two; convoy #53 completes it — adds `pty.toml` + `.claude/settings.local.json` to the repo's own
+# .git/info/exclude (host-independent, not relying on any global ignore). With all 5 excluded this cell is GREEN.
+# It is the DURABLE GUARD (the exact regression class #53 fixes: a self-exclude-at-write-site miss): it FAILS the
+# moment a convoy-authored file stops self-excluding, and can never silently pass (the mutation arm has teeth).
 #   ./grade.sh [SANDBOX]
 # Exit 0 = clean compose (no hard failures).
 # ─────────────────────────────────────────────────────────────────────────────
@@ -45,6 +47,15 @@ else
   no "planted dirt was NOT detected — the porcelain gate is vacuous (a dirty repo could pass); FIX the probe"
 fi
 
+echo "== CONVOY VERSION (info, reproducibility) — the exclude coverage is convoy-version-dependent =="
+if [ -s "$P/convoy-version.txt" ]; then
+  sed 's/^/     /' "$P/convoy-version.txt"
+  grep -q 'convoy_git_sha=c9a5dcb' "$P/convoy-version.txt" && echo "     ^ this IS the #53 merge (c9a5dcb) — GREEN expected" \
+                                                            || echo "     ^ if this convoy predates #53 (c9a5dcb), a ?? pty.toml leak is EXPECTED (the cell correctly goes RED)"
+else
+  echo "     (convoy version not captured)"
+fi
+
 echo "== CONTEXT (info) — everything convoy wrote, and what it already excludes =="
 if [ -s "$P/written.txt" ]; then
   echo "  convoy-created files (?? = leaks into porcelain, !! = already excluded/ignored):"
@@ -68,7 +79,7 @@ if [ "$fail" -eq 0 ]; then
   echo "==> clean-compose: PASS — convoy composes into a repo with ZERO working-tree pollution, and the gate is"
   echo "    mutation-valid (a dirty repo fails). Nathan's guarantee: we can work in convoy without polluting the repo."
 else
-  echo "==> clean-compose: FAIL — convoy REGRESSED the clean-worktree fix (#51 a609204): pty.toml and/or"
-  echo "    .claude/settings.local.json must stay in .git/info/exclude. This cell is the guard that caught it."
+  echo "==> clean-compose: FAIL — convoy REGRESSED the clean-worktree fix (#51 + #53): a convoy-authored file"
+  echo "    (e.g. pty.toml / .claude/settings.local.json) is no longer in .git/info/exclude. This guard caught it."
 fi
 [ "$fail" -eq 0 ]

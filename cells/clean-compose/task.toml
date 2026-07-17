@@ -6,9 +6,13 @@
 # WHY THIS EXISTS (Nathan mandate). "We can work in convoy WITHOUT polluting the repo." A composed agent dropping
 # untracked files into a real product repo shows up in the developer's `git status`, risks accidental commits, and
 # breaks the illusion that convoy is invisible to the repo. convoy USED to leak `pty.toml` +
-# `.claude/settings.local.json` (it excluded only PERSONA.md/DING-BUS.md/CLAUDE.local.md). convoy #51 (a609204,
-# "clean worktree") added the missing excludes. This cell is the held-out, deterministic REGRESSION GUARD for that
-# guarantee — GREEN today, and it FAILS the moment a convoy change re-dirties a composed repo.
+# `.claude/settings.local.json`. convoy #51 (a609204, "clean worktree") started excluding the rig files but MISSED
+# those two; convoy #53 (c9a5dcbe) completes it — adds both to the repo's OWN .git/info/exclude (host-independent,
+# not relying on a global ignore). This cell is the held-out, deterministic REGRESSION GUARD for that guarantee.
+# THE LOAD-BEARING PROPERTY: run against a leaky convoy (pre-#53) it goes RED on `?? pty.toml` (witnessed on the
+# real binary before the fix); against convoy >= c9a5dcbe (#53) it is GREEN. It FAILS the moment a convoy-authored
+# file stops self-excluding — the exact regression class #53 fixes (self-exclude-at-write-site). Requires convoy
+# >= c9a5dcbe (#53); probe.sh records the convoy version it actually ran against.
 id    = "clean-compose"
 title = "convoy composes an agent into a repo with ZERO working-tree pollution (git status --porcelain stays empty)"
 tier  = 1
@@ -32,7 +36,7 @@ builder = "fixture/setup-sandbox.sh (clean committed repo). fixture/probe.sh (is
 mechanical = """
 fixture/grade.sh — REAL repo state, never a self-report. Hard gates (deterministic):
   CLEAN-COMPOSE  — `git status --porcelain` in the repo is EMPTY after `convoy add` (no tracked/untracked pollution).
-                   A leak NAMES the offending files (RED before convoy #51 on pty.toml + .claude/settings.local.json).
+                   A leak NAMES the offending files (RED on a pre-#53 convoy: ?? pty.toml + .claude/settings.local.json).
   MUTATION-VALID — a planted synthetic-dirt file MUST make porcelain non-empty (the gate has teeth; a dirty repo
                    cannot pass). Proves the CLEAN-COMPOSE assertion is non-vacuous.
   ISOLATION      — no `ccw` session in the operator's global pty/convoy root (isolated net only).
@@ -47,5 +51,5 @@ A cell that always returns empty (e.g. a broken porcelain call) is caught by the
 """
 
 [dependency]
-convoy = "convoy add --dir writes its rig into the repo; the .git/info/exclude coverage (all 5 artifacts) is the guarantee. Fixed in convoy #51 (a609204, 'clean worktree'). This cell is the held-out regression guard; it goes RED if a convoy change stops excluding any written artifact."
+convoy = "convoy add --dir writes its rig into the repo; the .git/info/exclude coverage (all 5 artifacts) is the guarantee. #51 (a609204, 'clean worktree') started it (3 files); #53 (c9a5dcbe) completed it (pty.toml + .claude/settings.local.json). REQUIRES convoy >= c9a5dcbe (#53) — a pre-#53 convoy provably leaks pty.toml, so the cell correctly goes RED there (that RED-without / GREEN-with is the load-bearing proof). Held-out regression guard; RED if a convoy change stops excluding any written artifact."
 reuse = "Isolated convoy-add + teardown scaffolding: lib-harness (stev_convoy_init/teardown) + the restart-continuity/restorability isolation pattern. Repo+skill fixture shape: skill-inheritance (#10). Sibling: compose-config-load (proves the composed repo's CLAUDE.md + skills still LOAD)."

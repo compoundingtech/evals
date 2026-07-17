@@ -14,8 +14,12 @@ that repo. Every one of those must be excluded (via `.git/info/exclude`) so it n
 `git status` or risks an accidental commit.
 
 convoy *used to* leak `pty.toml` + `.claude/settings.local.json` (it excluded only the first three). **convoy #51**
-(`a609204`, "clean worktree") added the missing excludes. This cell is the held-out, deterministic **regression
-guard** for that guarantee: GREEN today, and it goes RED the moment a convoy change re-dirties a composed repo.
+(`a609204`, "clean worktree") started excluding the rig files but missed those two; **convoy #53** (`c9a5dcb`)
+completes it — adds both to the repo's own `.git/info/exclude` (host-independent). This cell is the held-out,
+deterministic **regression guard**: run against a pre-#53 convoy it goes **RED** on `?? pty.toml` (witnessed on
+the real binary before the fix); against convoy `>= c9a5dcb` (#53) it is **GREEN**. It goes RED the moment a
+convoy-authored file stops self-excluding — the exact regression class #53 fixes. **Requires convoy `>= c9a5dcb`**
+(`probe.sh` records the convoy version it ran against).
 
 ## How it works (box-free)
 
@@ -35,7 +39,7 @@ zero-orphan teardown; nothing touches the live convoy.
 
 See `task.toml` `[grader]`. A false PASS is impossible without tripping MUTATION-VALID: if the porcelain check were
 broken (always empty), the planted dirt would go undetected and the cell FAILS. A leak names the offending files
-(the `pty.toml` / `.claude/settings.local.json` gap that convoy #51 closed).
+(the `pty.toml` / `.claude/settings.local.json` gap that convoy #53 closed).
 
 See `task.toml` for the full spec and [`../../framework.md`](../../framework.md). Sibling:
 [`compose-config-load`](../compose-config-load/README.md) proves the composed repo's `CLAUDE.md` + skills still

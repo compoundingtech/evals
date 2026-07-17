@@ -40,6 +40,10 @@ BOOT
 
 { echo '---'; echo '## BASE — development practices (every coding agent inherits this)'; echo; cat "$PZ/dev-practices.md"; echo; } >> "$out"
 { echo '---'; echo '## BASE — known harness bugs'; echo; cat "$PZ/known-harness-bugs.md"; echo; } >> "$out"
-{ echo '---'; echo "## ROLE persona (specialist.md)"; echo; cat "$PZ/specialist.md"; echo; } >> "$out"
+# Role file: the personas repo renamed the leaf role specialist.md -> worker.md. Prefer worker.md (current), fall
+# back to specialist.md (the repo's pinned personas SHA still ships specialist.md) — so this composes cleanly on
+# both a pinned checkout and a newer one. (spin.sh died here when it hardcoded a name absent from the checkout.)
+role_md="$PZ/worker.md"; [ -f "$role_md" ] || role_md="$PZ/specialist.md"
+{ echo '---'; echo "## ROLE persona ($(basename "$role_md"))"; echo; cat "$role_md"; echo; } >> "$out"
 
 echo "composed $out  ($(wc -l < "$out") lines) id=$id family=claude"

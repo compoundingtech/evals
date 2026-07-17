@@ -31,6 +31,12 @@ export ST_ROOT="$NET"; export PTY_ROOT="$NET/pty"    # isolate: session lands in
 trap 'stev_convoy_teardown "$NET" >/dev/null 2>&1 || true' EXIT INT TERM
 
 echo "== 1/3  convoy init isolated net + convoy add the agent INTO the repo =="
+# Record WHICH convoy this ran against — the .git/info/exclude coverage is convoy-version-dependent (pre-#53
+# leaks pty.toml), so pin the version for reproducibility. Best-effort: --version + the convoy checkout's git SHA.
+{ convoy --version 2>&1 | head -1
+  cvb="$(command -v convoy 2>/dev/null)"; cvr="$(readlink -f "$cvb" 2>/dev/null || realpath "$cvb" 2>/dev/null || echo "$cvb")"
+  git -C "$(dirname "$cvr")/.." rev-parse --short HEAD 2>/dev/null | sed 's/^/convoy_git_sha=/'
+} > "$P/convoy-version.txt" 2>/dev/null || true
 stev_convoy_init "$NET" >/dev/null 2>&1 || true
 convoy add worker --identity "$id" --network "$NET" --dir "$repo" --persona "$P/persona.md" --harness claude >"$P/add.out" 2>&1
 echo "   add rc=$? (see $P/add.out)"

@@ -18,6 +18,7 @@ wn(){ echo "  [WARN] $1"; warn=$((warn+1)); }
 sk(){ echo "  [SKIP] $1"; skip=$((skip+1)); }
 [ -d "$P" ] || { echo "no probe artifacts at $P — run probe.sh first"; exit 1; }
 if grep -q 'CONVOY-MISSING' "$P/init.out" 2>/dev/null; then sk "convoy not available"; echo "SCORE: skipped"; exit 0; fi
+[ -f "$P/convoy-version.txt" ] && { echo "convoy under test:"; sed 's/^/  /' "$P/convoy-version.txt"; }
 
 echo "== STRUCTURE (hard gate) — convoy init <net> => <net>/{smalltalk,pty,worktrees} =="
 for d in smalltalk pty worktrees; do

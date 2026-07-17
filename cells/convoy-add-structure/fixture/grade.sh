@@ -18,6 +18,7 @@ sk(){ echo "  [SKIP] $1"; skip=$((skip+1)); }
 g(){ grep -q "^$1" "$P/shape.txt"; }
 [ -d "$P" ] || { echo "no probe artifacts at $P — run probe.sh first"; exit 1; }
 if grep -q 'CONVOY-MISSING' "$P/shape.txt" 2>/dev/null; then sk "convoy not available"; echo "SCORE: skipped"; exit 0; fi
+[ -f "$P/convoy-version.txt" ] && { echo "convoy under test:"; sed 's/^/  /' "$P/convoy-version.txt"; }
 echo "short-hostname this box: $(cat "$P/shorthost.txt" 2>/dev/null)"
 
 echo
@@ -35,7 +36,9 @@ else no "the repo is DIRTY after convoy add — convoy-authored files leaked int
 echo
 echo "== BUS FOLDER (hard gate) — <net>/smalltalk/<shorthost>.<identity>/ with inbox/ archive/ status =="
 if g "busdir=yes"; then
-  ok "bus folder <net>/smalltalk/<shorthost>.<identity>/ exists (smalltalk/ split + host-prefix)"
+  ok "bus folder <net>/smalltalk/<host>.<identity>/ exists (smalltalk/ split + host-prefix)"
+  g "host_parseable=yes" && ok "  host is parseable from the folder-name prefix (<host>.<identity>, doc 4aab4f1)" \
+                         || no "  host NOT parseable from the bus-folder name (prefix missing)"
   for s in inbox archive status; do g "bus_has_$s=yes" && ok "  bus folder has $s" || no "  bus folder MISSING $s"; done
 else
   no "bus folder <net>/smalltalk/<shorthost>.<identity>/ MISSING — smalltalk/ split + host-prefix not landed (current convoy = flat <net>/<identity>)"
@@ -48,9 +51,11 @@ elif g "pty_no_resume=no"; then no "pty.toml carries --resume/--session-id — i
 else sk "no pty.toml found to check for --resume"; fi
 
 echo
-echo "== CLAUDE.local.md (soft — exact location root-vs-.claude IN FLIGHT, pending convoy-claude) =="
-g "has_claude_local=yes" && wn "CLAUDE.local.md present + (porcelain-empty implies) git-excluded — location assertion HELD until convoy-claude confirms root vs .claude/" \
-                         || wn "no CLAUDE.local.md found (root or .claude/) — the persona-overlay loader is absent (or piece not landed); location decision pending"
+echo "== LOADER (hard gate, doc 4aab4f1 SETTLED) — .claude/rules/convoy.md is the loader; NO root CLAUDE.local.md =="
+g "has_loader=yes" && ok ".claude/rules/convoy.md exists — the loader (auto-loads + @-imports .convoy/, zero visible root file)" \
+                   || no ".claude/rules/convoy.md MISSING — the persona-overlay loader is absent (piece not landed)"
+g "no_root_claude_local=yes" && ok "NO CLAUDE.local.md at the repo ROOT — the loader lives in .claude/rules/, so the root stays pristine" \
+                             || no "a CLAUDE.local.md is at the repo ROOT — the redesign moved the loader to .claude/rules/convoy.md (no visible root file)"
 
 echo
 echo "== MUTATION-VALID (hard gate) — the presence checks are non-vacuous =="

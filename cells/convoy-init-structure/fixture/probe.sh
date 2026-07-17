@@ -22,6 +22,12 @@ if ! command -v convoy >/dev/null 2>&1; then
 fi
 
 echo "== run the REAL convoy init <net> (isolated) =="
+# Record WHICH convoy this ran against (the layout is convoy-version-dependent; the redesign lands incrementally).
+{ convoy --version 2>&1 | head -1
+  cvb="$(command -v convoy 2>/dev/null)"; cvr="$(readlink -f "$cvb" 2>/dev/null || realpath "$cvb" 2>/dev/null || echo "$cvb")"
+  git -C "$(dirname "$cvr")/.." rev-parse --short HEAD 2>/dev/null | sed 's/^/convoy_git_sha=/'
+  git -C "$(dirname "$cvr")/.." diff --quiet 2>/dev/null && echo "convoy_worktree=clean" || echo "convoy_worktree=DIRTY (may be ahead of the committed SHA — redesign piece in progress)"
+} > "$P/convoy-version.txt" 2>/dev/null || true
 convoy init "$NET" > "$P/init.out" 2>&1; echo "   init rc=$?"
 
 echo "== capture the on-disk shape convoy init produced =="

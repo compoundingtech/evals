@@ -1,0 +1,50 @@
+# Cell: convoy-doctor-structure — the redesign's NARRATED `convoy doctor` proves the network is laid out correctly
+# (redesign #6, convoy #61/6d3d36c). doctor's "Structure" section checks named net + smalltalk/pty/worktrees +
+# host-prefixed bus folders + pristine workspaces (.convoy git-excluded) + cold-boot (no --resume) — and PASSES on
+# a well-formed net, FAILS on a malformed one. The `--full` half is the CoS->sup->worker can-work graded proof.
+# Deterministic structure half (no LLM); the can-work half rides the box (gated).
+#
+# WHY THIS EXISTS (Nathan ask — the Johannes gate). Green `convoy doctor` = a correctly-set-up, working convoy for
+# a brand-new user. This cell guards that doctor actually PROVES the layout (not just narrates it) — the last mile
+# that closes the whole init->doctor deliverable (#1-#6) end-to-end on the acceptance gate.
+id    = "convoy-doctor-structure"
+title = "convoy doctor narrates + PROVES the redesign layout (structure-correct on a good net, flags a bad one) + the can-work proof"
+tier  = 1
+axes  = ["isolation", "task-success"]
+
+evaluates = """
+Whether the REAL `convoy doctor` proves the redesign network layout. Two halves:
+
+(a) STRUCTURE (deterministic, box-free): `convoy doctor --quick --network <net>` (no agent spawn) emits the
+    narrated "Structure" section checking named network + smalltalk/ + pty/ + worktrees/ + host-prefixed bus
+    folders + pristine workspaces + cold-boot (no --resume). Asserts the section + all check names are narrated,
+    the checks all PASS on a WELL-FORMED net (0 ✗, exit 0), AND — mutation-valid — doctor FLAGS a MALFORMED net
+    (worktrees/ removed => a ✗ + non-zero exit), proving the gate is real, not always-pass.
+
+(b) CAN-WORK (live headline, --full, HELD/gated): `convoy doctor --full` runs the real CoS->sup->worker graded org
+    proof on the new-layout sandbox — the "and can do real work" half. Spawns real agents (heavy/box), so it is
+    gated (skip-with-reason via fixture/spin.sh); the box-free structure half carries the layout proof.
+
+ISOLATION: doctor is scoped with --network <sandbox> and the ambient ST_ROOT/PTY_ROOT/CONVOY_NETWORK are unset (a
+bare doctor / ST_ROOT hits the operator's REAL default network). Never touches the live fleet.
+"""
+
+[setup]
+work_dir = "${EVAL_SANDBOX:-/tmp}/cds  (SHORT path). probe.sh convoy-inits a well-formed net (+ a malformed copy) off a throwaway megarepo, all scoped with --network + a clean env."
+mechanism = "REAL `convoy doctor --quick --network <net>` (structure half; no spawn) + `--full` (can-work; spawns a real org, gated). Ground truth @ convoy #61/6d3d36c. Torn down with convoy down."
+builder = "fixture/probe.sh (runs doctor on a well-formed + a malformed net). fixture/grade.sh (asserts the structure half + the gated can-work). No LLM for the structure half."
+
+[grader]
+mechanical = """
+fixture/grade.sh — REAL doctor output, never a self-report. Hard gates:
+  STRUCTURE-SECTION — doctor narrates the 'Structure' section with all 7 checks (named net, smalltalk/, pty/,
+                      worktrees/, host-prefixed folders, pristine workspaces, cold-boot).
+  WELL-FORMED-PASS  — 0 structure ✗ marks + doctor exit 0 on a correct net.
+  MALFORMED-FAIL    — doctor flags the removed worktrees/ (✗ + non-zero exit) — mutation-valid, the gate is real.
+  CAN-WORK (live, gated) — `convoy doctor --full` reports the CoS->sup->worker graded PASS (skip-with-reason if not exercised).
+  ISOLATION         — no doctor session in the operator's global pty root (--network scoped it to the sandbox).
+"""
+
+[dependency]
+convoy = "convoy doctor's narrated structure-correct + can-work checks (redesign #6, convoy #61/6d3d36c). GREEN once #6 lands (it has). Scope doctor with --network <net> (a bare doctor / ST_ROOT hits the real default net; convoy env exports ST_ROOT=<net>/smalltalk which double-nests). The Johannes-usability acceptance gate; closes #1-#6 end-to-end."
+reuse = "Deterministic real-command + assert-output discipline: the convoy structure cells. The well-formed-vs-malformed contrast (mutation-valid) mirrors clean-compose's planted-dirt arm. Siblings: convoy-init-structure + convoy-init-narration (the layout + init narration doctor proves)."

@@ -1,0 +1,40 @@
+# Cell: convoy-init-narration — the redesign's NARRATED `convoy init` (redesign #5, convoy #60/072808a). A
+# first-timer (Johannes) running `convoy init` must be TOLD what's happening step by step, in plain language.
+# Deterministic (no LLM): run the real command, grep the stdout for the narrated steps + the mode contrasts.
+#
+# WHY THIS EXISTS (Nathan ask). Both `init` and `doctor` must be chatty/narrated so a brand-new user can follow
+# along and trust the setup. This is the guard that the narration is actually THERE (and that --quiet/--json still
+# work for scripts/evals) — a LIGHT presence check, not an LLM judge of the prose.
+id    = "convoy-init-narration"
+title = "convoy init is narrated step-by-step (default), silent under --quiet, and emits a one-line --json summary"
+tier  = 1
+axes  = ["task-success"]
+
+evaluates = """
+Whether the REAL `convoy init` narrates its steps for a first-time user. Deterministic + box-free: run it in three
+modes on isolated paths and assert — DEFAULT emits substantial plain-language step narration (creating the network
+structure, recording the convoy.toml config, completion, and the "run convoy doctor" next-step pointer); --quiet
+emits ZERO stdout lines (scriptable/silent); --json emits exactly ONE line whose object has all of
+{network,dir,stRoot,ptyRoot,worktrees}. A LIGHT narration-PRESENCE check (tolerant substrings, not exact prose the
+owner may tweak). Mutation-valid: the --quiet=0-lines vs default=narrated contrast is built in (a non-narrating
+init fails default; an un-silenced --quiet fails quiet), plus a self-test that a not-present phrase reads absent.
+"""
+
+[setup]
+work_dir = "${EVAL_SANDBOX:-/tmp}/cin  (SHORT path). probe.sh runs convoy init fresh into isolated PATHS (used as-is, never the real state home) in default/--quiet/--json modes."
+mechanism = "REAL `convoy init <path>` (+ --quiet, + --json). Narration + the --json summary are on STDOUT; --quiet silences stdout. Ground truth @ convoy #60/072808a. Torn down with convoy down."
+builder = "fixture/probe.sh (runs the three modes + captures stdout). fixture/grade.sh (asserts). No LLM."
+
+[grader]
+mechanical = """
+fixture/grade.sh — REAL stdout, never a self-report. Hard gates:
+  DEFAULT NARRATION — substantial step narration (>=5 lines) mentioning the structure, the convoy.toml config,
+                      completion, and the 'run convoy doctor' next step.
+  --quiet           — ZERO stdout lines (scriptable silent mode).
+  --json            — exactly ONE line whose object has {network,dir,stRoot,ptyRoot,worktrees}.
+  MUTATION-VALID    — a not-present phrase reads ABSENT (the narration grep is non-vacuous).
+"""
+
+[dependency]
+convoy = "convoy init's narration + --quiet/--json modes (redesign #5, convoy #60/072808a). GREEN once #5 lands (it has). The Johannes-usability guard; complements convoy-init-structure (which asserts the on-disk layout init creates)."
+reuse = "Deterministic real-command + assert-output discipline: the convoy structure cells (init/add-structure). Sibling (last piece): a convoy-doctor cell (#6) — doctor's narrated structure-correct + can-work checks."

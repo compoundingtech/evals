@@ -1,21 +1,16 @@
 # Cell: compose-global-skill — a GLOBAL (user-level, ~/.claude/skills) skill still FIRES through a convoy compose.
-# compose-config-load proves a REPO-LOCAL skill loads; this proves the distinct case: a skill that convoy does NOT
-# put in the repo or the persona overlay — installed at the user/global level — stays DISCOVERABLE + callable in a
-# real composed work session. i.e. convoy's setup (the .claude/settings.local.json hooks, the CLAUDE.local.md
-# overlay, the cwd) must NOT shadow/break the user's global-skill environment.
+# compose-config-load proves a REPO-LOCAL skill loads; this proves the distinct case: a skill installed at the
+# user/global level — which convoy does NOT put in the repo or the persona overlay — stays DISCOVERABLE + callable
+# in a real composed work session. i.e. convoy's setup (settings.local.json hooks, CLAUDE.local.md overlay, cwd)
+# must NOT shadow/break the user's global-skill environment.
 #
-# WHY THIS EXISTS (Nathan mandate). A composed agent must keep the user's global skills. If convoy relocated the
-# config dir, disabled skills, or scoped discovery to the repo, a real work session would silently lose the user's
-# ~/.claude/skills. This is the held-out proof it does not.
-#
-# AUTH WALL (why the live layer is gated). To test ~/.claude/skills-scope WITHOUT polluting the user's real global
-# skills, the ONLY isolation is a relocated config dir (--config-dir / sandboxed HOME). But a relocated config dir
-# cannot use the keychain-locked oauth (verified: claude says "Not logged in"; copying the login pointer does not
-# restore it; there is no ANTHROPIC_API_KEY). So a FULLY-ISOLATED LIVE run needs a test ANTHROPIC_API_KEY. Without
-# one, the box-free NO-SHADOW deterministic core carries the proof and the live headline SKIPS-WITH-REASON. (Same
-# wall skill-inheritance deferred personal-scope for.)
+# LIVE ARM = READ-ONLY existing skill (Nathan's approach; supersedes the earlier config-dir/auth-key routes, which
+# hit an auth wall — a relocated config dir can't use the keychain-locked oauth). Instead: use a skill ALREADY in
+# ~/.claude/skills, on the DEFAULT config dir (real auth works — no key, no relocation, no install, nothing to
+# clean up, ZERO write to the user's config). The assertion is a DISTINCTIVE string from that skill's OWN body,
+# never in the kick — so a correct answer can only be the global skill firing, not echo.
 id    = "compose-global-skill"
-title = "A GLOBAL (~/.claude/skills) skill still fires through a convoy compose (the compose does not shadow global-skill discovery)"
+title = "A GLOBAL (~/.claude/skills) skill fires through a convoy compose (the compose does not shadow global-skill discovery)"
 tier  = 1
 axes  = ["isolation", "task-success", "autonomy"]
 
@@ -24,58 +19,46 @@ Whether a user's GLOBAL skill stays callable in an agent composed into a repo. T
 
 (a) NO-SHADOW (deterministic, box-free — the provable heart): compose into a repo and prove the compose does NOT
     relocate/disable/scope-away global-skill discovery — convoy pty.toml sets NO CLAUDE_CONFIG_DIR (the agent uses
-    the DEFAULT config dir, where global skills live), the launch command carries no --config-dir and no
+    the DEFAULT config dir, where the user's global skills live), the launch command carries no --config-dir and no
     --disable-slash-commands (which disables all skills), and convoy's .claude/settings.local.json is ADDITIVE
-    (hooks only, touches no skill key). So whatever global skills the user has stay discoverable through the compose.
+    (hooks only). So the user's global skills stay discoverable through the compose.
 
-(b) GLOBAL-SKILL-FIRES (live headline, rides the box; GATED on a test ANTHROPIC_API_KEY): install a nonce global
-    skill (GLOBAL-SKILL-<nonce>) in an ISOLATED config dir, compose an agent there (convoy add --config-dir), kick
-    it to use the skill + write the nonce; assert the nonce appears = the global skill fired. NEGATIVE CONTROL: a
-    second agent with the SAME kick but a config dir WITHOUT the skill must NOT emit the nonce (proves firing, not
-    echo — the token lives only in the skill body, never in the kick). SKIPS-WITH-REASON without a key.
+(b) GLOBAL-SKILL-FIRES (live headline, rides the box; READ-ONLY): take the first supported skill already in
+    ~/.claude/skills (xcodebuildmcp-cli — its body mandates the `xcodebuildmcp` executable), compose an agent into
+    a throwaway repo that does NOT contain it, on the DEFAULT config dir (real auth). Kick it with a DOMAIN
+    question that never names the answer ("what executable for iOS/Xcode build/test/run?"); assert it answers
+    `xcodebuildmcp` — a distinctive string from the skill body only (a skill-less agent answers the raw tool,
+    `xcodebuild`). NEGATIVE CONTROL: an unrelated-question agent must NOT emit that string. Skips-with-reason if no
+    supported global skill is installed (portability — NO-SHADOW carries it). The eval only READS ~/.claude/skills.
 """
 
 [setup]
-work_dir = "${EVAL_SANDBOX:-/tmp}/gs  (SHORT path — pty socket ~90-byte limit). A repo with NO skill of its own; an ISOLATED config dir $SB/cfg holding the test global skill; $SB/cfg-empty as the control config dir."
-isolation = "CRITICAL: the test global skill is installed ONLY under $SB/cfg/skills (reached via convoy add --config-dir), NEVER under the real ~/.claude/skills. The grader HARD-GATES that the real ~/.claude/skills is byte-identical before/after, and that the test skill 'globalgreet' never appears there."
-tokens = "per-run nonce, GLOBAL-SKILL-<nonce>, living ONLY in the global skill body (never in the kick)."
-builder = "fixture/setup-sandbox.sh (repo + isolated config dirs + token). fixture/probe.sh (box-free NO-SHADOW capture). fixture/spin.sh (gated live: --config-dir isolation + key + negative control). fixture/grade.sh (grades both)."
+work_dir = "${EVAL_SANDBOX:-/tmp}/gs  (SHORT path — pty socket ~90-byte limit). A throwaway repo with NO skill of its own."
+skill = "the live arm uses an EXISTING ~/.claude/skills skill (read-only). Supported: xcodebuildmcp-cli -> assert string `xcodebuildmcp`, domain 'the executable for iOS/macOS/Xcode build/test/run'. setup-sandbox records skill/assert/domain; if the skill is absent the live arm skips-with-reason."
+isolation = "CRITICAL: the eval only READS ~/.claude/skills — it never installs or writes a global skill. The grader HARD-GATES that the real ~/.claude/skills is byte-identical before/after; no session leak."
+builder = "fixture/setup-sandbox.sh (repo + skill detection). fixture/probe.sh (box-free NO-SHADOW). fixture/spin.sh (live: default config dir, domain kick + control). fixture/grade.sh (grades both)."
 
 [grader]
 mechanical = """
 fixture/grade.sh — REAL state, never a self-report. Hard gates:
-  NO-SHADOW (det, 3)      — no CLAUDE_CONFIG_DIR in pty.toml; no --config-dir/--disable-slash-commands on the
-                            command; settings.local.json touches no skill key. => global-skill discovery preserved.
-  GLOBAL-SKILL-FIRES (live, gated) — GLOBAL_SKILL.txt == the per-run token (the global skill fired through the compose).
-  NEGATIVE CONTROL (live, gated)   — the no-skill control agent (same kick) did NOT emit the token.
-  ISOLATION (hard)       — the real ~/.claude/skills is UNCHANGED (before == after) and never contains the test
-                            skill; no gsw/gsnc session leaked to the operator's global pty root.
-The NO-SHADOW tier grades box-free; the live headline + control ride the box, gated on a test ANTHROPIC_API_KEY.
+  NO-SHADOW (det, 3)      — no CLAUDE_CONFIG_DIR in pty.toml; no --config-dir/--disable-slash-commands; settings
+                            additive => global-skill discovery preserved.
+  GLOBAL-SKILL-FIRES (live)— GLOBAL_SKILL.txt contains the distinctive skill-body string (e.g. `xcodebuildmcp`),
+                            which is never in the kick => the global skill fired through the compose.
+  NEGATIVE CONTROL (live)  — an unrelated-question agent did NOT emit that string (skill-driven, not ambient).
+  ISOLATION (hard)         — real ~/.claude/skills byte-identical before/after (READ-only); no gsw/gsnc pty leak.
+The NO-SHADOW tier grades box-free; the live headline + control ride the box (skip-with-reason if no supported skill).
 """
 
 [integrity]
 note = """
-PASS (deterministic) = the compose provably preserves global-skill discovery (no config-dir relocation, no
-skill-disable, additive settings). PASS (live, when keyed) = the composed agent actually fired the isolated global
-skill (nonce in GLOBAL_SKILL.txt) while the no-skill control did not — ungameable (nonce only in the skill body).
-The test global skill is isolated to $SB/cfg via --config-dir and the real ~/.claude/skills is asserted untouched.
-The live layer is HONESTLY gated: isolating global skills breaks keychain auth, so without a test key the
-deterministic core carries it and the live headline skips-with-reason (documented, not silently degraded).
+PASS (deterministic) = the compose provably preserves global-skill discovery. PASS (live) = the composed agent
+produced a distinctive string that lives ONLY in a global skill's body (never in the kick) — ungameable proof it
+loaded + fired that GLOBAL skill through the compose, on the default config dir with real auth. The eval only READS
+the user's ~/.claude/skills (asserted byte-identical before/after) — no install, no relocation, no key, no cleanup
+risk. Skips-with-reason on a skill-less box (the NO-SHADOW core still proves the mechanism there).
 """
 
-# LIVE LAYER — HELD pending Nathan's decision (cos is relaying it). The deterministic NO-SHADOW core above is
-# APPROVED + shipped. The live "global skill actually fires" proof has three candidate isolations; pick ONE:
-#   (a) GUARDED TEMP-INSTALL (cos's proposal; NO api key): keep the DEFAULT config dir (real keychain auth works),
-#       temp-install a nonce-named skill (global-skill-<nonce>) into the REAL ~/.claude/skills, fire it via a
-#       composed agent, then a guaranteed-cleanup trap removes it + a post-check asserts ~/.claude/skills is clean.
-#       Full live proof with no key — BUT transiently touches the user's real Claude config (machine-changing =
-#       Nathan's call). Cleaner than config-dir relocation.
-#   (b) TEST-API-KEY + --config-dir (built here, gated in spin.sh): isolate the global skill in $SB/cfg via
-#       --config-dir + auth via a test ANTHROPIC_API_KEY. Never touches the real config; needs a key.
-#   (c) DETERMINISTIC-ONLY: ship the NO-SHADOW core alone (the mechanistic proof), no live firing.
-# spin.sh/configure implement (b) gated on a key; (a) is a small swap once approved. Do not finalize until Nathan
-# picks the isolation.
-
 [dependency]
-convoy = "convoy add composes without relocating the config dir or disabling skills (proven). --config-dir provides the isolated global-skill scope for live option (b)."
-reuse = "Sibling: compose-config-load (repo-local skill loads through the compose). Nonce sentinel + live negative-control pattern: compose-config-load + skill-inheritance (#10). The auth wall (relocated config dir can't oauth) is the same one skill-inheritance deferred personal-scope for."
+convoy = "convoy add composes without relocating the config dir or disabling skills (proven) — so the DEFAULT config dir's ~/.claude/skills stay discoverable."
+reuse = "Sibling: compose-config-load (repo-local skill loads through the compose). Live negative-control pattern: compose-config-load. This cell's live arm reads an existing global skill (xcodebuildmcp-cli) rather than installing one — Nathan's approach that dodges the config-dir/auth wall skill-inheritance deferred personal-scope for."

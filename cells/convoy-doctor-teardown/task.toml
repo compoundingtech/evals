@@ -1,0 +1,55 @@
+# Cell: convoy-doctor-teardown — a SIGTERM/SIGINT-killed `convoy doctor --full` reaps its WHOLE org before exit, so
+# an aborted run does NOT leak its real CoS→sup→worker org (agents + ding sidecars). Guards convoy #67 (the abort
+# trap): doctor traps SIGTERM/SIGINT and runs the finally-teardown (convoy down the sandbox) before exiting, instead
+# of the signal skipping the finally and orphaning the org into a now-deleted sandbox. This is the ABORT-path guard —
+# a NORMAL exit + a plain `convoy down` already reap the org+ding cleanly (convoy #30 confirmed; NOT the gap).
+#
+# WHY THIS EXISTS. doctor --full is the 15-20min org proof that gets CI-timeout-killed (a SIGTERM) or ctrl-c'd
+# (SIGINT). Pre-#67 that killed the signal skipped the teardown → the whole CoS→sup→worker org (real claude agents
+# + their ding sidecars) survived, orphaned, into a deleted sandbox — observed for real (a run-#1 timeout leaked 5
+# sessions in cvd-full-gYnbzd). #67 makes the abort reap the org. This cell locks that in so an abort-leak cannot
+# silently regress. Live/gated (heavy: a real org); grades on TEARDOWN, never rc.
+id    = "convoy-doctor-teardown"
+title = "a SIGTERM-killed convoy doctor --full reaps its whole org before exit (no abort-leak) — guards convoy #67"
+tier  = 1
+axes  = ["isolation", "task-success"]
+
+evaluates = """
+Whether a SIGTERM-aborted `convoy doctor --full` tears down its real org before exit (convoy #67), in ONE run,
+self-contained + mutation-valid:
+
+SPIN (fixture/spin.sh, heavy/gated): launch `convoy doctor --full` in the background; WAIT for the org-up marker
+("[full-org] real chief-of-staff spawned; convoy up hosting" — the earliest a real org exists to leak) + a short
+settle until the CoS agent/ding is actually live in the sandbox; count the sandbox's live org sessions BEFORE the
+abort; SIGTERM the --full; count AFTER; then GUARANTEED self-cleanup of any residual leak.
+
+GRADE (fixture/grade.sh), on TEARDOWN not rc:
+  PRECONDITION — a real org was live + abortable (org_up + aborted + before_leak>0), else the test is vacuous (skip).
+  ORG-LIVE (mutation-valid / anti-vacuous) — before_leak > 0: the detector actually saw a live org (CoS agent +
+    ding) before the SIGTERM, so a later 0 is meaningful, not vacuous. The live-before vs reaped-after contrast IS
+    the mutation-validity, self-contained on one convoy (no pre-#67 convoy needed).
+  TEARDOWN-ON-ABORT — after_leak = 0 + the sandbox swept: the SIGTERM'd doctor --full reaped its whole org (agents +
+    dings) before exit. On a pre-#67 convoy this would be RED (the org leaks).
+  ISOLATION / SELF-CLEANUP — after_clean = 0: no residual sessions remain; the operator's real fleet is untouched.
+
+SCOPE: checkFullOrg (the long run that gets CI-timeout-killed). The shorter readiness checks share the trap pattern
+and are lower-risk (out of scope for v1). rc is NOT pinned (convoy's trapped rc is 130, an impl detail).
+"""
+
+[setup]
+work_dir = "${EVAL_SANDBOX:-/tmp}/cdt  (SHORT path). spin.sh convoy-inits a well-formed net for the preflight; doctor --full makes its OWN cvd-full sandbox for the org (identified by a before/after dir diff). Scoped with --network + a clean env."
+mechanism = "REAL `convoy doctor --full` launched in the bg (convoy is a node script, so SIGTERM $! reaches the process's SIGTERM trap), aborted mid-org with a SIGTERM. Ground truth @ convoy #67/a171cce (suite.ts: 'SIGTERM received — tearing down the sandbox org before exit'). The org runs in doctor's own sandbox; torn down."
+builder = "fixture/spin.sh (launch → org-up → count-before → SIGTERM → count-after → self-clean). fixture/grade.sh (asserts the teardown invariant). No LLM — counts real live sessions/procs."
+
+[grader]
+mechanical = """
+fixture/grade.sh — REAL live-session/proc counts, never a self-report. Gates (on TEARDOWN, not rc):
+  PRECONDITION (skip-with-reason if unmet) — org_up + aborted + before_leak>0 (a real org was live + abortable).
+  ORG-LIVE (hard, mutation-valid) — before_leak>0: the detector saw a live org before the abort (anti-vacuous).
+  TEARDOWN-ON-ABORT (hard) — after_leak=0 + sandbox swept: the SIGTERM'd --full reaped its whole org before exit.
+  ISOLATION/SELF-CLEANUP (hard) — after_clean=0: no residual; the real fleet is untouched.
+"""
+
+[dependency]
+convoy = "convoy #67 (a171cce) — the doctor --full abort trap (SIGTERM/SIGINT → run the finally-teardown before exit). GREEN once #67 lands. Grade on TEARDOWN, not rc. The abort-path guard complementing convoy #30 (a normal exit + plain convoy down already reap the org+ding)."
+reuse = "The heavy real-org discipline of convoy-doctor-canwork (doctor --full in doctor's own sandbox; scoped; torn down). The live-before-vs-reaped-after contrast is the mutation-valid analog of clean-compose's planted-dirt. Sibling: convoy-doctor-canwork (the can-work proof; this guards that the same --full cleans up when ABORTED)."

@@ -1,0 +1,42 @@
+# Cell: convoy-worktree-cutting — `convoy init --megarepo <path>` + `convoy add <id>` cut a REAL linked git
+# worktree off the megarepo into <net>/worktrees/<id>. Deterministic (no LLM): run the real commands, assert the
+# exact on-disk git shape. Per cos notes/convoy-structure-redesign.md (redesign #4b, convoy #59, 36d5cf8).
+#
+# WHY THIS EXISTS (Nathan ask + the pollution fix). The redesign's structural fix for "don't pollute the user's
+# repo" is that agents work in a DEDICATED git worktree cut off the user's megarepo, never in an arbitrary
+# checkout. This cell proves convoy actually cuts that worktree correctly: a linked worktree (shared object store),
+# its own branch, and — critically — WITHOUT dirtying either the worktree or the megarepo. CI/regression guard.
+id    = "convoy-worktree-cutting"
+title = "convoy init --megarepo + convoy add cut a real linked git worktree off the megarepo (worktrees/<id>, branch convoy/<id>, both trees clean)"
+tier  = 1
+axes  = ["isolation", "task-success"]
+
+evaluates = """
+Whether the REAL `convoy init <net> --megarepo <mega>` + `convoy add <id>` cut a genuine linked git worktree off
+the megarepo. Deterministic + box-free: create a megarepo (a git repo with a commit), init a network pointing at
+it, add an agent, then assert — <net>/worktrees/<id>/ exists; its .git is a FILE (a linked-worktree marker
+`gitdir: <megarepo>/.git/worktrees/<id>`), NOT a directory (which would be a clone); it is on branch convoy/<id>;
+the MEGAREPO's `git worktree list` includes it (a real worktree OF the megarepo, sharing its object store); and
+BOTH the worktree AND the megarepo working trees are CLEAN (no pollution of either). Mutation-valid: a clone (.git
+a dir) or a dirtied megarepo FAILS, and a bogus-worktree-id self-test proves the presence check is non-vacuous.
+"""
+
+[setup]
+work_dir = "${EVAL_SANDBOX:-/tmp}/wct  (SHORT path — pty socket ~90-byte limit). A megarepo git repo at $SB/mega + an isolated net at $SB/net."
+mechanism = "REAL `convoy init $NET --megarepo $mega` then `convoy add <id> --network $NET`. Ground truth (convoy #59/36d5cf8): convoy cuts <net>/worktrees/<id> as a linked worktree, .git = `gitdir: <mega>/.git/worktrees/<id>`, branch convoy/<id>, both trees clean. Torn down with convoy down."
+builder = "fixture/probe.sh (runs the commands + captures the git worktree shape). fixture/grade.sh (asserts). No LLM."
+
+[grader]
+mechanical = """
+fixture/grade.sh — REAL on-disk git state, never a self-report. Hard gates:
+  WORKTREE-CUT          — <net>/worktrees/<id>/ exists.
+  LINKED-NOT-CLONE      — its .git is a FILE whose gitdir points into <megarepo>/.git/worktrees/<id> (shared object store).
+  BRANCH                — the worktree is on branch convoy/<id>.
+  REAL-WORKTREE         — the megarepo's `git worktree list` includes it.
+  NO-POLLUTION          — the worktree working tree AND the megarepo working tree are both CLEAN.
+  MUTATION-VALID        — a bogus worktree id reads ABSENT (the presence check is non-vacuous).
+"""
+
+[dependency]
+convoy = "convoy init --megarepo + convoy add's worktree-cutting (redesign #4b, convoy #59/36d5cf8). GREEN once #59 lands (it has); the regression guard for the megarepo worktree model. The no-megarepo case (symlink each agent's repo into worktrees/) landed in #4a and is covered by convoy-init-structure's worktrees/ subdir gate."
+reuse = "git-worktree layout probes (.git-is-a-file, linked-worktree detection, branch attribution, no-leak-to-megarepo/sibling): weird-git-setup. Isolated convoy-add + teardown: lib-harness. Siblings: convoy-init-structure + convoy-add-structure (the network + overlay shape)."

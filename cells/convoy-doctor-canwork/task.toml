@@ -1,0 +1,68 @@
+# Cell: convoy-doctor-canwork — convoy's OWN end-to-end self-test proves the full autonomous org WORKS on this
+# machine. `convoy doctor --full` spawns a REAL CoS→supervisor→worker org and grades that they delegated + shipped
+# a graded fix hands-off — the "and can do real work" headline (the README promise). A DEDICATED gate for that
+# headline (separate from convoy-doctor-structure) so a can-work regression is caught by the gate, not a human
+# dry-run — exactly the class that just bit us (host-prefix bus ids + kick sender-robustness both broke the CoS/
+# delegation boot). Live/gated (heavy: real agents, real API); a box-free preflight-fails-closed floor holds deterministically.
+#
+# HONEST SCOPE (v1, external knob DECLINED by Nathan). doctor --full makes its OWN isolated sandbox for the org proof and
+# IGNORES --network for it (--network scopes only the PREFLIGHT). So the cell proves: (a) doctor --full PASSES on a
+# real machine (rc + headline + check lines), (b) doctor --full FAILS-CLOSED on a bad preflight (rc=1 short-circuit
+# via --network <malformed>) — labeled precisely as a PREFLIGHT negative, NOT a can-work-grader negative, and (c)
+# cross-references convoy's OWN internal ghost-bug + mutation-valid grader test as THE can-work-grader mutation
+# guarantee. True EXTERNAL can-work mutation-validity (a force-bad-fix knob) is a footgun in shipped doctor code and
+# was DECLINED by Nathan (via cos-relay); the durable ghost-bug-regression.mjs cross-ref is the mutation-validity handle.
+id    = "convoy-doctor-canwork"
+title = "convoy doctor --full proves the full autonomous org works on this machine (real CoS→sup→worker graded fix), and fails-closed on a bad preflight"
+tier  = 1
+axes  = ["isolation", "task-success"]
+
+evaluates = """
+Whether convoy's OWN end-to-end self-test, `convoy doctor --full`, proves the full autonomous org can do real work:
+
+(a) CAN-WORK ORG-PROOF CORE (live, gated — fixture/spin.sh): on a well-formed net, `convoy doctor --full` runs a
+    real CoS→supervisor→worker org in doctor's own sandbox. The HARD gate is the ORG-PROOF CORE — g1 (CoS hands-off
+    boot) + cos→sup + sup→wk + graded_fix — which is STRADDLE-INDEPENDENT. rc, the PASS-headline ("the full
+    autonomous org works on this machine ...") and the restart-continuity straddle (G4/G5) are ADVISORY, NOT gated:
+    convoy confirmed checkFullOrg returns ONE pass/fail for G1..G5, so a straddle flake fails the WHOLE check =>
+    rc=1 + the ✗ FAIL headline. The straddle is known-flaky in the hosted run (agent-re-engagement, not a code
+    bug), so gating on rc or the PASS-headline would make the eval flaky. They are promoted to hard gates once
+    convoy makes the straddle deterministic. Markers: the interim [full-org] prose lines, switching to convoy's
+    stable machine-readable token line ("[full-org] GATE g1=pass cos_sup=pass sup_wk=pass graded_fix=pass
+    straddle=pass") the moment convoy's follow-up lands — so the gate never chases prose.
+
+(b) PREFLIGHT FAILS-CLOSED (box-free — fixture/probe.sh): `convoy doctor --full --network <malformed>` exits rc=1
+    via a preflight structure ✗ that short-circuits BEFORE the org proof spawns — proving doctor refuses a broken
+    layout. Labeled precisely: a PREFLIGHT negative, NOT proof the org grader catches a bad fix.
+
+The org-grader mutation-validity is a DURABLE, held-out test that already lives in convoy:
+src/doctor/fixtures/grader/ghost-bug-regression.mjs — doctor --full runs it against BOTH the worker repo (must
+PASS) AND the pristine buggy fixture src/doctor/fixtures/ghost-bug/ (must FAIL), proving the grader actually detects
+the bug (ungameable: it targets the exact call interaction the fixture's green suite never exercises + lives outside
+the repo). This cell cross-references that concrete durable test rather than exercising it from outside (no external
+force-bad knob — that was DECLINED by Nathan via cos-relay as a footgun in shipped doctor).
+
+ISOLATION: doctor is scoped with --network <sandbox> and ambient ST_ROOT/PTY_ROOT/CONVOY_NETWORK are unset. The
+--full org proof runs in doctor's own isolated sandbox + is torn down. Never touches the live fleet.
+"""
+
+[setup]
+work_dir = "${EVAL_SANDBOX:-/tmp}/cdc  (SHORT path). probe.sh convoy-inits a net + breaks it (rm worktrees/) for the preflight negative. spin.sh convoy-inits a well-formed net for the heavy --full org proof. All scoped with --network + a clean env."
+mechanism = "REAL `convoy doctor --full` — convoy's built-in graded CoS→sup→worker self-test (no hand-rolled kick). Preflight scoped by --network; the org proof runs in doctor's own sandbox. Ground truth @ convoy #64 (host-prefix + sender-robustness fixes). Torn down with convoy down."
+builder = "fixture/probe.sh (box-free preflight-fails-closed negative). fixture/spin.sh (the heavy live can-work headline; gated). fixture/grade.sh (asserts both). No LLM judge — grades doctor's real stdout + rc."
+
+[grader]
+mechanical = """
+fixture/grade.sh — REAL doctor stdout + exit code, never a self-report. Gates:
+  PREFLIGHT-FAILS-CLOSED (hard, box-free) — doctor --full --network <malformed>: rc=1 + a preflight structure ✗ +
+                     NO can-work headline (org proof short-circuited). A PREFLIGHT negative (labeled), not a grader negative.
+  CAN-WORK-CORE (hard when exercised via spin.sh; skip-with-reason otherwise) — the ORG-PROOF CORE g1 (CoS
+                     hands-off boot) + cos→sup + sup→wk + graded_fix (straddle-INDEPENDENT). This is the stable gate.
+  ADVISORY (reported, NEVER gated — straddle-coupled/single-run) — rc + the PASS-headline + the restart-continuity
+                     straddle. Promoted to hard gates once convoy makes the straddle deterministic.
+  ISOLATION (hard) — no doctor session in the operator's global pty root (--network scoped it to the sandbox).
+"""
+
+[dependency]
+convoy = "convoy doctor --full's CoS→sup→worker graded org proof (convoy #64: host-prefix all suite bus ids + kick sender-robustness --from a created folder). rc=0 only if preflight-green AND full-org PASS AND prod-untouched; else rc=1 (preflight short-circuits first). Scope with --network (a bare doctor hits the real default net). The dedicated can-work headline guard so a regression is caught by the gate, not a human dry-run."
+reuse = "Real-command + assert-output discipline of the convoy structure/doctor cells; the heavy-gated live headline + box-free floor split mirrors convoy-doctor-structure (probe/grade box-free + spin.sh gated). Sibling: convoy-doctor-structure (the layout-proof half; this is the can-work half kept SEPARATE so the headline has its own guard)."

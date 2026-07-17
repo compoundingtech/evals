@@ -44,6 +44,7 @@ BOOT
 # back to specialist.md (the repo's pinned personas SHA still ships specialist.md) — so this composes cleanly on
 # both a pinned checkout and a newer one. (spin.sh died here when it hardcoded a name absent from the checkout.)
 role_md="$PZ/worker.md"; [ -f "$role_md" ] || role_md="$PZ/specialist.md"
+[ -f "$role_md" ] || { echo "compose-persona: FATAL — no leaf role persona (worker.md or specialist.md) in $PZ. Personas checkout stale/wrong pin? Run bin/ensure-personas.sh." >&2; exit 1; }
 { echo '---'; echo "## ROLE persona ($(basename "$role_md"))"; echo; cat "$role_md"; echo; } >> "$out"
 
 echo "composed $out  ($(wc -l < "$out") lines) id=$id family=claude"

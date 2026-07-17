@@ -1,0 +1,38 @@
+# Cell: convoy-init-structure — `convoy init <net>` produces the REDESIGN network layout. Deterministic (no LLM):
+# run the real command, assert the exact on-disk shape. Per cos notes/convoy-structure-redesign.md (42692c1):
+#   $XDG_STATE_HOME/convoy/<name>/{smalltalk,pty,worktrees}  + the network config recorded.
+#
+# WHY THIS EXISTS (Nathan ask). Prove our real tooling produces the structure we THINK. This is the CI/regression
+# guard for convoy's network layout — complementary to `convoy doctor` (user-facing setup check). RED until the
+# named-net + smalltalk/pty/worktrees pieces land; GREEN after; and RED again the moment convoy regresses the shape.
+# Greenfield-safe (fresh isolated nets; nothing touches the live convoy).
+id    = "convoy-init-structure"
+title = "convoy init <net> produces the redesign layout: <net>/{smalltalk,pty,worktrees} + recorded config"
+tier  = 1
+axes  = ["isolation", "task-success"]
+
+evaluates = """
+Whether the REAL `convoy init <net>` creates the redesign network structure: a named network directory containing
+smalltalk/ (the synced bus state), pty/ (machine-local pty runtime), and worktrees/ (the workspaces), plus a
+recorded network config so add/up/doctor stay consistent. Deterministic + box-free: run the command in an isolated
+short path, assert each required subdir exists, and confirm a config artifact was written. Mutation-valid: a
+missing/wrong subdir FAILS (that is a structure gate's whole job), and a self-test proves the presence check is
+non-vacuous (a bogus subdir must read absent).
+"""
+
+[setup]
+work_dir = "${EVAL_SANDBOX:-/tmp}/cis  (SHORT path — pty socket ~90-byte limit). No pre-seed: probe.sh runs convoy init fresh into $SB/net."
+mechanism = "REAL `convoy init $SB/net` on an isolated path. Target (redesign doc): <net>/{smalltalk,pty,worktrees} + config. Current convoy makes a FLAT net (no subdirs) => RED today. Torn down with convoy down."
+builder = "fixture/probe.sh (runs convoy init + captures the tree/shape). fixture/grade.sh (asserts). No LLM."
+
+[grader]
+mechanical = """
+fixture/grade.sh — REAL on-disk state, never a self-report. Hard gates:
+  STRUCTURE       — <net>/smalltalk/ AND <net>/pty/ AND <net>/worktrees/ all exist.
+  CONFIG RECORDED — init wrote a network-config artifact (exact filename TBD with convoy-claude; accepts a few).
+  MUTATION-VALID  — a bogus subdir reads ABSENT (the presence check genuinely tests presence, not always-pass).
+"""
+
+[dependency]
+convoy = "convoy init's network layout. Target from the redesign doc (cos notes/convoy-structure-redesign.md): named nets + smalltalk/pty/worktrees split. RED until convoy-claude lands those pieces; the cell is the regression guard. Coordinate the exact config-artifact name + any layout refinements with convoy-claude as pieces land."
+reuse = "Isolated convoy + teardown scaffolding: lib-harness (stev_convoy_teardown). Deterministic real-command + assert-exact-shape discipline: clean-compose. Sibling: convoy-add-structure (the workspace-overlay + bus-folder shape)."

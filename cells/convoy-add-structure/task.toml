@@ -1,0 +1,47 @@
+# Cell: convoy-add-structure — `convoy add` produces the REDESIGN workspace overlay + bus folder. Deterministic
+# (no LLM): run the real command, assert the exact on-disk shape. Per cos notes/convoy-structure-redesign.md:
+#   - the rig moves OUT of the repo root INTO .convoy/: PERSONA.md + DING-BUS.md + pty.toml
+#   - .claude/settings.local.json (the hooks); CLAUDE.local.md present + git-excluded (exact location root-vs-.claude
+#     IN FLIGHT — held)
+#   - ALL git-excluded => git status --porcelain EMPTY (pristine product-repo root)
+#   - bus folder <net>/smalltalk/<shorthost>.<identity>/ with inbox/ + archive/ + status
+#   - pty.toml carries NO --resume (a launch spec, not a conversation-resume)
+#
+# WHY THIS EXISTS (Nathan ask). Prove convoy add produces the structure we THINK — the CI/regression guard for the
+# workspace overlay + bus-folder shape, complementary to `convoy doctor`. RED until pieces #1 (.convoy/ overlay) +
+# #3 (smalltalk/ split + host-prefix) land; GREEN after; RED again on any regression. Greenfield-safe (fresh nets).
+id    = "convoy-add-structure"
+title = "convoy add produces the redesign overlay (.convoy/ rig, pristine root, host-prefixed smalltalk/ bus folder, no-resume pty.toml)"
+tier  = 1
+axes  = ["isolation", "task-success"]
+
+evaluates = """
+Whether the REAL `convoy add --dir <repo>` produces the redesign workspace overlay + bus folder. Deterministic +
+box-free: run the command on an isolated net, then assert — the rig is under .convoy/ (PERSONA.md + DING-BUS.md +
+pty.toml); .claude/settings.local.json exists; the product-repo root is pristine (git status --porcelain EMPTY,
+all convoy files git-excluded); the bus folder is <net>/smalltalk/<shorthost>.<identity>/ with inbox/ + archive/ +
+status; pty.toml carries no --resume. Mutation-valid: a missing/wrong folder FAILS, and a self-test proves the
+presence checks are non-vacuous. The <shorthost> is derived portably (short hostname, lowercased — convoy's
+shortHostname), never hardcoded. The CLAUDE.local.md EXACT location (root vs .claude/) is IN FLIGHT — held; presence
++ pristine-root are asserted, the exact-path gate is added once convoy-claude confirms.
+"""
+
+[setup]
+work_dir = "${EVAL_SANDBOX:-/tmp}/cas  (SHORT path — pty socket ~90-byte limit). probe.sh convoy-inits an isolated net + convoy-adds into a throwaway repo."
+mechanism = "REAL `convoy add --dir <repo>` on an isolated net. Target: .convoy/ overlay + smalltalk/<shorthost>.<id> bus folder + no-resume pty.toml. Current convoy writes the rig in the repo ROOT + a flat <net>/<id> bus folder => RED for those parts today (pristine-root + no-resume already hold via convoy #53). Torn down with convoy down."
+builder = "fixture/probe.sh (runs convoy add + captures the shape). fixture/grade.sh (asserts). No LLM."
+
+[grader]
+mechanical = """
+fixture/grade.sh — REAL on-disk state, never a self-report. Hard gates:
+  OVERLAY-IN-.convoy — .convoy/{PERSONA.md,DING-BUS.md,pty.toml} + .claude/settings.local.json all exist.
+  PRISTINE-ROOT      — git status --porcelain EMPTY (all convoy files git-excluded; the product-repo root is clean).
+  BUS-FOLDER         — <net>/smalltalk/<shorthost>.<identity>/ exists with inbox/ + archive/ + status.
+  NO --resume        — pty.toml carries no --resume/--session-id.
+  MUTATION-VALID     — a bogus .convoy/ file reads ABSENT (the presence checks are non-vacuous).
+Soft/held: CLAUDE.local.md present + git-excluded (exact location root-vs-.claude pending convoy-claude).
+"""
+
+[dependency]
+convoy = "convoy add's workspace overlay + bus-folder shape. Target from the redesign doc; RED until pieces #1 (.convoy/ overlay) + #3 (smalltalk/ split + host-prefix) land. Coordinate the CLAUDE.local.md final location + per-piece landings with convoy-claude (PR titles 'redesign #N')."
+reuse = "Isolated convoy-add + teardown: lib-harness. Deterministic real-command + assert-exact-shape + pristine-root discipline: clean-compose (which caught convoy's #53 gap). Sibling: convoy-init-structure (the network layout)."

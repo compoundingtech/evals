@@ -14,7 +14,7 @@ thin on its direct verb surface. Two convoy gaps are tracked below.
 | `init` (layout + narration) | convoy-init-structure, convoy-init-narration | ✅ strong |
 | `add` / compose (overlay, config-load, global+project skills, zero-pollution) | convoy-add-structure, clean-compose, compose-config-load, compose-global-skill, skill-inheritance, weird-git-setup | ✅ strong |
 | `doctor` (pre-init UX, structure-proof, can-work self-test, abort/teardown) | convoy-doctor-preinit, convoy-doctor-structure, convoy-doctor-canwork, convoy-doctor-teardown | ✅ strong |
-| `doctor` on a **foreign box** (false-negative class) | convoy-doctor-foreign-box | 🔨 building (the Johannes false-negative regression guard) |
+| `doctor` on a **foreign box** (false-negative class) | convoy-doctor-foreign-box | ✅ (the Johannes false-negative regression guard, #77 + #78) |
 | `up` — hosting + respawn | convoy-network (capstone), crash-ding | ✅ |
 | worktree / megarepo | convoy-worktree-cutting, weird-git-setup | ✅ |
 | `reload` (restore path) | restorability, restorability-codex | ✅ |
@@ -46,14 +46,9 @@ thin on its direct verb surface. Two convoy gaps are tracked below.
 
 ## Open gaps
 
-1. **convoy doctor on a FOREIGN box — HIGH, 🔨 building (`convoy-doctor-foreign-box`).** The four existing
-   doctor cells run against nets THIS box created. None test `convoy doctor` diagnosing a box/net it did NOT
-   set up — the false-negative class where doctor scares a healthy foreign box (e.g. `st` off `PATH` + an
-   inconclusive claude-signed probe wrongly reported as "hooks not found" / "not signed"). The regression
-   guard for the Johannes false-negatives; asserts doctor reports **honestly**.
-2. **convoy job-lifecycle — HIGH, 🔨 building (`convoy-job-lifecycle`).** Zero cells touch `convoy job`
+1. **convoy job-lifecycle — HIGH, 🔨 building (`convoy-job-lifecycle`).** Zero cells touch `convoy job`
    (submit → run → status → complete). Built to extend to the incoming one-shot-agent job type.
-3. **pty peek / send / write — MEDIUM.** Exercised only as plumbing (tui-build reads `pty peek` for content)
+2. **pty peek / send / write — MEDIUM.** Exercised only as plumbing (tui-build reads `pty peek` for content)
    or as an isolation-negative (two-networks asserts cross-network peek/send is refused). No cell asserts
    "peek returns the session's real output" or "send injects input the session acts on" as a positive
    capability. A `pty peek`/`pty send` round-trip cell would close it.

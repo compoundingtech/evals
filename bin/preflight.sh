@@ -30,6 +30,7 @@ CAP[codex]=$(  have codex    && echo 1 || echo 0 )
 CAP[glm]=$(    have_glm      && echo 1 || echo 0 )
 CAP[st]=$(     have_st       && echo 1 || echo 0 )
 CAP[pty]=$(    have pty      && echo 1 || echo 0 )
+CAP[convoy]=$( have convoy   && echo 1 || echo 0 )
 CAP[git]=$(    have git      && echo 1 || echo 0 )
 CAP[node]=$(   have node     && echo 1 || echo 0 )
 CAP[gh]=$(     have gh       && echo 1 || echo 0 )
@@ -58,7 +59,7 @@ case "$MODE" in
   --runnable) printf '%s\n' "${runnable[@]}";;
   --json)
     printf '{"tools":{'; first=1
-    for k in claude codex glm st pty git node gh; do [ $first = 1 ] || printf ','; first=0; printf '"%s":%s' "$k" "${CAP[$k]}"; done
+    for k in claude codex glm st pty convoy git node gh; do [ $first = 1 ] || printf ','; first=0; printf '"%s":%s' "$k" "${CAP[$k]}"; done
     printf '},"families":%s,"cross_family_judging":%s,"runnable":[' "$FAMILIES" "$CROSS_FAMILY"
     first=1; for c in "${runnable[@]}"; do [ $first = 1 ] || printf ','; first=0; printf '"%s"' "$c"; done
     printf '],"skipped":['; first=1
@@ -66,7 +67,7 @@ case "$MODE" in
     printf ']}\n';;
   *)
     echo "evals preflight — installed capabilities"
-    for k in claude codex glm st pty git node gh; do
+    for k in claude codex glm st pty convoy git node gh; do
       printf '  %-7s %s\n' "$k" "$( [ "${CAP[$k]}" = 1 ] && echo '✓' || echo '—' )"
     done
     echo "  families present: $FAMILIES  ·  cross-family judging: $( [ $CROSS_FAMILY = 1 ] && echo 'available (>=2 families)' || echo 'unavailable (need >=2 families)' )"

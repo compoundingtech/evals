@@ -108,8 +108,12 @@ stev_ding_flags() { stev_ding_on && printf -- '--ding' || true; }
 # (e.g. hook-integrity needs MCP on both legs). Default = ding (no MCP).
 stev_mcp_on() { case "${EVAL_MCP:-}" in 1|true|TRUE|yes|YES|on|ON) return 0 ;; *) return 1 ;; esac; }
 
-# stev_convoy_add <id> <dir> <mode> <persona> [harness] : launch ONE eval agent via REAL convoy on the
-# isolated network ($ST_ROOT). Does NOT pre-trust the folder — convoy-core batch-pre-trusts every member's
+# stev_convoy_add <id> <dir> <mode> <persona> [harness] : DECLARE + LAUNCH ONE eval agent via REAL convoy
+# on the isolated network ($ST_ROOT). convoy is DECLARATIVE (add=declare / render=materialize /
+# up=reconcile): `convoy add` alone writes only the catalog agent file and launches NOTHING, so this
+# helper follows it with `convoy up --once` (one-shot reconcile-and-exit) to actually spawn the session
+# + ding sidecar. `up --once` ADOPTS already-live sessions, so calling this per-agent is idempotent —
+# each add reconciles the whole host, later calls adopt the earlier agents instead of respawning them. Does NOT pre-trust the folder — convoy-core batch-pre-trusts every member's
 # --dir before any boot (the CENTRAL fix for the multi-spawn workspace-trust race; see the body). Derives the
 # convoy role from the permission mode (bypassPermissions → supervisor / spawn-capable; else → worker),
 # and `convoy add`s it (ding by default; --mcp iff EVAL_MCP=1). ST_ROOT must be the isolated network
@@ -140,7 +144,12 @@ stev_convoy_add() {
   else
     convoy add "$conv_role" --identity "$id" --network "$NET" --dir "$d" --persona "$persona" --harness "$harness"
   fi
-  echo "launched $id  (convoy add $conv_role/$harness, $(stev_mcp_on && echo MCP || echo 'ding / no MCP'), net=$NET, --permission-mode $mode, persona=$persona)"
+  # convoy add only DECLARES. Reconcile once to materialize the overlay + spawn this host's agents; --once
+  # exits instead of daemonizing, and leaves the spawned sessions running (agents are decoupled from the
+  # supervisor). Without this the whole live suite declares agents that never start — and every downstream
+  # assertion then fails for a reason that looks like a product bug.
+  convoy up --once "$NET" >/dev/null || { echo "stev_convoy_add: 'convoy up --once' failed for $id on $NET" >&2; return 1; }
+  echo "launched $id  (convoy add $conv_role/$harness + up --once, $(stev_mcp_on && echo MCP || echo 'ding / no MCP'), net=$NET, --permission-mode $mode, persona=$persona)"
 }
 
 # stev_convoy_init <NET> : create a fresh isolated convoy network (idempotent — wipes any prior run's net).

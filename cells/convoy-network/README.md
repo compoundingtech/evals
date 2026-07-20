@@ -20,7 +20,7 @@ record so the reconcile can't see it to respawn.)*
 - **NO-MCP** — no `.mcp.json` in any agent dir (`convoy add` is ding-by-default).
 - **NO-APP** — hosted by `convoy up` (CLI); no `Convoy.app` invocation.
 - **RESPAWN** *(the new gate)* — a `{type:respawn, identity:cap-cos, ok:true}` event **after** the crash: the HOST
-  (not the fixture) brought the permanent cos back, resuming its session (ties to resumability).
+  (not the fixture) brought the permanent cos back, resuming its session.
 - **LOOP-CLOSED** — a **threaded** reply from cos in the requester's inbox (`in-reply-to` == the kick — reuses
   ding-reply's discriminator) carrying the `ANSWER.txt` token.
 - **autonomy — 0 rescues.**
@@ -36,6 +36,6 @@ fixture/grade.sh $SB                 # HOSTED + respawn + no-mcp + no-app + thre
 ```
 
 **Dependency:** the installed `convoy` (0.1.0, `/opt/homebrew/bin`) does **not** have `up` yet — set `CONVOY_BIN`
-to a built/re-published binary until it ships. Composes bootstrap + ding + resumability into one end-to-end host
+to a built/re-published binary until it ships. Composes bootstrap + ding + respawn into one end-to-end host
 proof; binds to convoy's frozen `convoy up` interface. Design: `CONVOY-UP-CAPSTONE-DESIGN.md`. Caps:
 `claude,convoy,st,pty,git`.

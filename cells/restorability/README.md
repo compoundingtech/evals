@@ -33,7 +33,7 @@ That trio *is* the mandate's proof.
 > queue is *deliberately not seeded* because its persistence is undocumented / version-dependent / buggy, and a
 > fragile hand-authored-JSONL seed would risk a **false PASS** on a CC version bump (the worse-than-FAIL case).
 
-## Two tiers (mirrors resumability + restart-continuity)
+## Two tiers (mirrors restart-continuity)
 
 - **Deterministic core — `fixture/probe.sh` (box-free; needs no live model):**
   - **NO-RESUME** — materialize the real `pty.toml` (what `convoy reload` respawns from) and prove the stored

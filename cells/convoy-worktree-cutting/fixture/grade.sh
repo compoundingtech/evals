@@ -21,7 +21,7 @@ if grep -q 'CONVOY-MISSING' "$P/shape.txt" 2>/dev/null; then sk "convoy not avai
 echo
 echo "== WORKTREE CUT (hard gate) — convoy add cut <net>/worktrees/<id>/ off the megarepo =="
 g "wt_exists=yes" && ok "<net>/worktrees/$id/ exists (convoy add placed the workspace there)" \
-                  || no "<net>/worktrees/$id/ MISSING — convoy add did not cut a worktree (megarepo model not landed / no megarepo recorded)"
+                  || no "<net>/worktrees/$id/ MISSING — CHECK THE VERB SPLIT FIRST: convoy is declarative now (add=declare / render=materialize / up=reconcile); \`convoy add\` alone cuts nothing. Verify via \`convoy render\`/\`up\` before concluding 'megarepo model not landed'"
 
 echo
 echo "== LINKED WORKTREE, NOT A CLONE (hard gate) — .git is a FILE pointing into the megarepo =="

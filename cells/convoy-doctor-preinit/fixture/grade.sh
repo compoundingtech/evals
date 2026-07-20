@@ -21,7 +21,7 @@ if grep -q 'CONVOY-MISSING' "$P/shape.txt" 2>/dev/null; then sk "convoy not avai
 echo
 echo "== PRE-INIT NEUTRAL (hard gate) — a fresh net gets a friendly pointer, not a failure wall =="
 g "pre_rc=0"       && ok "convoy doctor --quick on a FRESH (uninitialized) net exits rc=0 (not a blocking failure)" \
-                   || no "fresh-net doctor exited non-zero (pre_rc != 0) — the scary rc=1 wall regressed (redesign #63 not landed)"
+                   || no "fresh-net doctor exited non-zero (pre_rc != 0) — VERIFY THE CAUSE before blaming #63: an UNRELATED blocking check (e.g. hooks/paths) also yields rc=1. Read pre.out's ✗ lines: if the neutral pointer is present and no scary wall, #63 IS landed and the rc comes from elsewhere (env/setup), not a UX regression"
 g "pre_neutral=yes" && ok "stdout carries the neutral 'no network here yet — run convoy init' pointer" \
                     || no "no neutral 'no network here yet' pointer — a first-time user gets no friendly next-step"
 g "pre_scary_wall=no" && ok "stdout does NOT contain the old scary '✗ named network' / 'MISSING:' wall on a fresh net" \
@@ -48,7 +48,10 @@ if [ "$fail" -eq 0 ]; then
   echo "    old scary failure wall (redesign #63, convoy 3fc9dc32d)."
 else
   echo "==> convoy-doctor-preinit: FAIL — the pre-init doctor UX does not match the target (redesign #63 / convoy 3fc9dc32d)."
-  echo "    (If the local convoy checkout predates 3fc9dc32d, a fresh net still shows the old rc=1 wall — sync the box to a"
-  echo "     tree that includes #63, then this flips GREEN.)"
+  echo "    DIAGNOSE before concluding — this cell cannot tell these apart, so check in order:"
+  echo "      1. env/setup   — an unrelated blocking ✗ (hooks, PTY_ROOT length) makes rc=1 while #63 IS landed."
+  echo "                       Tell: the neutral pointer is PRESENT and no scary wall. Read .probe/pre.out ✗ lines."
+  echo "      2. cell staleness — convoy'''s UX/verb surface moved and this assertion is out of date."
+  echo "      3. unlanded/regressed — the local convoy predates 3fc9dc32d; sync past #63 and re-run."
 fi
 [ "$fail" -eq 0 ]

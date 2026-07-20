@@ -1,6 +1,6 @@
 # Cell: convoy-network — the CAPSTONE. `convoy up` hosts a ding-only, no-MCP network END-TO-END: stand up → HOST
 # → message → threaded reply, with a mid-run kill the host must RESPAWN. This is the reboot's GO/NO-GO acceptance
-# test — it composes the unit cells (bootstrap + ding + resumability) into one end-to-end HOST proof. Fully
+# test — it composes the unit cells (bootstrap + ding + respawn) into one end-to-end HOST proof. Fully
 # synthetic + hermetic. Binds to `convoy up`'s live interface (PR #10). See README.md + CONVOY-UP-CAPSTONE-DESIGN.md.
 id    = "convoy-network"
 title = "convoy up hosts a ding-only, no-MCP network end-to-end — the reboot acceptance test"
@@ -16,7 +16,7 @@ INJECTS a mid-run CRASH of the PERMANENT cos — the host must RESPAWN it (resum
 still close. The genuinely-new gate is RESPAWN OWNERSHIP (the host, not the fixture, brings the permanent agent
 back — proven by convoy up's own `--json` respawn event). (LIVE-validated: convoy up respawns PERMANENT sessions,
 not workers; and respawn fires on a crashed/exited session, not a `pty kill` — which removes it.) If this passes, the reboot's hosting model works; if it fails, the
-reboot doesn't ship. It composes bootstrap (convoy init/add) + ding (no-MCP loop) + resumability (respawn-resume).
+reboot doesn't ship. It composes bootstrap (convoy init/add) + ding (no-MCP loop) + respawn.
 """
 
 # Frozen world: setup-sandbox.sh `convoy init`s an isolated network + agent dirs + a task token. Fully synthetic —
@@ -38,7 +38,7 @@ path = "DING (no MCP, no app) — `convoy add` is ding-by-default; every agent h
 hosted     = "hard: convoy up's `up` event present — the network is hosted by the CLI host."
 no_mcp     = "hard: no `.mcp.json` in any agent dir (ding-default)."
 no_app     = "hard: no Convoy.app invocation in the host log — the CLI host, not the app."
-respawn    = "hard + HELD-OUT + the new gate: a `{type:respawn, identity:cap-cos, ok:true}` event AFTER the injected CRASH of the PERMANENT cos — the HOST (not the fixture) respawned it, resuming its session (ties to resumability). LIVE-run corrections: convoy up respawns PERMANENT sessions (cos), NOT workers; and respawn triggers on a crashed/EXITED session (a `pty kill` REMOVES the session, so the injector crashes the process instead)."
+respawn    = "hard + HELD-OUT + the new gate: a `{type:respawn, identity:cap-cos, ok:true}` event AFTER the injected CRASH of the PERMANENT cos — the HOST (not the fixture) respawned it, resuming its session. LIVE-run corrections: convoy up respawns PERMANENT sessions (cos), NOT workers; and respawn triggers on a crashed/EXITED session (a `pty kill` REMOVES the session, so the injector crashes the process instead)."
 loop_closed = "held-out: a reply from cap-cos in cap-req's inbox, THREADED (`in-reply-to` == the seeded kick — reuses ding-reply's discriminator) + carrying the ANSWER.txt token."
 flapping   = "v2 probe: crash-loop a session → a `session_flapping` event parks it (the flapping-cap)."
 

@@ -24,7 +24,7 @@ echo "short-hostname this box: $(cat "$P/shorthost.txt" 2>/dev/null)"
 echo
 echo "== OVERLAY IN .convoy/ (hard gate) — the rig moved OUT of the repo root into .convoy/ =="
 for f in PERSONA.md DING-BUS.md pty.toml; do
-  g "convoy_has_$f=yes" && ok ".convoy/$f exists" || no ".convoy/$f MISSING — the rig is not under .convoy/ (piece #1 not landed / regressed)"
+  g "convoy_has_$f=yes" && ok ".convoy/$f exists" || no ".convoy/$f MISSING after \`convoy add\` — CHECK THE VERB SPLIT FIRST: current convoy is declarative (add=declare / render=materialize / up=reconcile), so \`convoy add\` alone writes NO overlay. Run \`convoy render <id>\` and re-check before concluding 'piece #1 not landed'"
 done
 g "has_settings=yes" && ok ".claude/settings.local.json exists (the hooks)" || no ".claude/settings.local.json MISSING"
 
@@ -57,7 +57,7 @@ else sk "no pty.toml found to check for --resume"; fi
 echo
 echo "== LOADER (hard gate, doc 4aab4f1 SETTLED) — .claude/rules/convoy.md is the loader; NO root CLAUDE.local.md =="
 g "has_loader=yes" && ok ".claude/rules/convoy.md exists — the loader (auto-loads + @-imports .convoy/, zero visible root file)" \
-                   || no ".claude/rules/convoy.md MISSING — the persona-overlay loader is absent (piece not landed)"
+                   || no ".claude/rules/convoy.md MISSING — see the verb-split note above: \`convoy render\` materializes the overlay, \`convoy add\` no longer does"
 g "no_root_claude_local=yes" && ok "NO CLAUDE.local.md at the repo ROOT — the loader lives in .claude/rules/, so the root stays pristine" \
                              || no "a CLAUDE.local.md is at the repo ROOT — the redesign moved the loader to .claude/rules/convoy.md (no visible root file)"
 

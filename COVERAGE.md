@@ -29,7 +29,7 @@ thin on its direct verb surface. Two convoy gaps are tracked below.
 | ding / no-MCP sidecar (`[DING]`) | ding-mode, ding-reply, crash-ding | ✅ |
 | hooks (SessionStart rehydrate) | hook-integrity (hook FIRES, not just configured), restorability(+codex) | ✅ |
 | context (now.md read / write / append) | hook-integrity, restorability(+codex) | ✅ |
-| `st launch` session resume (`--resume` / `--fresh`) | resumability | ✅ |
+| session resume (`--resume`) | — removed by design: the reboot moved OFF `--resume`; see restorability | n/a |
 | status / agents discovery | bootstrap-network | ⚠️ thin |
 | `st resource` | — none as subject — | ⚠️ minor gap (operational) |
 
@@ -37,9 +37,9 @@ thin on its direct verb surface. Two convoy gaps are tracked below.
 
 | pty capability | cells (subject) | coverage |
 |---|---|---|
-| spawn (session create) | implicit plumbing in every team cell (st launch / convoy add) | ✅ implicit |
+| spawn (session create) | implicit plumbing in every team cell (convoy add + up) | ✅ implicit |
 | restart / cold-restart | restart-continuity, restorability | ✅ |
-| session resume (pinned `--resume`) | resumability | ✅ |
+| session resume (pinned `--resume`) | — removed by design (restorability proves restore WITHOUT resume) | n/a |
 | session death detection | crash-ding, convoy-doctor-teardown | ✅ |
 | per-network `PTY_ROOT` isolation | two-networks-coexist | ✅ |
 | **peek / send** (inspect live output / inject input) | pty-send-peek (positive round-trip) | ✅ (also: tui-build consumes `pty peek`, two-networks refuses cross-net peek/send) |

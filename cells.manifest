@@ -1,6 +1,6 @@
 # evals cell manifest — single source of truth for preflight, readiness, and the registry.
 # Format:  cell | type | ship | caps | discriminator
-#   caps: comma-list from {claude, codex, glm, st, pty, git, node, gh, network}
+#   caps: comma-list from {claude, codex, glm, st, pty, convoy, git, node, gh, network}
 #   ship: ship | flag   (flag = de-personalize + get sign-off before publishing)
 #   a cell needs ALL its caps present to be runnable. Cross-family JUDGING (a quality judge
 #   from a different family than the subject) is available only when >=2 families are installed;

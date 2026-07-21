@@ -23,7 +23,8 @@ this cell's declared caps. This is the **matrix cell**, so the same task/world a
 
 ## Grading
 
+- **`fixture/grade.sh [SANDBOX]`** — mechanizes the ground-truth checks once the loop closes; never trusts a self-report. It reads only git metadata, the committed license text, and the smalltalk bus files, so a PASS means the loop really happened. Run it after the run, then tear down with `bin/evals teardown <SANDBOX>`.
 - **Held-out acceptance** — see `task.toml` `[grader]`: an independent check the team never sees, so the result can not be gamed by editing a unit test.
-- **Isolation is a hard PASS/FAIL gate:** every agent changes only the module/repo it owns; all coordination flows through the message bus. A non-owner change fails the run outright.
+- **Isolation is a hard PASS/FAIL gate:** every agent changes only the module/repo it owns; all coordination flows through the message bus. A non-owner change fails the run outright. Note: the worker repo's git identity is *pinned* to the worker, so git-author alone can't catch a "supervisor did it itself" violation — the honest proxy is structural (the supervisor owns no repo) **plus** coordination-visibility (a completed change with no delegate→report thread is the out-of-band signature). `grade.sh` encodes exactly that.
 
 See `task.toml` for the full spec and [`../../framework.md`](../../framework.md) for the runner, axes, and grading model.

@@ -57,6 +57,7 @@ command = "sh -c 'sleep 4; exit $code'"
 [sessions.s.tags]
 role = "agent"
 "st.network" = "$NET"
+"convoy.spawner" = "cd-sup"
 [sessions.s.env]
 ST_AGENT = "$id"
 ST_ROOT = "$NET"
@@ -78,7 +79,10 @@ echo "== 2/6  compose personas ==" >&2
 echo "== 3/6  add cd-cos + cd-sup (PERMANENT recipients) + cd-wk (NON-perm real $H worker) ==" >&2
 "$CONVOY" add cos        --identity cd-cos --permanent --network "$NET" --dir "$SB/cd-cos" --persona "$SB/personas-local/cd-cos.md" >/dev/null 2>&1
 "$CONVOY" add supervisor --identity cd-sup --permanent --network "$NET" --dir "$SB/cd-sup" --persona "$SB/personas-local/cd-sup.md" >/dev/null 2>&1
-"$CONVOY" add worker     --identity cd-wk               --harness "$H" --network "$NET" --dir "$SB/cd-wk"  --persona "$SB/personas-local/cd-wk.md" >/dev/null 2>&1
+# --supervisor cd-sup records `supervisor = "cd-sup"` in the agent file → convoy stamps convoy.spawner=cd-sup
+# → a crash pages the supervisor (cd-sup), not just the CoS. (convoy #102 carries `supervisor` through the
+# declarative arc; before it, convoy.spawner mis-stamps to the host and only cd-cos is paged — see crash-ding.)
+"$CONVOY" add worker     --identity cd-wk               --harness "$H" --network "$NET" --dir "$SB/cd-wk"  --persona "$SB/personas-local/cd-wk.md" --supervisor cd-sup >/dev/null 2>&1
 
 echo "== 4/6  HOST (continuous convoy up, fast reconcile, bg) + spawn the synthetic crash + clean workers ==" >&2
 "$CONVOY" up "$NET" --reconcile-interval 1 --json >> "$SB/.events.log" 2>&1 &

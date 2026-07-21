@@ -32,10 +32,7 @@ convoy pretrust "$SB/sup" "$SB/widget"
 "$HERE/configure-claude-agent.sh" dev "$SB"
 "$HERE/configure-claude-agent.sh" sup "$SB"
 echo "== 4/4  seed the hermetic kick into dm-sup's inbox; its ding sidecar delivers it =="
-mkdir -p "$NET/dm-sup/inbox"
-ms=$(( $(date +%s) * 1000 )); sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$NET/dm-sup/inbox/${ms}-${sfx}.md"
-echo "   seeded $NET/dm-sup/inbox/${ms}-${sfx}.md"
+stev_seed_kick "$NET" "dm-sup" "$HERE/kick-supervisor.md"
 
 echo
 echo "SPUN (Ding-mode cell, isolated convoy net $NET). members:"; convoy ls "$NET" 2>/dev/null | grep -E 'dm-sup|dm-dev' || convoy ls "$NET" 2>/dev/null

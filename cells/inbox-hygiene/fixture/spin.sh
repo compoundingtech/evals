@@ -26,12 +26,13 @@ echo "== 3/5  launch ih-agent (convoy add: auto, owns its repo) =="
 "$HERE/configure-claude-agent.sh" "$SB"
 
 echo "== 4/5  seed ONE token-carrying kick into ih-agent's inbox =="
-mkdir -p "$NET/ih-agent/inbox" "$SB/.stev"
+mkdir -p "$SB/.stev"
 TOKEN="IH-$(head -c 4 /dev/urandom | od -An -tx1 | tr -d ' \n')"
 printf '%s\n' "$TOKEN" > "$SB/.stev/token"
-ms=$(( $(date +%s) * 1000 )); sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed 's/__IH_TOKEN__/'"$TOKEN"'/' "$HERE/kick.md" | sed -n '/^---$/,$p' > "$NET/ih-agent/inbox/${ms}-${sfx}.md"
-echo "   token=$TOKEN seeded $NET/ih-agent/inbox/${ms}-${sfx}.md"
+# render the token into the kick, then deliver over the REAL bus (stev_seed_kick parses from/subject/body)
+rendered="$SB/.stev/kick.rendered.md"; sed 's/__IH_TOKEN__/'"$TOKEN"'/' "$HERE/kick.md" > "$rendered"
+stev_seed_kick "$NET" "ih-agent" "$rendered" >/dev/null
+echo "   token=$TOKEN delivered to ih-agent over the real bus"
 
 echo "== 5/5  arm the double-act injector (background) =="
 nohup "$HERE/inject-restart.sh" "$SB" >> "$SB/.stev/injector.out" 2>&1 &

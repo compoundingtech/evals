@@ -43,11 +43,7 @@ echo "== 4/5  launch the supervisor (convoy add: gb-sup, bypass) — creates its
 "$HERE/configure-claude-agent.sh" sup "$SB"
 
 echo "== 5/5  seed the hermetic kick into gb-sup's inbox; the ding sidecar delivers it (boot-time ms) =="
-mkdir -p "$NET/gb-sup/inbox"
-ms=$(( $(date +%s) * 1000 ))
-sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$NET/gb-sup/inbox/${ms}-${sfx}.md"
-echo "   seeded $NET/gb-sup/inbox/${ms}-${sfx}.md"
+stev_seed_kick "$NET" "gb-sup" "$HERE/kick-supervisor.md"
 
 echo
 echo "SPUN (Ghost-bug cell, isolated convoy net at $NET). members:"

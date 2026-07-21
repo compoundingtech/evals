@@ -32,10 +32,7 @@ echo "== 4/5  launch si-agent (convoy add auto) + inject --plugin-dir (plugin sc
 "$HERE/configure-claude-agent.sh" "$SB"
 
 echo "== 5/5  seed the check kick into si-agent's inbox (delivered post-restart, plugin scope live) =="
-mkdir -p "$NET/si-agent/inbox"
-ms=$(( $(date +%s) * 1000 )); sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed -n '/^---$/,$p' "$HERE/kick.md" > "$NET/si-agent/inbox/${ms}-${sfx}.md"
-echo "   kick seeded $NET/si-agent/inbox/${ms}-${sfx}.md (names no tokens — worker must invoke the skills)"
+stev_seed_kick "$NET" "si-agent" "$HERE/kick.md"
 
 echo
 echo "SPUN (skill-inheritance, isolated convoy net $NET). members:"; convoy ls "$NET" 2>/dev/null | grep -E 'si-agent' || convoy ls "$NET" 2>/dev/null

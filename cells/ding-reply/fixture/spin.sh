@@ -29,12 +29,11 @@ echo "== 3/4  launch the agent (convoy add: dr-agent, auto, ding/no-MCP) — cre
 mkdir -p "$NET/dr-req/inbox" "$NET/dr-req/archive"   # fake requester: so the agent's reply has somewhere to land
 
 echo "== 4/4  seed the requester's kick into dr-agent's inbox (the message it must REPLY to) =="
-ms=$(( $(date +%s) * 1000 )); sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-kickfn="${ms}-${sfx}.md"
-mkdir -p "$NET/dr-agent/inbox"
-sed -n '/^---$/,$p' "$HERE/kick.md" > "$NET/dr-agent/inbox/$kickfn"
-mkdir -p "$SB/.stev"; printf '%s\n' "$kickfn" > "$SB/.stev/kick-filename"   # grader asserts the reply's in-reply-to == this
-echo "   seeded $NET/dr-agent/inbox/$kickfn"
+mkdir -p "$SB/.stev"
+# deliver over the REAL bus; stev_seed_kick returns the delivered filename (grader needs it for in-reply-to)
+kickfn="$(stev_seed_kick "$NET" "dr-agent" "$HERE/kick.md")"
+printf '%s\n' "$kickfn" > "$SB/.stev/kick-filename"   # grader asserts the reply's in-reply-to == this
+echo "   delivered kick -> dr-agent ($kickfn)"
 
 echo
 echo "SPUN (ding-reply, isolated convoy net $NET). members:"; convoy ls "$NET" 2>/dev/null | grep -E 'dr-agent' || convoy ls "$NET" 2>/dev/null

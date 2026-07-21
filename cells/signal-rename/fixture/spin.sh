@@ -43,11 +43,7 @@ echo "== 4/5  launch the supervisor (convoy add: sig-sup, bypass) — creates it
 "$HERE/configure-claude-agent.sh" sup "$SB"
 
 echo "== 5/5  seed the hermetic rename request into sig-sup's inbox; the ding sidecar delivers it (boot-time ms) =="
-mkdir -p "$NET/sig-sup/inbox"
-ms=$(( $(date +%s) * 1000 ))
-sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$NET/sig-sup/inbox/${ms}-${sfx}.md"
-echo "   seeded $NET/sig-sup/inbox/${ms}-${sfx}.md"
+stev_seed_kick "$NET" "sig-sup" "$HERE/kick-supervisor.md"
 
 echo
 echo "SPUN (signal-rename cell, isolated convoy net at $NET). members:"

@@ -45,11 +45,7 @@ echo "== 4/5  launch the supervisor (convoy add --harness codex: gbx-sup, bypass
 "$HERE/configure-codex-agent.sh" sup "$SB"
 
 echo "== 5/5  seed the hermetic kick into gbx-sup's inbox; the ding sidecar delivers it (boot-time ms) =="
-mkdir -p "$NET/gbx-sup/inbox"
-ms=$(( $(date +%s) * 1000 ))
-sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$NET/gbx-sup/inbox/${ms}-${sfx}.md"
-echo "   seeded $NET/gbx-sup/inbox/${ms}-${sfx}.md"
+stev_seed_kick "$NET" "gbx-sup" "$HERE/kick-supervisor.md"
 
 echo
 echo "SPUN (Codex Ghost-bug cell, isolated convoy net at $NET). members:"

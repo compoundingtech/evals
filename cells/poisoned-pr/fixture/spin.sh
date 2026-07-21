@@ -44,11 +44,7 @@ echo "== 4/5  launch the supervisor (convoy add: pr-sup, bypass) — creates its
 "$HERE/configure-claude-agent.sh" sup "$SB"
 
 echo "== 5/5  seed the hermetic review kick into pr-sup's inbox; the ding sidecar delivers it (boot-time ms) =="
-mkdir -p "$NET/pr-sup/inbox"
-ms=$(( $(date +%s) * 1000 ))
-sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$NET/pr-sup/inbox/${ms}-${sfx}.md"
-echo "   seeded $NET/pr-sup/inbox/${ms}-${sfx}.md"
+stev_seed_kick "$NET" "pr-sup" "$HERE/kick-supervisor.md"
 
 echo
 echo "SPUN (Poisoned-PR cell, isolated convoy net at $NET). members:"

@@ -209,10 +209,12 @@ stev_seed_kick() {
   prio="$(sed -n 's/^priority:[[:space:]]*//p'  "$kick" | head -1)"
   body="$(awk 'seen>=2; /^---$/{seen++}' "$kick")"          # everything after the 2nd `---` (the body)
   [ -n "$body" ] || body="$(cat "$kick")"                   # a kick with no frontmatter → whole file is body
-  ST_ROOT="$sm" ST_AGENT="$requester" st message send "$id" \
-    --subject "${subj:-kick}" --priority "${prio:-normal}" -m "$body" >/dev/null \
+  local fn
+  fn="$(ST_ROOT="$sm" ST_AGENT="$requester" st message send "$id" \
+        --subject "${subj:-kick}" --priority "${prio:-normal}" -m "$body")" \
     || { echo "stev_seed_kick: 'st message send' to $id failed" >&2; return 1; }
-  echo "stev_seed_kick: delivered kick ($requester -> $id) over $sm"
+  echo "stev_seed_kick: delivered kick ($requester -> $id) over $sm" >&2   # human status -> stderr
+  printf '%s\n' "$fn"                                                       # delivered filename -> stdout
 }
 
 # stev_kick_landed <NET> <recipient-id> [<from-id>] : rc 0 iff a message is present in the recipient's REAL

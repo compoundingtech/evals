@@ -38,11 +38,7 @@ convoy pretrust --harness codex "$SB/a" "$SB/b" "$SB/c" "$SB/sup"
 for r in $PROPOSERS "sup"; do "$HERE/configure-codex-agent.sh" "$r" "$SB"; done
 
 echo "== 4/4  seed the hermetic design kick into fdx-sup's inbox; its ding sidecar delivers it =="
-mkdir -p "$NET/fdx-sup/inbox"
-ms=$(( $(date +%s) * 1000 ))
-sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$NET/fdx-sup/inbox/${ms}-${sfx}.md"
-echo "   seeded $NET/fdx-sup/inbox/${ms}-${sfx}.md"
+stev_seed_kick "$NET" "fdx-sup" "$HERE/kick-supervisor.md"
 
 echo
 echo "SPUN (Fork-in-the-road CODEX cell, isolated convoy net at $NET). members:"

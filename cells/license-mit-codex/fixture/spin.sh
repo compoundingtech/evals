@@ -35,10 +35,7 @@ convoy pretrust --harness codex "$SB/sup" "$SB/worker"
 echo "== 4/5  launch the supervisor (convoy add --harness codex: lmc-sup, bypass) — creates its inbox + ding sidecar =="
 "$HERE/configure-codex-agent.sh" sup "$SB"
 echo "== 5/5  seed the MIT-license kick into lmc-sup's inbox; the ding sidecar delivers it =="
-mkdir -p "$NET/lmc-sup/inbox"
-ms=$(( $(date +%s) * 1000 )); sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$NET/lmc-sup/inbox/${ms}-${sfx}.md"
-echo "   seeded $NET/lmc-sup/inbox/${ms}-${sfx}.md"
+stev_seed_kick "$NET" "lmc-sup" "$HERE/kick-supervisor.md"
 
 echo
 echo "SPUN (Codex license-mit cell, isolated convoy net at $NET). members:"

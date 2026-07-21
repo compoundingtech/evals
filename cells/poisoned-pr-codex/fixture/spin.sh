@@ -35,10 +35,7 @@ convoy pretrust --harness codex "$SB/rev" "$SB/sup"
 echo "== 4/5  launch the supervisor (convoy add --harness codex: prx-sup, bypass) — creates its inbox + ding sidecar =="
 "$HERE/configure-codex-agent.sh" sup "$SB"
 echo "== 5/5  seed the review kick into prx-sup's inbox; the ding sidecar delivers it =="
-mkdir -p "$NET/prx-sup/inbox"
-ms=$(( $(date +%s) * 1000 )); sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$NET/prx-sup/inbox/${ms}-${sfx}.md"
-echo "   seeded $NET/prx-sup/inbox/${ms}-${sfx}.md"
+stev_seed_kick "$NET" "prx-sup" "$HERE/kick-supervisor.md"
 
 echo
 echo "SPUN (Codex Poisoned-PR cell, isolated convoy net at $NET). members:"

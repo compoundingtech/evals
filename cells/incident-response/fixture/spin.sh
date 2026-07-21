@@ -43,11 +43,7 @@ echo "== 4/5  launch the supervisor (convoy add: ir-sup, bypass) — creates its
 "$HERE/configure-claude-agent.sh" sup "$SB"
 
 echo "== 5/5  seed the hermetic incident page into ir-sup's inbox; the ding sidecar delivers it (boot-time ms) =="
-mkdir -p "$NET/ir-sup/inbox"
-ms=$(( $(date +%s) * 1000 ))
-sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$NET/ir-sup/inbox/${ms}-${sfx}.md"
-echo "   seeded $NET/ir-sup/inbox/${ms}-${sfx}.md"
+stev_seed_kick "$NET" "ir-sup" "$HERE/kick-supervisor.md"
 
 echo
 echo "SPUN (Incident-response cell, isolated convoy net at $NET). members:"

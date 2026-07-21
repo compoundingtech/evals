@@ -43,11 +43,7 @@ echo "== 4/5  launch the supervisor (convoy add: feat-sup, bypass) — creates i
 "$HERE/configure-claude-agent.sh" sup "$SB"
 
 echo "== 5/5  seed the hermetic feature request into feat-sup's inbox; the ding sidecar delivers it (boot-time ms) =="
-mkdir -p "$NET/feat-sup/inbox"
-ms=$(( $(date +%s) * 1000 ))
-sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$NET/feat-sup/inbox/${ms}-${sfx}.md"
-echo "   seeded $NET/feat-sup/inbox/${ms}-${sfx}.md"
+stev_seed_kick "$NET" "feat-sup" "$HERE/kick-supervisor.md"
 
 echo
 echo "SPUN (Feature-fit cell, isolated convoy net at $NET). members:"

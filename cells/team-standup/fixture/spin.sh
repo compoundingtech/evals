@@ -36,10 +36,7 @@ convoy pretrust "$SB/cos" "$SB/taskflow"
 echo "== 4/4  launch the CoS (convoy add: ts-cos, bypass, spawn-capable) — creates its inbox + ding sidecar =="
 "$HERE/configure-claude-agent.sh" "$SB"
 echo "   seed the delegated task into ts-cos's inbox; its ding sidecar delivers it =="
-mkdir -p "$NET/ts-cos/inbox"
-ms=$(( $(date +%s) * 1000 )); sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$NET/ts-cos/inbox/${ms}-${sfx}.md"
-echo "   seeded $NET/ts-cos/inbox/${ms}-${sfx}.md"
+stev_seed_kick "$NET" "ts-cos" "$HERE/kick-supervisor.md"
 
 echo
 echo "SPUN (TEAM-STANDUP P5, isolated convoy net $NET). members:"; convoy ls "$NET" 2>/dev/null | grep -E 'cos|taskflow' || convoy ls "$NET" 2>/dev/null

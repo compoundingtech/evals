@@ -44,11 +44,7 @@ echo "== 4/5  launch the supervisor (convoy add: doc-sup, bypass) — creates it
 "$HERE/configure-claude-agent.sh" sup "$SB"
 
 echo "== 5/5  seed the hermetic docs request into doc-sup's inbox; the ding sidecar delivers it (boot-time ms) =="
-mkdir -p "$NET/doc-sup/inbox"
-ms=$(( $(date +%s) * 1000 ))
-sfx="$(printf '%06x' "$(( (RANDOM << 8 ^ RANDOM) & 0xffffff ))")"
-sed -n '/^---$/,$p' "$HERE/kick-supervisor.md" > "$NET/doc-sup/inbox/${ms}-${sfx}.md"
-echo "   seeded $NET/doc-sup/inbox/${ms}-${sfx}.md"
+stev_seed_kick "$NET" "doc-sup" "$HERE/kick-supervisor.md"
 
 echo
 echo "SPUN (Docs cell, isolated convoy net at $NET). members:"

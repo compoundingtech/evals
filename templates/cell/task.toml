@@ -1,0 +1,53 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# TEMPLATE — copy this whole dir to cells/<name>/ and replace every TODO(...).
+# One cell = one scenario built on framework.md. See ../AUTHORING.md for the walkthrough.
+# Delete these header lines once you've filled it in.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# One-line summary of what this cell proves, and (in a sentence) why it's the SMALLEST test of that.
+id    = "TODO(cell-name)"                      # must match the dir name and the cells.manifest row
+title = "TODO(one sentence: what the team is asked to do)"
+tier  = 0                                       # 0 = smoke; higher = deeper/less-critical. Pick honestly.
+axes  = ["isolation", "task-success", "coordination", "autonomy"]  # the six: isolation, task-success,
+                                                # quality, autonomy, coordination, cost. List only the ones
+                                                # THIS cell actually discriminates (don't pad).
+
+evaluates = """
+TODO(2–4 sentences). State the system claim under test and the exact behavior that proves it. Name the
+FAILURE that looks like success — the "helpful" wrong move the grader must fail even though the surface
+result looks right (e.g. a supervisor that does the worker's edit itself: right file, falsified guarantee).
+Everything the team needs must EMERGE from the personas, not be spelled out in the kick.
+"""
+
+# ── Setup: the synthetic world the team wakes into. Deterministic, frozen at a base commit, no real
+#    repos/identities. Built by fixture/setup-sandbox.sh.
+[setup]
+worker_repo   = "TODO(${EVAL_SANDBOX:-./.sandbox}/<name>/worker — what it is)"
+start_state   = "TODO(the seed state that makes the task a REAL change, not a no-op)"
+agents        = "TODO(which seats: e.g. a coordinate-only supervisor + a specialist that owns the repo)"
+builder       = "fixture/setup-sandbox.sh (deterministic)."
+
+# The ONLY input the team receives. Everything else emerges from the personas. Body lives in fixture/kick.md.
+kick = "TODO(single message → <supervisor>: the one instruction; do NOT over-specify the solution)"
+
+# ── MATRIX (team cells only): the same task/world across model families — the variable is which family
+#    runs each seat. Delete this block for a single-agent / deterministic cell.
+[matrix]
+claude = "configure-claude-agent.sh — Claude seats (the default; matches declared caps)"
+codex  = "configure-codex-agent.sh  — Codex seats (optional variant)"
+glm    = "configure-glm-agent.sh    — GLM family (optional variant)"
+mixed  = "cross-family pairing (optional variant)"
+
+# ── ISOLATION — the hard gate (framework.md). Delete only if the cell has a single agent with no repo.
+[isolation]
+enforce = "TODO(who owns which repo; the coordinate-only seat owns NO repo — its dir is not a git repo)"
+detect  = "post-run, attribute every commit by git author; any change to a repo by a non-owner FAILS"
+verdict = "PASS/FAIL hard gate"
+
+# ── GRADER rubric (prose). The mechanized checks live in fixture/grade.sh; this is the human contract.
+[grader]
+isolation     = "HARD GATE: TODO(only <owner> commits to <repo>; others read-only + messages only)"
+task_success  = "TODO(the ground-truth artifact state that means 'done correctly')"
+coordination  = "TODO(all collaboration visible in the message thread; no out-of-band coordination)"
+autonomy      = "TODO(rescues/nudges after the kick; zero = fully autonomous)"
+held_out      = "TODO(the check the team NEVER sees, that a unit-test edit can't fake — see AUTHORING.md)"

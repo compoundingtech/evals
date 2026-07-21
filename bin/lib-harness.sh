@@ -169,6 +169,67 @@ stev_convoy_teardown() {
   rm -rf "$NET" 2>/dev/null || true
 }
 
+# --- hermetic kick delivery -------------------------------------------------
+# stev_seed_kick <NET> <recipient-id> <kick-file> [requester-override] : deliver a cell's ONE hermetic kick
+# to a convoy-launched agent over the REAL isolated bus.
+#
+# WHY THIS EXISTS (the hollow-green bug it fixes): convoy runs smalltalk under $NET/smalltalk and
+# HOST-PREFIXES every agent (e.g. hetz.<id>). The pre-convoy `$NET/<id>/inbox` file-drop therefore landed
+# in a directory NOBODY watches → the kick never reached the agent, so the team spun GREEN (rc 0, agents
+# boot) but idled on an empty inbox and did nothing. Every team-loop cell shared this bug.
+#
+# THE FIX: wait (bounded) for the recipient to register its bus dir under $NET/smalltalk, resolve the real
+# host-prefixed id convoy assigned, and deliver the kick via `st message send` AS the requester. st writes
+# the correct host-prefixed inbox AND notifies the recipient's `st ding` socket, so an already-booted agent
+# is poked to drain it immediately (a raw file-drop at the right path is picked up too, but only on the
+# next inbox poll). The kick file stays the single source of truth: its subject/priority/body are parsed
+# and sent, and the SENDER defaults to the kick's own `from:` header (so the agent confirms back to the
+# right requester) — pass a 4th arg only to override it. For a kick needing templating (e.g. a token),
+# render it to a temp file first and pass that.
+stev_seed_kick() {
+  local net="$1" rid="$2" kick="$3" requester="${4:-}"
+  [ -n "$net" ] && [ -n "$rid" ] && [ -n "$kick" ] \
+    || { echo "stev_seed_kick: usage: stev_seed_kick <NET> <recipient-id> <kick-file> [requester-override]" >&2; return 2; }
+  [ -f "$kick" ] || { echo "stev_seed_kick: no kick file at '$kick'" >&2; return 1; }
+  # requester = explicit override, else the kick's own `from:` (single source of truth), else eval-runner
+  [ -n "$requester" ] || requester="$(sed -n 's/^from:[[:space:]]*//p' "$kick" | head -1 | tr -d '"')"
+  [ -n "$requester" ] || requester="eval-runner"
+  local sm="$net/smalltalk" bus="" i=0
+  # convoy creates the recipient's bus dir when the agent registers on boot; that can lag the launch.
+  # `find` (not an `ls` glob) so a no-match returns rc 0 and never trips a caller's `set -e`.
+  while [ "$i" -lt 90 ]; do
+    bus="$(find "$sm" -maxdepth 1 -type d \( -name "*.$rid" -o -name "$rid" \) 2>/dev/null | head -1)"
+    if [ -n "$bus" ]; then break; fi
+    i=$((i + 1)); sleep 1
+  done
+  [ -n "$bus" ] || { echo "stev_seed_kick: '$rid' never registered a bus dir under $sm — did it boot?" >&2; return 1; }
+  local id subj prio body
+  id="$(basename "$bus")"                                   # the real host-prefixed id convoy assigned
+  subj="$(sed -n 's/^subject:[[:space:]]*//p' "$kick" | head -1 | sed 's/^"//;s/"$//')"
+  prio="$(sed -n 's/^priority:[[:space:]]*//p'  "$kick" | head -1)"
+  body="$(awk 'seen>=2; /^---$/{seen++}' "$kick")"          # everything after the 2nd `---` (the body)
+  [ -n "$body" ] || body="$(cat "$kick")"                   # a kick with no frontmatter → whole file is body
+  ST_ROOT="$sm" ST_AGENT="$requester" st message send "$id" \
+    --subject "${subj:-kick}" --priority "${prio:-normal}" -m "$body" >/dev/null \
+    || { echo "stev_seed_kick: 'st message send' to $id failed" >&2; return 1; }
+  echo "stev_seed_kick: delivered kick ($requester -> $id) over $sm"
+}
+
+# stev_kick_landed <NET> <recipient-id> [<from-id>] : rc 0 iff a message is present in the recipient's REAL
+# (host-prefixed) bus inbox OR archive — a cheap "the kick reached the team" check, short of a full run.
+# With <from-id>, require a message from that sender (host-prefix tolerant). Poll it a few times after spin.
+stev_kick_landed() {
+  local net="$1" rid="$2" from="${3:-}" sm bus
+  sm="$net/smalltalk"
+  bus="$(find "$sm" -maxdepth 1 -type d \( -name "*.$rid" -o -name "$rid" \) 2>/dev/null | head -1)"
+  [ -n "$bus" ] || return 1
+  if [ -n "$from" ]; then
+    grep -qRE "^from:[[:space:]]*([a-z0-9][a-z0-9._-]*\.)?$from([[:space:]]|\$)" "$bus/inbox" "$bus/archive" 2>/dev/null
+  else
+    find "$bus/inbox" "$bus/archive" -name '*.md' 2>/dev/null | grep -q .
+  fi
+}
+
 # --- teardown ---------------------------------------------------------------
 
 # stev_teardown <SB> : remove EVERY pty session in this run's decoupled PTY_ROOT +

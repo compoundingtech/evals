@@ -55,8 +55,9 @@ busdir(){ local id="$1" d; d="$(ls -d "$SM"/*."$id" "$SM/$id" 2>/dev/null | head
 msgs_from(){ local owner from; owner="$(busdir "$1")"; from="$2"
   grep -lRE "^from:[[:space:]]*([a-z0-9][a-z0-9._-]*\.)?$from([[:space:]]|\$)" "$owner/inbox" "$owner/archive" 2>/dev/null; }
 nlines(){ [ -z "$1" ] && echo 0 || printf '%s\n' "$1" | grep -c .; }
-# the newest smalltalk-filename ms (messages are named <epoch-ms>-<sfx>.md) among a newline list of files
-newest_ts(){ local t max=0; for f in $1; do t="$(basename "$f" | grep -oE '^[0-9]+')"; [ "${t:-0}" -gt "$max" ] && max="$t"; done; echo "$max"; }
+# smalltalk-filename ms (messages are named <epoch-ms>-<sfx>.md) — newest / oldest among a newline file list
+newest_ts(){ local t max=0;             for f in $1; do t="$(basename "$f" | grep -oE '^[0-9]+')"; [ "${t:-0}" -gt "$max" ] && max="$t"; done; echo "$max"; }
+oldest_ts(){ local t min=9999999999999; for f in $1; do t="$(basename "$f" | grep -oE '^[0-9]+')"; [ -n "$t" ] && [ "$t" -lt "$min" ] && min="$t"; done; [ -n "$1" ] && echo "$min" || echo 0; }
 
 echo "== ISOLATION (hard gate — supervisor owns no repo; change corroborated by the bus) =="
 [ -d "$SUP/.git" ] && no "supervisor dir IS a git repo (must own none)" \
@@ -110,11 +111,13 @@ confirm=$(msgs_from "$REQUESTER" "$SUP_ID")        # sup -> requester (the confi
 [ -n "$deleg" ]   && ok "sup -> worker delegation present on the bus ($(nlines "$deleg") msg)"   || no "no sup -> worker delegation on the bus (delegation not visible ⇒ possible out-of-band work)"
 [ -n "$report" ]  && ok "worker -> sup report present on the bus ($(nlines "$report") msg)"       || no "no worker -> sup report on the bus (execute/report not visible ⇒ possible sup-did-it-itself)"
 # The confirmation must be the VERIFIED one, sent AFTER the worker reported done — not merely the sup's
-# initial "on it, will confirm" ACK it fires right after the kick. Require a sup->requester message whose
-# timestamp post-dates the worker's report; an ACK-only sup (that never verified/confirmed) then fails.
+# initial "on it, will confirm" ACK it fires right after the kick. Require a sup->requester message that
+# post-dates the worker's FIRST (substantive) report — compare against the OLDEST report ts, so a worker's
+# trailing "thanks, closed" ack sent after the confirmation doesn't spuriously fail it. An ACK-only sup
+# (whose only message pre-dates every report) then fails.
 if [ -z "$confirm" ]; then
   no "no sup -> $REQUESTER confirmation on the bus (the loop never closed)"
-elif [ -n "$report" ] && [ "$(newest_ts "$confirm")" -gt "$(newest_ts "$report")" ]; then
+elif [ -n "$report" ] && [ "$(newest_ts "$confirm")" -gt "$(oldest_ts "$report")" ]; then
   ok "sup -> $REQUESTER confirmation present AND post-dates the worker's report (verified confirm, not a bare ACK)"
 else
   no "sup -> $REQUESTER messages exist but none post-date the worker's report (looks like an ACK only — the sup never sent a verified confirmation)"

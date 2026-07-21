@@ -31,7 +31,23 @@ fi
 mkdir -p "$repo"; git -C "$repo" init -q
 git -C "$repo" config user.name  "as-agent"; git -C "$repo" config user.email "as-agent@eval.local"
 printf '# convoy-add-structure test repo\n' > "$repo/CLAUDE.md"
-git -C "$repo" add -A && git -C "$repo" commit -q -m "seed"
+# HERMETIC SEED (the pristine-root gate depends on this landing). `core.hooksPath=` disables the
+# OPERATOR's global git hooks for this one commit: a host with a commit-msg identity guard (an
+# agent-authorship policy that rejects any author outside its allowlist) kills the seed, the fixture's
+# own CLAUDE.md is left staged-but-uncommitted, and the pristine-root gate then reports
+# "the repo is DIRTY after convoy add — convoy-authored files leaked" while pointing at a file THIS
+# SCRIPT wrote. Attribute before you blame: the gate must start from a genuinely committed baseline.
+git -C "$repo" add -A
+git -C "$repo" -c core.hooksPath= commit -q -m "seed" || {
+  echo "FATAL: the fixture's own seed commit failed — the pristine-root gate would misattribute this" >&2
+  printf 'SEED-COMMIT-FAILED\n' > "$P/shape.txt"; exit 1
+}
+# Fail loudly rather than grade a repo with no baseline: a zero-commit repo makes EVERY tracked file
+# read as dirt, which is indistinguishable from a real convoy leak.
+git -C "$repo" rev-parse HEAD >/dev/null 2>&1 || {
+  echo "FATAL: seed commit reported success but no HEAD exists" >&2
+  printf 'SEED-COMMIT-FAILED\n' > "$P/shape.txt"; exit 1
+}
 printf '# add-structure worker %s\nYou are %s.\n' "$id" "$id" > "$P/persona.md"
 export ST_ROOT="$NET"; export PTY_ROOT="$NET/pty"
 trap 'stev_convoy_teardown "$NET" >/dev/null 2>&1 || true' EXIT INT TERM
@@ -46,6 +62,25 @@ echo "== convoy init the isolated net, then run the REAL convoy add into the rep
 stev_convoy_init "$NET" >/dev/null 2>&1 || true
 convoy add worker --identity "$id" --network "$NET" --dir "$repo" --persona "$P/persona.md" --harness claude >"$P/add.out" 2>&1
 echo "   add rc=$?"
+
+# STAGE. convoy is declarative: `add` DECLARES (writes <net>/catalog/<id>.toml and nothing else),
+# `render` MATERIALIZES the workspace overlay, `up` RECONCILES and launches. convoy says so itself in
+# add.out: "NOTHING launched — the catalog is desired state ... (or `convoy render <id>` to materialize
+# the overlay now)". Capturing the overlay straight after `add` therefore asserts a later stage's
+# outcome against an earlier stage's command, and every overlay-presence check fails on a system that
+# is behaving exactly as designed. Advance to the stage that owns the effect before observing it.
+# This stays deterministic: `render` writes files and git-excludes them — it launches no pty and
+# touches no bus, so no model is invoked and nothing is spent.
+convoy render "$id" --network "$NET" >"$P/render.out" 2>&1
+echo "   render rc=$?"
+# `render` resolves the claude-code hook scripts through SMALLTALK_DIR, then an `st` on PATH. With
+# neither it aborts after writing only a partial overlay (PERSONA.md + DING-BUS.md + the loader, but no
+# pty.toml and no settings.local.json) — which reads as "convoy did not write pty.toml" rather than as
+# a missing dependency. Surface it as its own signal so the grader can say which it is.
+if grep -qi 'smalltalk hook scripts not found' "$P/render.out" 2>/dev/null; then
+  echo "hooks_missing=yes" >> "$P/render-notes.txt"
+  echo "   WARNING: render could not resolve smalltalk hooks — set SMALLTALK_DIR. Overlay is PARTIAL." >&2
+fi
 
 echo "== capture the on-disk shape convoy add produced =="
 # Bus folder: find <net>/smalltalk/<host>.<identity>/ by GLOB (host = the name PREFIX, doc 4aab4f1 — no separate

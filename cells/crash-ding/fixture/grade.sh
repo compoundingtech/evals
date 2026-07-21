@@ -18,18 +18,20 @@ wn(){ echo "  [WARN] $1"; warn=$((warn+1)); }
 # is <file> a convoy-up "worker crash: <id>" ding? (subject may be quoted)
 is_worker_ding() { # <file> <id>
   local f="$1" id="$2"; [ -f "$f" ] || return 1
-  grep -qiE '^from:[[:space:]]*"?convoy-up' "$f" && grep -qiE "^subject:[[:space:]]*\"?worker crash:[[:space:]]*$id" "$f"
+  grep -qiE '^from:[[:space:]]*"?convoy-up' "$f" && grep -qiE "^subject:[[:space:]]*\"?worker crash:[[:space:]]*([a-z0-9-]+\.)?$id" "$f"
 }
+# convoy delivers dings to $NET/smalltalk/<host>.<id>/inbox (host-prefixed) — resolve a recipient's bus dir.
+cdbox() { ls -d "$NET/smalltalk"/*."$1" "$NET/smalltalk/$1" 2>/dev/null | head -1; }
 # does <identity>'s inbox contain a worker-crash ding for <id>?
 inbox_has_worker_ding() { # <identity> <id>
-  local box="$1" id="$2" f
-  for f in "$NET/$box/inbox"/*.md; do [ -e "$f" ] || continue; is_worker_ding "$f" "$id" && return 0; done
+  local box id bd f; box="$(cdbox "$1")"; box="${box:-$NET/smalltalk/$1}"; id="$2"
+  for f in "$box/inbox"/*.md; do [ -e "$f" ] || continue; is_worker_ding "$f" "$id" && return 0; done
   return 1
 }
 # any worker-crash ding for <id> in ANY member inbox?
 any_ding_for() { # <id>
   local id="$1" box f
-  for box in "$NET"/*/inbox; do [ -d "$box" ] || continue; for f in "$box"/*.md; do [ -e "$f" ] || continue; is_worker_ding "$f" "$id" && return 0; done; done
+  for box in "$NET"/smalltalk/*/inbox; do [ -d "$box" ] || continue; for f in "$box"/*.md; do [ -e "$f" ] || continue; is_worker_ding "$f" "$id" && return 0; done; done
   return 1
 }
 
@@ -45,7 +47,7 @@ positive() { # <worker-id> <label>
 
 echo "== REAL CRASH (hard — convoy up saw both non-permanent workers die) =="
 for id in cd-wk cd-oom; do
-  if grep -qE '"type":"worker_crash".*"(session|identity)":"(silber\.)?'"$id"'' "$SB/.events.log" 2>/dev/null; then ok "convoy up recorded a worker_crash for $id (real session death, detect-only, no respawn)"
+  if grep -qE '"type":"worker_crash".*"(session|identity)":"([a-z0-9-]+\.)?'"$id"'' "$SB/.events.log" 2>/dev/null; then ok "convoy up recorded a worker_crash for $id (real session death, detect-only, no respawn)"
   else no "no worker_crash event for $id — the crash was not detected (crash-injection / non-permanent detection wrong)"; fi
 done
 

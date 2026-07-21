@@ -19,6 +19,9 @@ BASE="${2:-${EVAL_SANDBOX:-/tmp}/cd}"
 CONVOY="${CONVOY_BIN:-convoy}"
 SB="$("$HERE/setup-sandbox.sh" "$H" "$BASE" | head -1)"
 NET="$SB/net"; PR="$NET/pty"; export ST_ROOT="$NET"
+# convoy host-prefixes every session/bus id with the short hostname (e.g. hetz.cd-cos) — was hardcoded
+# "silber" (the box this cell was authored on), which broke it on every other machine. Derive it.
+HOST="$(hostname -s 2>/dev/null | tr 'A-Z' 'a-z' | tr -cd 'a-z0-9-')"; HOST="${HOST:-localhost}"
 : > "$SB/.events.log"; : > "$SB/.crash.log"
 
 stop_host() { [ -f "$SB/.up.pid" ] && kill "$(cat "$SB/.up.pid")" 2>/dev/null; sleep 1; }
@@ -26,12 +29,14 @@ teardown() { stop_host; "$CONVOY" down "$NET" --force >/dev/null 2>&1 || true; }
 trap 'rc=$?; [ "$rc" = 0 ] || { echo "== spin rc=$rc — tearing down $NET ==" >&2; teardown; }' EXIT
 trap 'stop_host; exit 130' INT; trap 'stop_host; exit 143' TERM
 
-snap() { for id in cd-cos cd-sup; do ls "$NET/$id/inbox"/*.md 2>/dev/null > "$SB/.$1.$id" || : > "$SB/.$1.$id"; done; }
-sess_up() { pty --root "$PR" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -qE "silber.$1-$H .*pid:"; }
+# convoy delivers dings to the recipient's REAL bus inbox at $NET/smalltalk/<host>.<id>/inbox (host-prefixed).
+cdbox() { ls -d "$NET/smalltalk"/*."$1" "$NET/smalltalk/$1" 2>/dev/null | head -1; }
+snap() { for id in cd-cos cd-sup; do local b; b="$(cdbox "$id")"; ls "${b:-$NET/smalltalk/$id}/inbox"/*.md 2>/dev/null > "$SB/.$1.$id" || : > "$SB/.$1.$id"; done; }
+sess_up() { pty --root "$PR" ls 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -qE "${HOST}.$1-$H .*pid:"; }
 wait_up() { local id="$1" n="${2:-40}"; local _; for _ in $(seq 1 "$n"); do sess_up "$id" && return 0; sleep 1; done; return 1; }
 # CRASH the REAL worker cd-wk as a hard death (status "vanished"): SIGKILL the pty DAEMON so no exit is recorded.
 crash_vanish() {
-  local pf="$PR/silber.cd-wk.pid" dpid child
+  local pf="$PR/${HOST}.cd-wk.pid" dpid child
   [ -f "$pf" ] || { echo "no pidfile $pf" >&2; return 1; }
   dpid="$(cat "$pf")"; child="$(pgrep -P "$dpid" 2>/dev/null)"
   kill -9 "$dpid" 2>/dev/null || true; [ -n "$child" ] && kill -9 $child 2>/dev/null
@@ -45,9 +50,9 @@ spawn_synth() { # <id> <exitcode>
   local d="$SB/$id"                          # SEPARATE line: $id must be the local, not an outer var
   mkdir -p "$d"
   cat > "$d/pty.toml" <<TOML
-prefix = "silber.$id"
+prefix = "${HOST}.$id"
 [sessions.s]
-id = "silber.$id"
+id = "${HOST}.$id"
 command = "sh -c 'sleep 4; exit $code'"
 [sessions.s.tags]
 role = "agent"
@@ -74,7 +79,6 @@ echo "== 3/6  add cd-cos + cd-sup (PERMANENT recipients) + cd-wk (NON-perm real 
 "$CONVOY" add cos        --identity cd-cos --permanent --network "$NET" --dir "$SB/cd-cos" --persona "$SB/personas-local/cd-cos.md" >/dev/null 2>&1
 "$CONVOY" add supervisor --identity cd-sup --permanent --network "$NET" --dir "$SB/cd-sup" --persona "$SB/personas-local/cd-sup.md" >/dev/null 2>&1
 "$CONVOY" add worker     --identity cd-wk               --harness "$H" --network "$NET" --dir "$SB/cd-wk"  --persona "$SB/personas-local/cd-wk.md" >/dev/null 2>&1
-mkdir -p "$NET/cd-cos/inbox" "$NET/cd-sup/inbox"
 
 echo "== 4/6  HOST (continuous convoy up, fast reconcile, bg) + spawn the synthetic crash + clean workers ==" >&2
 "$CONVOY" up "$NET" --reconcile-interval 1 --json >> "$SB/.events.log" 2>&1 &
@@ -91,8 +95,8 @@ sleep 9                        # let convoy up detect cd-wk vanished + cd-oom/cd
 snap after
 
 echo "== 6/6  capture clean-exit worker state (non-false-pass) + stop host + record ==" >&2
-cp "$PR/silber.cd-clean.json" "$SB/.clean.json" 2>/dev/null || : > "$SB/.clean.json"
-cp "$PR/silber.cd-oom.json"   "$SB/.oom.json"   2>/dev/null || : > "$SB/.oom.json"
+cp "$PR/${HOST}.cd-clean.json" "$SB/.clean.json" 2>/dev/null || : > "$SB/.clean.json"
+cp "$PR/${HOST}.cd-oom.json"   "$SB/.oom.json"   2>/dev/null || : > "$SB/.oom.json"
 stop_host
 { echo "harness=$H"; echo "net=$NET"; echo "vanish=cd-wk"; echo "crashexit=cd-oom"; echo "clean=cd-clean"; } > "$SB/.run"
 echo "$SB"

@@ -25,9 +25,9 @@ echo "== 2/4  compose ding-mode personas (convoy add installs the bus contract a
 "$HERE/compose-persona.sh" dev "$SB"
 echo "== 3/4  launch the worker first (convoy add: dm-dev, auto, owns widget), then the supervisor (dm-sup, bypass) =="
 # Pre-trust all agent dirs up front (before any spawn) so no earlier sibling's booted claude can stale-flush
-# ~/.claude.json and clobber a later add's trust entry (workspace-trust stall). convoy pretrust = convoy's
+# ~/.claude.json and clobber a later add's trust entry (workspace-trust stall). stev_pretrust (lib-harness; wraps convoy pretrust) = the
 # batch write, shared with convoy up; the harness no longer pre-trusts per-add (see lib-harness.sh). [convoy sweep: revalidate]
-convoy pretrust "$SB/sup" "$SB/widget"
+stev_pretrust "$SB/sup" "$SB/widget"
 
 "$HERE/configure-claude-agent.sh" dev "$SB"
 "$HERE/configure-claude-agent.sh" sup "$SB"

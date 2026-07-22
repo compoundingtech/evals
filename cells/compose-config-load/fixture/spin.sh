@@ -30,7 +30,7 @@ echo "== 2/4  compose personas (positive ccl + negative-control ccln; neither na
 "$HERE/compose-persona.sh" "$SB" ccln "$SB/control"
 
 echo "== 3/4  convoy add BOTH into their repos (auto). ccl -> real repo; ccln -> control repo (diff secret, no skill) =="
-convoy pretrust "$SB/repo" "$SB/control" >/dev/null 2>&1 || true
+stev_pretrust "$SB/repo" "$SB/control" >/dev/null 2>&1 || true
 "$HERE/configure-claude-agent.sh" "$SB" ccl  "$SB/repo"
 "$HERE/configure-claude-agent.sh" "$SB" ccln "$SB/control"
 

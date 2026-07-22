@@ -108,6 +108,24 @@ stev_ding_flags() { stev_ding_on && printf -- '--ding' || true; }
 # (e.g. hook-integrity needs MCP on both legs). Default = ding (no MCP).
 stev_mcp_on() { case "${EVAL_MCP:-}" in 1|true|TRUE|yes|YES|on|ON) return 0 ;; *) return 1 ;; esac; }
 
+# --- runner selector (evals→st2 migration trust gate) -----------------------
+# The gate runs the SAME cell on BOTH runners: convoy is the DEFAULT so the live suite is unaffected, and
+# STEV_RUNNER=st2 flips every seam (init / pretrust / add / teardown) to st2 to prove the candidate passes
+# the identical cell. Any value other than `st2` means convoy. See EVALS-ST2-MIGRATION.md. The seams keep
+# their stev_convoy_* names (the cell-facing API) — the dispatch is internal, so NO cell changes.
+stev_runner() { case "${STEV_RUNNER:-convoy}" in st2|ST2) echo st2 ;; *) echo convoy ;; esac; }
+stev_is_st2() { [ "$(stev_runner)" = st2 ]; }
+# stev_host : the host under which agents register (bus dirs are <host>.<id>). On st2, render-agent + up
+# must AGREE on it, so we resolve it ONCE and pass it to both; graders tolerate any prefix (busdir() globs
+# *.<id>), so the exact string only needs internal consistency. Defaults to the short hostname; override
+# with STEV_HOST. (Convoy derives its own host; this is only consulted on the st2 leg.)
+stev_host() { echo "${STEV_HOST:-$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo localhost)}"; }
+# stev_st2 : invoke st2 honoring an ST2_BIN override. The installed st2 on PATH may PREDATE the migration
+# commits (e.g. render-agent / pretrust land after the published 0.1.0), so a gate run points ST2_BIN at a
+# current build/source binary — mirroring the CONVOY_BIN convention convoy-network/crash-ding already use.
+# Bare `st2` when ST2_BIN is unset.
+stev_st2() { "${ST2_BIN:-st2}" "$@"; }
+
 # stev_convoy_add <id> <dir> <mode> <persona> [harness] : DECLARE + LAUNCH ONE eval agent via REAL convoy
 # on the isolated network ($ST_ROOT). convoy is DECLARATIVE (add=declare / render=materialize /
 # up=reconcile): `convoy add` alone writes only the catalog agent file and launches NOTHING, so this
@@ -139,6 +157,26 @@ stev_convoy_add() {
   # NOTE: convoy derives the permission posture from the ROLE (worker/supervisor) and always launches the
   # session bypassPermissions; it does NOT take --permission-mode (convoy #30/#31 rejects it loudly). $mode is
   # kept only to pick conv_role above.
+  # ── st2 leg (STEV_RUNNER=st2) — the migration candidate ──────────────────────────────────────────────
+  # G5 (st2 render-agent) maps convoy add's launch line 1:1: `st2 render-agent <CATALOG> --role --identity
+  # --dir --persona --harness [--host]` DECLARES+materializes one runnable catalog agent (persona installed
+  # VERBATIM as .convoy/PERSONA.md, @-imported — byte-identical to convoy, SHA-pin holds), then `st2 up
+  # --once` LAUNCHES — the same two-step shape as convoy add + up --once. render-agent seeds the bus at
+  # <CATALOG>/smalltalk (== <sandbox>/st-root/smalltalk, where graders look). Honest guards, NOT silent
+  # fallbacks: codex's st2 rig + st2 render-agent --mcp aren't built yet, so a cell needing them FAILS LOUD
+  # on the st2 leg (run it on convoy) rather than passing as claude/ding and reporting a hollow green.
+  if stev_is_st2; then
+    local h; h="$(stev_host)"
+    [ "$harness" = codex ] && { echo "stev_convoy_add: st2 codex rig not ready yet (claude leg only) — run codex cells on convoy (STEV_RUNNER=convoy) until st2 codex render lands" >&2; return 3; }
+    stev_mcp_on && { echo "stev_convoy_add: this cell forces MCP (EVAL_MCP=1) but st2 render-agent has no --mcp yet — run it on convoy until st2 MCP lands" >&2; return 3; }
+    stev_st2 render-agent "$NET" --role "$conv_role" --identity "$id" --dir "$d" --persona "$persona" --harness "$harness" --host "$h" \
+      || { echo "stev_convoy_add: 'st2 render-agent' failed for $id on $NET" >&2; return 1; }
+    stev_st2 up --once "$NET" --host "$h" >/dev/null \
+      || { echo "stev_convoy_add: 'st2 up --once' failed for $id on $NET (host=$h)" >&2; return 1; }
+    echo "launched $id  (st2 render-agent $conv_role/$harness + up --once, ding / no MCP, catalog=$NET, host=$h, persona=$persona)"
+    return 0
+  fi
+  # ── convoy leg (default) ─────────────────────────────────────────────────────────────────────────────
   if stev_mcp_on; then
     convoy add "$conv_role" --identity "$id" --network "$NET" --dir "$d" --persona "$persona" --harness "$harness" --mcp
   else
@@ -157,7 +195,10 @@ stev_convoy_add() {
 stev_convoy_init() {
   local NET="$1"
   [ "${#NET}" -le 70 ] || { echo "stev_convoy_init: NET path too long for the pty socket limit ($NET) — use a shorter EVAL_SANDBOX" >&2; return 2; }
-  rm -rf "$NET"; convoy init "$NET" >/dev/null
+  rm -rf "$NET"
+  # st2 has NO separate init — `st2 render-agent` seeds the smalltalk bus dirs itself (G5). Just ensure the
+  # catalog root exists so render-agent has somewhere to write; on convoy, `convoy init` creates the layout.
+  if stev_is_st2; then mkdir -p "$NET"; else convoy init "$NET" >/dev/null; fi
 }
 
 # stev_convoy_teardown <NET> : tear the isolated network down (convoy down is the only path that kills
@@ -165,8 +206,27 @@ stev_convoy_init() {
 stev_convoy_teardown() {
   local NET="$1"
   [ -n "$NET" ] || return 0
-  convoy down "$NET" --force >/dev/null 2>&1 || true
+  if stev_is_st2; then
+    stev_st2 down "$NET" --host "$(stev_host)" >/dev/null 2>&1 || true
+  else
+    convoy down "$NET" --force >/dev/null 2>&1 || true
+  fi
   rm -rf "$NET" 2>/dev/null || true
+}
+
+# stev_pretrust [--harness codex] <dir> [<dir> ...] : batch workspace-pre-trust every agent's --dir BEFORE
+# any session boots. This is the SINGLE runner-abstraction seam for pre-trust — cells call `stev_pretrust`,
+# never the runner directly, so the runner swap is a one-line change in THIS body (the whole point: pretrust
+# used to leak raw into every cell's spin.sh, so a repoint meant editing 23 files). It is ONE atomic batch
+# write shared with `convoy up`: a per-add write lost-updates against sibling boots and re-opens the
+# multi-spawn workspace-trust race (a clobbered agent silently stalls on the trust dialog → the grade flakes),
+# so pre-trust ALL dirs here in one call, once, before the first spawn. Args pass through verbatim: the
+# variadic dirs AND the optional `--harness codex` (which also pre-trusts the codex config for the full-Codex
+# cells). Today it delegates to `convoy pretrust`; the evals→st2 migration swaps this one line to
+# `st2 pretrust "$@"` (same CLI shape: st2 pretrust mirrors convoy pretrust — merge-not-clobber, one atomic
+# batch write over projects.<abs-dir>).
+stev_pretrust() {
+  if stev_is_st2; then stev_st2 pretrust "$@"; else convoy pretrust "$@"; fi
 }
 
 # --- hermetic kick delivery -------------------------------------------------

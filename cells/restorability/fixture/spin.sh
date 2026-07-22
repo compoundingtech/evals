@@ -36,7 +36,7 @@ echo "   seeded $NET/rl-wk/context/now.md (token $(tr -d '\r\n' < "$SB/.token"))
 
 echo "== 3/5  compose persona + convoy add rl-wk (auto; owns its repo) — cold boot #1 =="
 "$HERE/compose-persona.sh" "$SB"
-convoy pretrust "$SB/rl-wk" >/dev/null 2>&1 || true
+stev_pretrust "$SB/rl-wk" >/dev/null 2>&1 || true
 "$HERE/configure-claude-agent.sh" "$SB"
 
 echo "== 4/5  convoy reload rl-wk — the RESTART under test (NO --resume/--session-id, fresh transcript) =="

@@ -35,9 +35,9 @@ echo "== 2/5  compose personas (standalone files for --persona) =="
 
 echo "== 3/5  launch the worker first (convoy add --harness codex: gbx-fix, auto, owns labelkit) =="
 # Pre-trust all agent dirs up front (before any spawn) — codex hits the SAME per-dir trust boot-blocker
-# + multi-spawn stale-flush race, just in ~/.codex/config.toml. `convoy pretrust --harness codex` = convoy's
+# + multi-spawn stale-flush race, just in ~/.codex/config.toml. `stev_pretrust --harness codex` (wraps convoy pretrust) = the
 # batch codex-trust write, shared with convoy up. [convoy sweep: revalidate]
-convoy pretrust --harness codex "$SB/sup" "$SB/worker"
+stev_pretrust --harness codex "$SB/sup" "$SB/worker"
 
 "$HERE/configure-codex-agent.sh" fix "$SB"
 

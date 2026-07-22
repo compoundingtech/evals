@@ -40,7 +40,7 @@ echo "== 2/4  compose personas (positive gsw + control gsnc) =="
 "$HERE/compose-persona.sh" "$SB" gsnc "$SB/control"
 
 echo "== 3/4  convoy add both on the DEFAULT config dir (real auth; global skills visible) — under test: $SKILL =="
-convoy pretrust "$SB/repo" "$SB/control" >/dev/null 2>&1 || true
+stev_pretrust "$SB/repo" "$SB/control" >/dev/null 2>&1 || true
 "$HERE/configure-claude-agent.sh" "$SB" gsw  "$SB/repo"
 "$HERE/configure-claude-agent.sh" "$SB" gsnc "$SB/control"
 

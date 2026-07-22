@@ -31,9 +31,9 @@ for r in $ROLES; do "$HERE/compose-persona.sh" "$r" "$SB"; done
 
 echo "== 3/4  launch proposers first, supervisor last (convoy add --harness codex; sets each agent's ding sidecar) =="
 # Pre-trust all agent dirs up front (before any spawn) — codex hits the SAME per-dir trust boot-blocker
-# + multi-spawn stale-flush race, just in ~/.codex/config.toml. `convoy pretrust --harness codex` = convoy's
+# + multi-spawn stale-flush race, just in ~/.codex/config.toml. `stev_pretrust --harness codex` (wraps convoy pretrust) = the
 # batch codex-trust write, shared with convoy up. [convoy sweep: revalidate]
-convoy pretrust --harness codex "$SB/a" "$SB/b" "$SB/c" "$SB/sup"
+stev_pretrust --harness codex "$SB/a" "$SB/b" "$SB/c" "$SB/sup"
 
 for r in $PROPOSERS "sup"; do "$HERE/configure-codex-agent.sh" "$r" "$SB"; done
 

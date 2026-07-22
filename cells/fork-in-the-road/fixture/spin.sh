@@ -39,9 +39,9 @@ for r in $ROLES; do "$HERE/compose-persona.sh" "$r" "$SB"; done
 
 echo "== 3/5  launch the proposers first (convoy add: fd-<r>, auto, champion one approach each) =="
 # Pre-trust all agent dirs up front (before any spawn) so no earlier sibling's booted claude can stale-flush
-# ~/.claude.json and clobber a later add's trust entry (workspace-trust stall). convoy pretrust = convoy's
+# ~/.claude.json and clobber a later add's trust entry (workspace-trust stall). stev_pretrust (lib-harness; wraps convoy pretrust) = the
 # batch write, shared with convoy up; the harness no longer pre-trusts per-add (see lib-harness.sh). [convoy sweep: revalidate]
-convoy pretrust "$SB/a" "$SB/b" "$SB/c" "$SB/sup"
+stev_pretrust "$SB/a" "$SB/b" "$SB/c" "$SB/sup"
 
 for r in $PROPOSERS; do "$HERE/configure-claude-agent.sh" "$r" "$SB"; done
 

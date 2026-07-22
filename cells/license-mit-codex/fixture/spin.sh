@@ -27,9 +27,9 @@ echo "== 2/5  compose personas (standalone files for --persona) =="
 "$HERE/compose-persona.sh" worker "$SB"
 echo "== 3/5  launch the worker first (convoy add --harness codex: lmc-worker, auto, owns the widget repo) =="
 # Pre-trust all agent dirs up front (before any spawn) — codex hits the SAME per-dir trust boot-blocker
-# + multi-spawn stale-flush race, just in ~/.codex/config.toml. `convoy pretrust --harness codex` = convoy's
+# + multi-spawn stale-flush race, just in ~/.codex/config.toml. `stev_pretrust --harness codex` (wraps convoy pretrust) = the
 # batch codex-trust write, shared with convoy up. [convoy sweep: revalidate]
-convoy pretrust --harness codex "$SB/sup" "$SB/worker"
+stev_pretrust --harness codex "$SB/sup" "$SB/worker"
 
 "$HERE/configure-codex-agent.sh" worker "$SB"
 echo "== 4/5  launch the supervisor (convoy add --harness codex: lmc-sup, bypass) — creates its inbox + ding sidecar =="

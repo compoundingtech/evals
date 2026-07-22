@@ -35,7 +35,7 @@ echo "   seeded $NET/rlx-wk/context/now.md (token $(tr -d '\r\n' < "$SB/.token")
 
 echo "== 3/4  compose persona + convoy add rlx-wk (--harness codex; auto) — cold boot #1 =="
 "$HERE/compose-persona.sh" "$SB"
-convoy pretrust "$SB/rlx-wk" >/dev/null 2>&1 || true
+stev_pretrust "$SB/rlx-wk" >/dev/null 2>&1 || true
 "$HERE/configure-codex-agent.sh" "$SB"
 
 echo "== 4/4  convoy reload rlx-wk — the RESTART under test (NO --resume/--session-id, fresh transcript) =="

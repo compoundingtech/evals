@@ -31,7 +31,7 @@ mkdir -p "$NET/jordan/inbox" "$NET/jordan/archive"; printf 'available\n' > "$NET
 # primitive, so when the CoS does its runtime `convoy add taskflow-dev` the dir is already trusted — no
 # workspace-trust stall (which an earlier sibling's stale ~/.claude.json flush would otherwise cause). The
 # harness no longer pre-trusts per-add (see lib-harness.sh). [full-suite rollout + validation: convoy sweep]
-convoy pretrust "$SB/cos" "$SB/taskflow"
+stev_pretrust "$SB/cos" "$SB/taskflow"
 
 echo "== 4/4  launch the CoS (convoy add: ts-cos, bypass, spawn-capable) — creates its inbox + ding sidecar =="
 "$HERE/configure-claude-agent.sh" "$SB"

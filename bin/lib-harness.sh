@@ -162,12 +162,13 @@ stev_convoy_add() {
   # --dir --persona --harness [--host]` DECLARES+materializes one runnable catalog agent (persona installed
   # VERBATIM as .convoy/PERSONA.md, @-imported — byte-identical to convoy, SHA-pin holds), then `st2 up
   # --once` LAUNCHES — the same two-step shape as convoy add + up --once. render-agent seeds the bus at
-  # <CATALOG>/smalltalk (== <sandbox>/st-root/smalltalk, where graders look). Honest guards, NOT silent
-  # fallbacks: codex's st2 rig + st2 render-agent --mcp aren't built yet, so a cell needing them FAILS LOUD
-  # on the st2 leg (run it on convoy) rather than passing as claude/ding and reporting a hollow green.
+  # <CATALOG>/smalltalk (== <sandbox>/st-root/smalltalk, where graders look). CODEX runs here — render-agent
+  # --harness codex installs the verbatim AGENTS.md persona overlay + st2 pretrust writes the codex trust
+  # (~/.codex/config.toml), both proven green (ghost-bug-codex live on the harness). One HONEST guard remains,
+  # NOT a silent fallback: st2 render-agent has no --mcp yet, so an MCP-forced cell (EVAL_MCP=1, e.g.
+  # hook-integrity) FAILS LOUD on the st2 leg rather than passing as ding and reporting a hollow green.
   if stev_is_st2; then
     local h; h="$(stev_host)"
-    [ "$harness" = codex ] && { echo "stev_convoy_add: st2 codex rig not ready yet (claude leg only) — run codex cells on convoy (STEV_RUNNER=convoy) until st2 codex render lands" >&2; return 3; }
     stev_mcp_on && { echo "stev_convoy_add: this cell forces MCP (EVAL_MCP=1) but st2 render-agent has no --mcp yet — run it on convoy until st2 MCP lands" >&2; return 3; }
     stev_st2 render-agent "$NET" --role "$conv_role" --identity "$id" --dir "$d" --persona "$persona" --harness "$harness" --host "$h" \
       || { echo "stev_convoy_add: 'st2 render-agent' failed for $id on $NET" >&2; return 1; }

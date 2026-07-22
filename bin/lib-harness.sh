@@ -146,6 +146,15 @@ stev_convoy_add() {
   local NET="${ST_ROOT:?stev_convoy_add: export ST_ROOT to the isolated convoy network first}"
   [ -f "$persona" ] || { echo "stev_convoy_add: missing composed persona $persona — compose it first" >&2; return 1; }
   local conv_role=worker; [ "$mode" = "bypassPermissions" ] && conv_role=supervisor
+  # DRY-RUN (phase-2 generator seat extraction): record this seat's inputs, spawn NOTHING. The generator
+  # runs a cell's spin.sh with STEV_DRYRUN=1 — setup-sandbox + compose still build the world+personas, but
+  # each stev_convoy_add appends a TSV row (id / role / harness / dir / persona) to $STEV_SEATS_FILE instead
+  # of rendering+launching, so the generator learns every cell's exact seats without spinning agents.
+  if [ "${STEV_DRYRUN:-}" = 1 ]; then
+    printf '%s\t%s\t%s\t%s\t%s\n' "$id" "$conv_role" "$harness" "$d" "$persona" >> "${STEV_SEATS_FILE:?STEV_DRYRUN needs STEV_SEATS_FILE}"
+    echo "dryrun: seat $id ($conv_role/$harness) dir=$d"
+    return 0
+  fi
   # NO per-add workspace-trust write here (deliberate — the CENTRAL fix for the multi-spawn trust race).
   # convoy-core batch-pre-trusts every member's --dir BEFORE any session boots — covering bare `convoy add` —
   # so the harness must NOT also pre-trust: a per-add write lost-updates against sibling boots and RE-OPENS the
@@ -203,6 +212,7 @@ stev_convoy_init() {
   local NET="$1"
   [ "${#NET}" -le 70 ] || { echo "stev_convoy_init: NET path too long for the pty socket limit ($NET) — use a shorter EVAL_SANDBOX" >&2; return 2; }
   rm -rf "$NET"
+  [ "${STEV_DRYRUN:-}" = 1 ] && { mkdir -p "$NET"; return 0; }   # dry-run: just a dir for setup/compose, no runner
   # st2 has NO separate init — `st2 render-agent` seeds the smalltalk bus dirs itself (G5). Just ensure the
   # catalog root exists so render-agent has somewhere to write; on convoy, `convoy init` creates the layout.
   if stev_is_st2; then mkdir -p "$NET"; else convoy init "$NET" >/dev/null; fi
@@ -213,6 +223,7 @@ stev_convoy_init() {
 stev_convoy_teardown() {
   local NET="$1"
   [ -n "$NET" ] || return 0
+  [ "${STEV_DRYRUN:-}" = 1 ] && return 0   # dry-run: nothing spawned, leave the built world for the generator
   if stev_is_st2; then
     stev_st2 down "$NET" --host "$(stev_host)" >/dev/null 2>&1 || true
   else
@@ -233,6 +244,7 @@ stev_convoy_teardown() {
 # `st2 pretrust "$@"` (same CLI shape: st2 pretrust mirrors convoy pretrust — merge-not-clobber, one atomic
 # batch write over projects.<abs-dir>).
 stev_pretrust() {
+  [ "${STEV_DRYRUN:-}" = 1 ] && return 0   # dry-run: no trust write
   # Serialize the pre-trust write across concurrent callers: parallel gate cells share ~/.claude.json /
   # ~/.codex, and two concurrent read-merge-writes can lost-update → a clobbered agent stalls on the trust
   # dialog. An flock on a shared lock fd makes it safe (no-op if flock is absent). Harmless when serial.
@@ -266,6 +278,12 @@ stev_seed_kick() {
   # requester = explicit override, else the kick's own `from:` (single source of truth), else eval-runner
   [ -n "$requester" ] || requester="$(sed -n 's/^from:[[:space:]]*//p' "$kick" | head -1 | tr -d '"')"
   [ -n "$requester" ] || requester="eval-runner"
+  # dry-run (generator): record the kick's recipient + requester + file; deliver nothing (no agent exists).
+  if [ "${STEV_DRYRUN:-}" = 1 ]; then
+    printf '%s\t%s\t%s\n' "$rid" "$requester" "$kick" >> "${STEV_KICK_FILE:?STEV_DRYRUN needs STEV_KICK_FILE}"
+    echo "dryrun: kick to=$rid requester=$requester file=$kick"
+    return 0
+  fi
   local sm="$net/smalltalk" bus="" i=0
   # convoy creates the recipient's bus dir when the agent registers on boot; that can lag the launch.
   # `find` (not an `ls` glob) so a no-match returns rc 0 and never trips a caller's `set -e`.

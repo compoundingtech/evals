@@ -113,3 +113,13 @@ table.) The PORT set (capstone-first) is the high-value, gate-relevant slice eve
 evals owns the harness + cells + graders; st2 owns the st2 runner. Neither writes to the other's repo;
 cross-repo needs are routed. Handoff point: when st2's convoy-add-shaped surface (G5) is stable, wire
 `stev_convoy_add` → it.
+
+## Phase-2 suite-cleanup backlog (do NOT touch during the gate — Nathan reserved review-after)
+
+- **skill-inheritance convoy path is silber-host-hardcoded** (logged by CoS during the gate). Its
+  `configure-claude-agent.sh` convoy leg pins `SESS=silber.si-agent-claude` and `$PR/silber.si-agent.*` to
+  its authored host (silber), so the convoy cell only runs cleanly on silber — a hetz-convoy run reds for a
+  host-hardcode reason orthogonal to the cell's assertion. The **st2 version is strictly MORE portable**
+  (green on hetz via `render-agent --extra-arg=--plugin-dir` + agent.kdl self-check, no host pins). Suite
+  portability gap, not a gate blocker; de-hardcode the convoy leg (derive the id/pty paths from the launch
+  host) in the phase-2 spec-review cleanup.

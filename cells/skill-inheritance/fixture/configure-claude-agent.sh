@@ -19,6 +19,22 @@ PLUGIN_DIR="$SB/plugin/evalpkg"
 SESS="silber.si-agent-claude"
 [ -f "$PLUGIN_DIR/.claude-plugin/plugin.json" ] || { echo "configure: missing plugin at $PLUGIN_DIR — run setup-sandbox.sh first" >&2; exit 1; }
 
+# ── st2 leg: --plugin-dir is spliced into the rendered exec-claude command at RENDER time via
+# render-agent --extra-arg (STEV_EXTRA_ARGS → stev_convoy_add), so there's NO pty.toml to edit and no
+# re-launch dance. Self-check the rendered agent.kdl carries the flag, else hard-fail (no silent-broken leg).
+if stev_is_st2; then
+  STEV_EXTRA_ARGS="--plugin-dir $PLUGIN_DIR" stev_convoy_add "si-agent" "$REPO" "auto" "$SB/personas-local/si-agent.md"
+  H="$(stev_host)"; KDL="$NET/$H/si-agent/agent.kdl"
+  if grep -qF -- "--plugin-dir" "$KDL" 2>/dev/null && grep -qF -- "$PLUGIN_DIR" "$KDL" 2>/dev/null; then
+    echo "si-agent up with PLUGIN scope injected (--plugin-dir $PLUGIN_DIR via render-agent --extra-arg) + PROJECT scope via --dir"
+    exit 0
+  fi
+  echo "configure: FATAL — --plugin-dir did not land in si-agent's rendered command ($KDL)" >&2
+  grep -n 'exec claude' "$KDL" >&2 2>/dev/null || true
+  exit 1
+fi
+
+# ── convoy leg (default): convoy add does NOT pass claude flags, so inject via the pty.toml it writes ──
 # 1) convoy add (writes $REPO/pty.toml + starts claude+ding, WITHOUT --plugin-dir yet)
 stev_convoy_add "si-agent" "$REPO" "auto" "$SB/personas-local/si-agent.md"
 

@@ -28,7 +28,7 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 
 echo "== pty ceiling check (harness gotcha: completed sandboxes leak daemons) =="
-n=$(ls /dev/ttys* 2>/dev/null | wc -l | tr -d ' '); max=$(sysctl -n kern.tty.ptmx_max 2>/dev/null || echo '?')
+n=$( (ls /dev/pts 2>/dev/null || ls /dev/ttys* 2>/dev/null || true) | wc -l | tr -d ' '); max=$(cat /proc/sys/kernel/pty/max 2>/dev/null || sysctl -n kern.tty.ptmx_max 2>/dev/null || echo '?')
 echo "   /dev/ttys = $n  (kern.tty.ptmx_max = $max) — abort + reclaim if near the ceiling before launching $((1 + $(echo $PROPOSERS | wc -w))) agents"
 
 echo "== 1/5  convoy init the isolated network ($NET) =="

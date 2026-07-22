@@ -170,7 +170,13 @@ stev_convoy_add() {
   if stev_is_st2; then
     local h; h="$(stev_host)"
     stev_mcp_on && { echo "stev_convoy_add: this cell forces MCP (EVAL_MCP=1) but st2 render-agent has no --mcp yet — run it on convoy until st2 MCP lands" >&2; return 3; }
-    stev_st2 render-agent "$NET" --role "$conv_role" --identity "$id" --dir "$d" --persona "$persona" --harness "$harness" --host "$h" \
+    # Optional per-seat EXTRA claude args (STEV_EXTRA_ARGS, whitespace-split) spliced into the rendered
+    # exec-claude command via render-agent --extra-arg=TOK (one token each). Used by cells that need a launch
+    # flag convoy injects by editing pty.toml (e.g. skill-inheritance's --plugin-dir) — on st2 it's declared
+    # at render time, no post-render edit. Empty => byte-identical to a plain seat.
+    local ea=()
+    if [ -n "${STEV_EXTRA_ARGS:-}" ]; then local tok; for tok in $STEV_EXTRA_ARGS; do ea+=("--extra-arg=$tok"); done; fi
+    stev_st2 render-agent "$NET" --role "$conv_role" --identity "$id" --dir "$d" --persona "$persona" --harness "$harness" --host "$h" ${ea[@]+"${ea[@]}"} \
       || { echo "stev_convoy_add: 'st2 render-agent' failed for $id on $NET" >&2; return 1; }
     stev_st2 up --once "$NET" --host "$h" >/dev/null \
       || { echo "stev_convoy_add: 'st2 up --once' failed for $id on $NET (host=$h)" >&2; return 1; }
@@ -227,7 +233,12 @@ stev_convoy_teardown() {
 # `st2 pretrust "$@"` (same CLI shape: st2 pretrust mirrors convoy pretrust — merge-not-clobber, one atomic
 # batch write over projects.<abs-dir>).
 stev_pretrust() {
-  if stev_is_st2; then stev_st2 pretrust "$@"; else convoy pretrust "$@"; fi
+  # Serialize the pre-trust write across concurrent callers: parallel gate cells share ~/.claude.json /
+  # ~/.codex, and two concurrent read-merge-writes can lost-update → a clobbered agent stalls on the trust
+  # dialog. An flock on a shared lock fd makes it safe (no-op if flock is absent). Harmless when serial.
+  ( flock 9 2>/dev/null || true
+    if stev_is_st2; then stev_st2 pretrust "$@"; else convoy pretrust "$@"; fi
+  ) 9>/tmp/stev-pretrust.lock
 }
 
 # --- hermetic kick delivery -------------------------------------------------

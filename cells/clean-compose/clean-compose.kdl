@@ -1,0 +1,37 @@
+// clean-compose.kdl — the whole eval in one file.  `st2 eval ./` runs it (team-less: the run{} steps ARE the
+// work — deterministic).  Proves `st2 render-agent` composes a seat overlay INTO an existing git repo without
+// polluting its working tree: render-agent writes .convoy/ + .claude/rules/convoy.md + settings, all excluded
+// via .git/info/exclude, so `git status --porcelain` stays EMPTY. Mutation-valid: a planted synthetic-dirt file
+// MUST turn porcelain non-empty, so the gate can never vacuously pass. All judges held-out.
+
+env {
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+eval {
+  copy "./fixture"                       // repo/ (its own CLAUDE.md + a project skill, _git -> .git) + persona.md
+  max-timeout "120s"
+
+  run {
+    step "compose" {                     // compose a seat INTO the repo (the overlay write; no boot needed)
+      command "st2 render-agent --identity cc-agent --dir $CATALOG/repo --persona $CATALOG/persona.md $CATALOG"
+      require-exit 0
+    }
+    step "porcelain"  { command #"sh -c 'cd $CATALOG/repo && git status --porcelain'"# }        // EMPTY = no pollution
+    step "plant-dirt" { command #"sh -c 'printf dirt > $CATALOG/repo/SYNTHETIC-DIRT.txt'"# }     // the mutation control
+    step "porcelain2" { command #"sh -c 'cd $CATALOG/repo && git status --porcelain'"# }         // MUST be non-empty now
+  }
+
+  judges {
+    judge "the overlay WAS composed — render-agent wrote .convoy/PERSONA.md into the repo (not a no-op)" {
+      exec "test -f $CATALOG/repo/.convoy/PERSONA.md"
+    }
+    judge "CLEAN COMPOSE — `git status --porcelain` is EMPTY after the compose (overlay git-excluded, zero pollution)" {
+      exec "! test -s $RUNS_DIR/porcelain.out"
+    }
+    judge "mutation-valid — a planted synthetic-dirt file DOES turn porcelain non-empty (the gate is not vacuous)" {
+      exec "test -s $RUNS_DIR/porcelain2.out"
+    }
+  }
+}

@@ -1,25 +1,34 @@
-# feature-fit — feature cell
+# feature-fit — add a feature that fits the house conventions
 
-**Discriminates:** add a feature that fits existing patterns, not a bolt-on
+**What it evaluates.** Feature-in-existing-code — harder than greenfield because you must **read the code
+and match it**. The `tasklit` library has strong, consistent conventions across 4 commands (a Result
+pattern that never throws, shared validators, a `{ name, describe, run }` module shape + a dispatch
+registry, one test per command). A supervisor (`feat.sup`, coordinate-only) delegates to a specialist
+(`feat.dev`, owns the repo) to **add a `rename` command** — and the request deliberately does **not** list
+the conventions. Reading the existing commands, inferring the style, and slotting the feature in
+idiomatically (not a functional-but-alien bolt-on) is the test.
 
-**Capabilities required:** `claude,st,pty,git,node`  ·  run `bin/evals preflight` to confirm your setup supports this cell.
+**Run it:** `st2 eval ./cells/feature-fit/`
 
-## Run it
+`st2 eval` copies the fixture into a fresh catalog, boots the team, delivers `task.md` to `feat.sup`, runs
+to the supervisor's confirmation (or `max-timeout`), then runs the judges → verdict.
 
-The team is launched via the real `st launch` (the same command a user runs). `fixture/spin.sh` is
-**self-isolating** — it creates and exports its own scratch bus root at `$SB/st-root`, so nothing touches
-your live network; the st-launched agents inherit that root by env inheritance. You only need
-`PERSONAS_DIR` (a checkout of the public personas repo — `bin/ensure-personas.sh` clones it pinned; the
-runner sets it for you). No external `ST_ROOT` / `ST_HOOKS_DIR` required — spin owns the root and
-`st launch` wires the boot hooks (asyncRewake / PreCompact / StopFailure) itself.
+## The folder
 
-Run it: `fixture/spin.sh` (auto-materializes the sandbox via `fixture/setup-sandbox.sh` if absent), or
-`bin/evals run feature-fit`. Tear down after grading with `bin/evals teardown <SB>`.
+| path | what it is |
+| --- | --- |
+| `feature-fit.kdl` | the whole eval: the `feat` team (sup + dev) + the `eval {}` block (copy, kickoff, judges) |
+| `task.md` | the feature request delivered to `feat.sup` (does not enumerate the conventions) |
+| `fixture/` | the pre-built world, copied 1:1: `worker/` (the `tasklit` repo, green suite, base commit + owner-pinned author `feat.dev`, git db `worker/_git` → `.git` on copy) and `sup/` (coordinate-only, no repo). Each holds an `st2`-native persona. |
+| `judges/` | the held-out bash judges (below) |
 
-## Grading
+## What makes it pass (all judges must pass — the team never sees these)
 
-- **Grade:** `fixture/grade.sh` mechanizes the ground-truth checks (never trusts self-reports).
-- **Held-out acceptance** — see `task.toml` `[grader]`: an independent check the team never sees, so the result can not be gamed by editing a unit test.
-- **Isolation is a hard PASS/FAIL gate:** every agent changes only the module/repo it owns; all coordination flows through the message bus. A non-owner change fails the run outright.
-
-See `task.toml` for the full spec and [`../../framework.md`](../../framework.md) for the runner, axes, and grading model.
+- **isolation** (`judges/isolation.sh`) — only `feat.dev` authored commits; the supervisor owns no repo.
+- **visible suite** (`judges/suite.sh`) — `node --test` is green on HEAD (existing behavior preserved).
+- **functional** (`judges/functional.sh`) — `rename` works via `dispatch` across four cases, which enforces
+  **registration** + the **Result shape** (a throw, missing registration, or wrong codes fail here).
+- **test added** (`judges/test-added.sh`) — a matching test at `test/commands/rename.test.js`.
+- **convention fit** (`judges/convention-fit.sh`) — the discriminator: hard gates on **no `throw`** (Result
+  pattern) + **registered** in `index.js`; plus non-gating signals (module shape, `ok()`/`fail()` from
+  `result.js`, reuse of `validate.js`) that surface a functional-but-alien implementation.

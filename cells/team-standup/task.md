@@ -1,10 +1,3 @@
-<!--
-HERMETIC KICK for TEAM-STANDUP P5 (the LIVE proof). This is the ONLY input to the team — no live agent
-prompts anyone. spin.sh strips this HTML header and materializes the rest into the CoS's inbox as a valid
-smalltalk filename (<13-digit-ms>-<6alnum>.md) with a boot-time ms so the boot ritual ACTS on it rather than
-archiving it as stale backlog. `from: jordan` is the frozen synthetic principal (reproducible, not a live
-sender). The task is small + verifiable + real; it is DELEGATED, so it names WHAT is needed, not who does it.
--->
 ---
 from: jordan
 subject: "need completeTask(id) in taskflow — stand up someone to own it"

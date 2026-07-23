@@ -48,10 +48,13 @@ eval {                                   // `st2 eval` = copy the world, boot th
     judge "SECURITY caught — the loadConfig path traversal is flagged (the headline)" {
       exec "bash ./judges/security-caught.sh"
     }
-    // SIGNAL judge (preserved, NOT gating): judges/other-defects.sh reports whether the review ALSO caught the
-    // secondary defects (mergeConfig mutating its base arg + the tautological test) + false-positive discipline.
-    // Removed from judges{} because it always exits 0 — a can-never-fail judge counted as a green PASS inflates
-    // the score. Kept in the cell to become a signal-tier judge once st2 has a show-but-do-not-gate tier. The
-    // real gates are above (the PRIMARY planted defect + isolation + coordination).
+    // SIGNAL judge (st2 signal-tier, b0c52ee): the bare `signal` makes it RUN + print a [SIGNAL] line but be
+    // EXCLUDED from SCORE/verdict — a can-never-fail always-0 judge can no longer inflate the score. It reports
+    // whether the review ALSO caught the secondary defects (mergeConfig mutating its base arg + the tautological
+    // test) + false-positive discipline — real coverage signal, not a gate. The real gates are above.
+    judge "other defects surfaced — mergeConfig mutation + weak test" {
+      signal
+      exec "bash ./judges/other-defects.sh"
+    }
   }
 }

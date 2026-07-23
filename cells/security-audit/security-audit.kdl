@@ -45,9 +45,13 @@ eval {                                   // `st2 eval` = copy the world, boot th
     judge "the 3 HIGH-severity vulns are caught (command-injection, traversal, auth-bypass)" {
       exec "bash ./judges/high-vulns.sh"
     }
-    // SIGNAL judge (preserved, NOT gating): judges/coverage-signal.sh reports whether the review ALSO caught the
-    // mediums/low + kept the red-herrings out (false-positive discipline). Removed from judges{} because it always
-    // exits 0 — a can-never-fail judge counted as a green PASS inflates the score. Kept in the cell to become a
-    // signal-tier judge once st2 has a show-but-do-not-gate tier. The real gate is above (the HIGH-severity vulns).
+    // SIGNAL judge (st2 signal-tier, b0c52ee): the bare `signal` makes it RUN + print a [SIGNAL] line but be
+    // EXCLUDED from SCORE/verdict — a can-never-fail always-0 judge can no longer inflate the score. It reports
+    // whether the review ALSO caught the mediums/low + kept the red-herrings out (false-positive discipline) —
+    // real coverage signal, not a gate. The real gate is above (the HIGH-severity vulns).
+    judge "coverage signals — mediums/low + red-herring discipline" {
+      signal
+      exec "bash ./judges/coverage-signal.sh"
+    }
   }
 }

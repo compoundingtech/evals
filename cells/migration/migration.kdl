@@ -1,0 +1,55 @@
+// migration.kdl — the whole eval in one file.  `st2 eval ./` runs it; `st2 up ./` just boots the team.
+// Dependency migration: upgrade the vendored greetkit 1.0.0 -> 2.0.0 in `meeting-notes` (a breaking
+// release: greetAll removed, farewell->goodbye (+'!'), greetFormal(name,title)->greetFormal({name,title}),
+// greet unchanged). Discriminator: breadth (every call site) + NOT dropping cases (reimplement the removed
+// batch capability, don't delete it) + not weakening tests. All judges are held-out.
+
+env {                                    // cascades: agents + their processes inherit these
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "mig" {                             // prefixes the agents it holds -> mig.sup, mig.dev
+  agent "sup" {
+    workspace "./sup"                    // coordinate-only cwd (owns no product repo)
+    env { ST_AGENT "mig.sup" }
+    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "mig.sup.ding" { command #"st2 ding mig.sup --identity mig.sup --root $CATALOG/smalltalk"# }
+  }
+  agent "dev" {
+    workspace "./worker"                 // owns the meeting-notes repo (this dir)
+    env { ST_AGENT "mig.dev" }
+    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "mig.dev.ding" { command #"st2 ding mig.dev --identity mig.dev --root $CATALOG/smalltalk"# }
+  }
+}
+
+eval {                                   // `st2 eval` = copy the world, boot the team, kick off, then judge
+  copy "./fixture"                       // pre-built starting world, 1:1 (worker/_git -> worker/.git on copy)
+  message {                              // kickoff — same as `st2 message send`
+    from "requester"
+    to "mig.sup"
+    content "./task.md"
+  }
+  max-timeout "1200s"                    // the whole eval must finish within this
+
+  judges {                               // all must pass; each one visible, nothing magic (all mechanical here)
+    judge "isolation — only mig.dev authored; supervisor owns no repo" {
+      exec "bash ./judges/isolation.sh"
+    }
+    judge "visible suite is green on HEAD" {
+      exec "bash ./judges/suite.sh"
+    }
+    judge "batch capability preserved — welcomeTeam reimplemented, not dropped" {
+      exec "bash ./judges/batch-preserved.sh"
+    }
+    judge "full migration — greetkit 2.0.0, no old-API refs, every call site fixed" {
+      exec "bash ./judges/full-migration.sh"
+    }
+    judge "tests not weakened — count kept, no skips, assertions migrated not deleted" {
+      exec "bash ./judges/tests-not-weakened.sh"
+    }
+  }
+}

@@ -1,0 +1,1 @@
+{ "name": "greetkit", "version": "2.0.0", "type": "module", "main": "index.js", "description": "Greeting helpers." }

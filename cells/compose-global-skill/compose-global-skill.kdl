@@ -1,0 +1,41 @@
+// compose-global-skill.kdl — the whole eval in one file. `st2 eval ./` runs it (team-less, deterministic).
+//
+// Proves an st2 COMPOSE (`st2 render-agent`) does NOT SHADOW or BREAK a user's GLOBAL (~/.claude/skills) skills, so
+// they stay discoverable in a composed session — the box-free NO-SHADOW heart of the cell. (The live "the global
+// skill actually FIRES" arm needs an installed global skill + real auth on the default config dir → skips-with-
+// reason, exactly as the original cell; the deterministic no-shadow core carries the proof.)
+//
+// A `run { step "compose" }` git-inits a throwaway repo, seeds a GLOBAL skill under a FAKE HOME (read-only), and
+// renders the agent into the repo on the DEFAULT config dir. Four held-out judges inspect the rendered artifacts:
+// no config relocation, additive settings (mutation-valid), no workspace skills shadow, global skills untouched.
+
+env {
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+eval {
+  copy "./fixture"                       // compose.sh + persona.md
+  run {
+    step "compose" {
+      command #"bash ./compose.sh"#
+      require-exit 0                      // the compose must succeed — there is nothing to inspect otherwise
+    }
+  }
+  max-timeout "60s"
+
+  judges {                               // team-less: the judges are the whole verdict; all must pass
+    judge "NO CONFIG RELOCATION — the rendered seat uses the DEFAULT config dir (no CLAUDE_CONFIG_DIR, no --config-dir/--disable-slash-commands)" {
+      exec "bash ./judges/no-config-relocation.sh"
+    }
+    judge "SETTINGS ADDITIVE (hooks only) + mutation-valid — settings.local.json touches no skill-scoping key, and the detector provably bites a synthetic shadow" {
+      exec "bash ./judges/settings-hooks-only.sh"
+    }
+    judge "NO WORKSPACE SKILLS SHADOW — the overlay wrote no workspace .claude/skills to mask the user's global skills" {
+      exec "bash ./judges/no-workspace-skills.sh"
+    }
+    judge "GLOBAL SKILLS UNTOUCHED — ~/.claude/skills byte-identical before/after (the compose only READ them)" {
+      exec "bash ./judges/global-skills-untouched.sh"
+    }
+  }
+}

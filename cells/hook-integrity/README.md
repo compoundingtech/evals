@@ -6,17 +6,16 @@ field case this comes from, where hooks were configured but silently never ran. 
 
 **Capabilities required:** `claude,st,pty,git`  ·  run `bin/evals preflight` to confirm your setup.
 
-## Run it (one command)
+## Run it (st2 folder-eval)
 
-```
-bin/evals run hook-integrity
+```sh
+st2 eval ./cells/hook-integrity/     # render the REAL hook into 2 legs → seed now.md → boot ON + --no-hooks OFF → judge
 ```
 
-It prints a **loud PASS / FAIL banner**. `PASS` = your SessionStart hook fires and rehydrates
-`context/now.md` on launch. `FAIL` = it didn't (the silent-hook failure mode) — with a specific
-reason + a fix pointer. Takes ~2–3 min on a healthy machine; up to ~4 min if the hook is genuinely
-dead (it waits to be sure it isn't just a slow agent). Env knobs: `HI_TIMEOUT` (default 240s),
-`HI_GRACE` (45s). Direct form: `cells/hook-integrity/fixture/run.sh`.
+The whole eval is `hook-integrity.kdl`. `fixture/setup.sh` runs as the eval's `run { step "setup" }` (before boot):
+it `st2 render-agent`s the **real** SessionStart hook (smalltalk `session-start.sh`) into two identical workspaces
+(`repo-on`, `repo-off`) and seeds the **same** per-run secret token into each leg's `context/now.md`. Two team
+agents boot identically **except** `hi.off` adds `--no-hooks`. Proven live: **4/4 PASS**.
 
 ## What it proves — the ungameable core
 
@@ -44,13 +43,11 @@ its own scratch bus root (`$SB/st-root`) that `st launch` binds into the session
 network is never touched. Sessions are collision-proof and torn down **zero-orphan** (agents + any
 sidecars). If the agent commits, isolation attributes it (author-pinned to `hi-agent`).
 
-## Grading
+## Grading (held-out judges in `judges/`)
 
-`fixture/grade.sh <SB_ON> <SB_OFF>` (run.sh calls it):
-- **HARD — hooks ON:** `repo/HOOK_OK.txt` contains exactly `REHYDRATE-<token>` → SessionStart fired + rehydrated.
-- **HARD — hooks OFF (control):** no such token → the ON assertion depends on the hook.
-- **Soft:** isolation (only `hi-agent`/seed authored commits); boot-ritual observation (status flip, welcome-note drained) — corroborating, not gated.
-- **Autonomy:** rescues = 0. A hook that needs a human poke to "fire" is a fail.
+- **HOOKS-ON FIRED (hard):** `repo-on/HOOK_OK.txt` contains exactly `REHYDRATE-<token>` → SessionStart fired + injected `now.md`.
+- **HOOKS-OFF CONTROL (hard):** `repo-off/HOOK_OK.txt` is absent/tokenless → the ON assertion depends on the hook (a check that passed both ways would test nothing).
+- **HOOK-EXCLUSIVE (attribution):** the token appears in **no agent seed input** — persona, kick, repo-seed, inbox — only in `context/now.md` (the hook channel). The agent's *outputs* (its `HOOK_OK.txt`, its bus report to the requester, its transcript) legitimately carry it and are excluded.
 
 ## Scope
 

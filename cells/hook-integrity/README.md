@@ -6,17 +6,6 @@ field case this comes from, where hooks were configured but silently never ran. 
 
 **Capabilities required:** `claude,st,pty,git`
 
-> **⚠ Status: KNOWN RED (documented, not a regression) — HOOKS-OFF CONTROL fails on claude 2.1.x.**
-> The negative control assumes the SessionStart hook is the *only* path to `now.md`. It isn't: a modern
-> claude agent, told to "act on your durable working state," runs `st context read` (or Reads the file)
-> and gets the same `now.md` — token and all — **without** the hook. Ground truth (a `--keep` run): the
-> OFF-leg hook did **not** fire (zero `<context source=…>` injections), yet the agent still wrote the
-> token via that non-hook read. It passed before only because older claude didn't self-fetch its durable
-> state — **green by luck, now exposed.** The **discriminator redesign is pending Nathan's pick** (leaning:
-> gate the token on the hook's `<context source=…>` envelope, which `st context read` does not add;
-> fallback: key on a hook direct-execution trace). The boot-fix + flat-run conversion below are correct
-> regardless and are applied; only the redesign is held.
-
 ## Run it (st2 folder-eval)
 
 ```sh
@@ -25,30 +14,34 @@ st2 eval ./cells/hook-integrity/     # render the REAL hook into 2 legs → seed
 
 The whole eval is `hook-integrity.kdl`. `fixture/setup.sh` runs as the eval's `run "setup"` (before boot):
 it `st2 render-agent`s the **real** SessionStart hook (smalltalk `session-start.sh`) into two identical workspaces
-(`repo-on`, `repo-off`) and seeds the **same** per-run secret token into each leg's `context/now.md`. Two team
-agents boot identically **except** `hi.off` adds `--settings disableAllHooks` (claude 2.1.x dropped the old
-`--no-hooks`). See the KNOWN RED note above for the current control status.
+(`repo-on`, `repo-off`), seeds the **same** per-run secret token into each leg's `context/now.md`, and adds a
+**parallel SessionStart witness hook** alongside the real one. Two team agents boot identically **except** `hi.off`
+adds `--settings disableAllHooks` (claude 2.1.x dropped the old `--no-hooks`), which co-suppresses both hooks.
 
-## What it proves — the ungameable core
+## What it proves — the drift-proof core
 
-The SessionStart hook injects your agent's durable working-state (`context/now.md`) as a `<context>`
-block on its first turn — **only if it fires**. The diagnostic exploits that:
+The SessionStart hook injects your agent's durable working-state (`context/now.md`) on its first turn —
+**only if it fires**. Asserting on what the *model* then does is fragile: a modern claude agent, told to
+"act on your durable working state," fetches `now.md` itself via `st context read` (a **non-hook** path),
+so the token reaches it either way. So the discriminator asserts a **hook side-effect** the model can't forge:
 
-1. It seeds `now.md` with a **secret token** generated fresh this run — reachable **no other way**:
-   not in the agent's persona, not in its repo, not in its inbox. `now.md` tells the agent to write
-   `REHYDRATE-<token>` into `HOOK_OK.txt`.
-2. It boots the agent in **two legs**, identical except one flag (the real SessionStart hook, written by
-   `st2 render-agent`, is configured in BOTH):
-   - **hooks ON** (`hi.on`, plain `exec claude`) → if the hook fires, the agent sees the token and writes it. ✅
-   - **hooks OFF** (`hi.off`, `exec claude --settings '{"disableAllHooks":true}'`) → the negative control.
-     Same hook configured, but claude does not fire it → no injection. ❌ *(KNOWN RED on claude 2.1.x — the
-     agent reaches `now.md` via `st context read` regardless; see the Status note above.)*
-3. **PASS iff the token is present with hooks ON and absent with hooks OFF.** That difference is the
-   proof: a check that passes *both* ways would be testing nothing. The token is random per run, so
-   no edit to the fixture can pre-satisfy it.
+1. `now.md` is seeded with a **secret token** generated fresh this run — reachable no other way (not the
+   persona, not the repo, not the kick).
+2. A **parallel SessionStart witness hook** (`hook-witness.sh`) is configured alongside the real
+   `session-start.sh` in **both** legs. When SessionStart fires, the witness records what the hook injects
+   (`now.md`, verbatim) to `$CATALOG/hook-witness/<id>.injected`. It fires **iff** SessionStart fires — i.e.
+   iff the real hook fires — and it is a file the model **cannot create**.
+3. Two legs, identical except one flag:
+   - **hooks ON** (`hi.on`, plain `exec claude`) → SessionStart fires → witness present, carrying the token. ✅
+   - **hooks OFF** (`hi.off`, `exec claude --settings '{"disableAllHooks":true}'`) → both hooks co-suppressed
+     → **no witness**, even though the agent can still read `now.md` via `st context read`. ❌
+4. **PASS iff the witness is present (with the real token) on ON and absent on OFF.** Zero model-behavior
+   dependence, content-verified against the per-run token, immune to the `st context read` drift that
+   defeated the older `HOOK_OK.txt` control. The real `session-start.sh` is left **unmodified** — the witness
+   only *observes* its firing.
 
-The probe agent runs a **minimal standalone persona** that never mentions `now.md`, the token, or
-`HOOK_OK.txt` — so a passing token is attributable *only* to the hook.
+The probe agent runs a **minimal standalone persona** that never mentions `now.md` or the token — but the
+proof no longer rests on the agent at all; it rests on the hook's own witness.
 
 ## Isolation + safety
 
@@ -58,9 +51,9 @@ sidecars). If the agent commits, isolation attributes it (author-pinned to `hi-a
 
 ## Grading (held-out judges in `judges/`)
 
-- **HOOKS-ON FIRED (hard):** `repo-on/HOOK_OK.txt` contains exactly `REHYDRATE-<token>` → SessionStart fired + injected `now.md`.
-- **HOOKS-OFF CONTROL (hard):** `repo-off/HOOK_OK.txt` is absent/tokenless → the ON assertion depends on the hook (a check that passed both ways would test nothing). **⚠ Currently RED on claude 2.1.x** — see the Status note at the top; discriminator redesign pending Nathan.
-- **HOOK-EXCLUSIVE (attribution):** the token appears in **no agent seed input** — persona, kick, repo-seed, inbox — only in `context/now.md` (the hook channel). The agent's *outputs* (its `HOOK_OK.txt`, its bus report to the requester, its transcript) legitimately carry it and are excluded.
+- **HOOKS-ON FIRED (hard):** `$CATALOG/hook-witness/hi.on.injected` exists and contains the run's `REHYDRATE-<token>` → the SessionStart hook fired and emitted the real `now.md` (proven from a side-effect, not model output).
+- **HOOKS-OFF CONTROL (hard, drift-proof):** `$CATALOG/hook-witness/hi.off.injected` is absent/tokenless → with `disableAllHooks` the hook did not fire. The witness is a hook side-effect the model can't forge, so the OFF-leg agent reaching `now.md` via `st context read` does not create it.
+- **HOOK-EXCLUSIVE (attribution):** the token appears in **no agent seed input** — persona, kick, repo-seed, inbox — only in `context/now.md`. The hook's own outputs (the witness, the model's `HOOK_OK.txt`, its bus report) legitimately carry it and are excluded.
 
 ## Scope
 

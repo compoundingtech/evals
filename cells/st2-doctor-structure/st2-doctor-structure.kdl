@@ -1,5 +1,5 @@
-// convoy-doctor-structure.kdl — the whole eval in one file.  `st2 eval ./` runs it (team-less, deterministic).
-// Ports the convoy-doctor-structure cell to the REAL `st2 doctor` (which health-checks a RUNNING catalog:
+// st2-doctor-structure.kdl — the whole eval in one file.  `st2 eval ./` runs it (team-less, deterministic).
+// Does `st2 doctor` prove a RUNNING catalog is healthy (it health-checks:
 // tools on PATH, supervisor holds the host-lock, each agent's task alive, presence fresh). Two halves:
 //   (a) HEALTHY — `st2 up` a well-formed net (background, holds the lock), then `st2 doctor` → "all checks passed" + exit 0.
 //   (b) MUTATION-VALID BROKEN — `st2 doctor` on the same net with NO live host → it FLAGS "✗ supervisor (st2 up) running"
@@ -23,8 +23,10 @@ eval {
     }
     // BROKEN (mutation-valid): with no live host now, doctor must FLAG the missing supervisor + exit non-zero.
     step "broken" {
-      // NO trailing `; true` — the step must PROPAGATE doctor's non-zero exit into $RUN_broken_EXIT (verdict is
-      // judges-only, so a non-zero step exit here does NOT fail the run; the judge asserts it).
+      // `allow-nonzero`: st2 (a0fdb61+) requires exit 0 by DEFAULT; this step INTENTIONALLY exits non-zero (a
+      // broken net), so it opts out — the exit propagates into $RUN_broken_EXIT for the judge to assert, and does
+      // NOT hard-fail the run. (Also: NO trailing `; true` — the exit must reach the judge, not be masked.)
+      allow-nonzero
       command #"sh -c 'sleep 1; st2 doctor "$CATALOG/net" --host hetz'"#
     }
   }

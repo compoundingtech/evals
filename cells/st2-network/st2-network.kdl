@@ -1,7 +1,7 @@
-// convoy-network.kdl — the whole eval in one file.  `st2 eval ./` runs it (team-less, deterministic).
+// st2-network.kdl — the whole eval in one file.  `st2 eval ./` runs it (team-less, deterministic).
 // The reboot acceptance test: `st2 up` HOSTS a network end-to-end — it brings a rendered seat online (the
 // supervisor holds the host-lock, the seat's task is alive) AND the bus works (a message addressed to the
-// hosted agent is delivered to its inbox). Ports the convoy-network cell (host a ding-only net) to `st2 up`.
+// hosted agent is delivered to its inbox). Does the host command stand up a ding-only net end-to-end.
 // All judges held-out.
 
 env {

@@ -21,7 +21,7 @@ run them. Cells that test the *newcomer stands up a network/CoS from zero* path 
   init a fresh network, CoS boot ritual, CoS spawns a specialist (harness bootstrap: identity + hooks +
   session), end-to-end message. Its deliverable is the FRICTION LIST (where docs diverge from reality),
   which is *about* the missing init/onboard commands — so it ties to the same deferred onboarding path,
-  not just `st2 up`. (Contrast: **convoy-network** = does `st2 up` *host* a network — that ports now.)
+  not just `st2 up`. (Contrast: **st2-network** = does `st2 up` *host* a network — that ports now.)
   Port when the st2 onboarding path exists.
 
 ## Parked pending the WORKSPACE-PREP layer (open question: what cuts worktrees in the new stack)

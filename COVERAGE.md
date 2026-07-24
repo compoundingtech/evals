@@ -15,7 +15,7 @@ thin on its direct verb surface. Two convoy gaps are tracked below.
 | `add` / compose (overlay, config-load, global+project skills, zero-pollution) | convoy-add-structure, clean-compose, compose-config-load, compose-global-skill, skill-inheritance, weird-git-setup | ✅ strong |
 | `doctor` (pre-init UX, structure-proof, can-work self-test, abort/teardown) | convoy-doctor-preinit, convoy-doctor-structure, convoy-doctor-canwork, convoy-doctor-teardown | ✅ strong |
 | `doctor` on a **foreign box** (false-negative class) | convoy-doctor-foreign-box | ✅ (the Johannes false-negative regression guard, #77 + #78) |
-| `up` — hosting + respawn | convoy-network (capstone), crash-ding | ✅ |
+| `up` — hosting + respawn | st2-network (capstone), crash-ding | ✅ |
 | worktree / megarepo | convoy-worktree-cutting, weird-git-setup | ✅ |
 | `reload` (restore path) | restorability, restorability-codex | ✅ |
 | **job-lifecycle** (submit / run / status / complete) | convoy-job-lifecycle | ⏳ deferred — convoy has no job subsystem yet (waits on the one-shot-agent job type) |

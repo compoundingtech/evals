@@ -12,15 +12,13 @@ team "mix" {                             // prefixes the agents it holds -> mix.
     workspace "./sup"                    // coordinate-only cwd (owns no product repo)
     env { ST_AGENT "mix.sup" }
     command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
-    /- ding {}                            // long-term collapses to `ding {}`; expands to the line below
-    exec "mix.sup.ding" { command #"st2 ding mix.sup --identity mix.sup --root $CATALOG/smalltalk"# }
+    ding                                 // auto-renders: st2 ding mix.sup --identity mix.sup --root $ST_ROOT
   }
   agent "worker" {
     workspace "./worker"                 // owns the widget repo (this dir)
     env { ST_AGENT "mix.worker" }
     command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
-    /- ding {}
-    exec "mix.worker.ding" { command #"st2 ding mix.worker --identity mix.worker --root $CATALOG/smalltalk"# }
+    ding                                 // auto-renders: st2 ding mix.worker --identity mix.worker --root $ST_ROOT
   }
 }
 
@@ -37,8 +35,7 @@ eval {                                   // `st2 eval` = copy the world, boot te
     workspace "./"                       // sees the whole sandbox + bus, so it can inspect
     env { ST_AGENT "judge" }
     command #"exec codex --model gpt-5.6-sol 'You are a judge. Read your inbox for what to evaluate, inspect the sandbox, reply in the exact format asked.'"#
-    /- ding {}
-    exec "judge.ding" { command #"st2 ding judge --identity judge --root $CATALOG/smalltalk"# }
+    ding                                 // auto-renders: st2 ding judge --identity judge --root $ST_ROOT
   }
 
   judges {                               // all must pass; each one visible, nothing magic

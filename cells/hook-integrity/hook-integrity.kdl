@@ -5,10 +5,23 @@
 // session-start.sh, written by `st2 render-agent`) injects the agent's durable working-state (context/now.md) as a
 // <context> block on its first turn — ONLY if it fires. Two legs, identical except one flag:
 //   • hi.on  — hooks fire → if the hook injects now.md, the agent sees a per-run secret token + writes it. ✅
-//   • hi.off — `--no-hooks` control → same hook configured, same now.md seeded, but claude does not fire it. ❌
+//   • hi.off — hooks-disabled control (`--settings disableAllHooks`) → same hook configured, same now.md seeded,
+//              but claude does not fire it. ❌  (claude 2.1.x removed the old `--no-hooks` flag; disableAllHooks
+//              is the surgical replacement — it suppresses ONLY hook firing, keeps auth + the configured hook.)
 // The token lives ONLY in each leg's context/now.md (never in the persona, repo, or kick), so a produced token is
 // attributable to the hook actually running. PASS iff the token is present in the ON leg and absent in the OFF
 // leg. All judges held-out. Isolation-safe: each leg is a hermetic catalog workspace; nothing touches ~/.claude.
+//
+// ⚠ KNOWN RED (documented, NOT a runner regression) — the HOOKS-OFF CONTROL judge currently FAILS on claude 2.1.x.
+// The control assumes the SessionStart hook is the ONLY path to now.md. It is not: a modern claude agent, told to
+// "act on your durable working state", runs `st context read` (or Reads the file) and gets the SAME now.md — token
+// and all — WITHOUT the hook. Ground truth (a --keep run): the OFF-leg hook did NOT fire (zero <context source=…>
+// injections), yet the agent still wrote the token via that non-hook read. The control passed before only because
+// older claude did not self-fetch its durable state — green by luck, now exposed (this is not-hollow discipline
+// working). The DISCRIMINATOR REDESIGN is pending Nathan's pick (leaning: gate the token on the hook's
+// `<context source=…>` envelope, which `st context read` does not add; fallback: key on a hook direct-exec trace).
+// The boot-fix (--no-hooks → --settings disableAllHooks, since 2.1.x dropped --no-hooks) + the flat-run conversion
+// are correct regardless and ARE applied; only the redesign is held.
 
 env {
   ST_ROOT  "$CATALOG/smalltalk"
@@ -26,19 +39,16 @@ team "hi" {
   agent "off" {
     workspace "./repo-off"               // IDENTICAL config (same rendered hook + same seeded now.md)…
     env { ST_AGENT "hi.off" }
-    // …EXCEPT --no-hooks: the SessionStart hook is configured but claude does NOT fire it (the negative control).
-    command #"exec claude --permission-mode auto --no-hooks 'You just cold-started. Run your boot ritual (set status available, drain your inbox), then act on your durable working state.'"#
+    // …EXCEPT --settings disableAllHooks: the SessionStart hook is configured but claude does NOT fire it (control).
+    command #"exec claude --permission-mode auto --settings '{"disableAllHooks":true}' 'You just cold-started. Run your boot ritual (set status available, drain your inbox), then act on your durable working state.'"#
     exec "hi.off.ding" { command #"st2 ding hi.off --identity hi.off --root $CATALOG/smalltalk"# }
   }
 }
 
 eval {
   copy "./fixture"                       // persona.md + now.md.tmpl + setup.sh
-  run {
-    step "setup" {
-      command #"bash ./setup.sh"#        // render the real hook into both legs + seed the same token into each now.md
-      require-exit 0
-    }
+  run "setup" {
+    command #"bash ./setup.sh"#          // render the real hook into both legs + seed the same token into each now.md
   }
   message {                              // benign kick (names no token/HOOK_OK/now.md) → wakes hi.on
     from "requester"
@@ -51,7 +61,10 @@ eval {
     judge "HOOKS-ON FIRED — repo-on/HOOK_OK.txt carries REHYDRATE-<token> (the SessionStart hook injected now.md)" {
       exec "bash ./judges/hooks-on-fired.sh"
     }
-    judge "HOOKS-OFF CONTROL — repo-off/HOOK_OK.txt is absent/tokenless (--no-hooks: the same hook did NOT fire)" {
+    // ⚠ KNOWN RED (see the KNOWN RED note at the top): this control currently FAILS on claude 2.1.x because the
+    // OFF leg reaches now.md via `st context read` (a non-hook path), not via the suppressed hook. Redesign pending
+    // Nathan's pick — do NOT read this red as a regression.
+    judge "HOOKS-OFF CONTROL — repo-off/HOOK_OK.txt is absent/tokenless (disableAllHooks: the same hook did NOT fire)" {
       exec "bash ./judges/hooks-off-control.sh"
     }
     judge "HOOK-EXCLUSIVE — the token appears in no agent input beyond context/now.md (attribution to the hook)" {

@@ -6,16 +6,28 @@ field case this comes from, where hooks were configured but silently never ran. 
 
 **Capabilities required:** `claude,st,pty,git`
 
+> **⚠ Status: KNOWN RED (documented, not a regression) — HOOKS-OFF CONTROL fails on claude 2.1.x.**
+> The negative control assumes the SessionStart hook is the *only* path to `now.md`. It isn't: a modern
+> claude agent, told to "act on your durable working state," runs `st context read` (or Reads the file)
+> and gets the same `now.md` — token and all — **without** the hook. Ground truth (a `--keep` run): the
+> OFF-leg hook did **not** fire (zero `<context source=…>` injections), yet the agent still wrote the
+> token via that non-hook read. It passed before only because older claude didn't self-fetch its durable
+> state — **green by luck, now exposed.** The **discriminator redesign is pending Nathan's pick** (leaning:
+> gate the token on the hook's `<context source=…>` envelope, which `st context read` does not add;
+> fallback: key on a hook direct-execution trace). The boot-fix + flat-run conversion below are correct
+> regardless and are applied; only the redesign is held.
+
 ## Run it (st2 folder-eval)
 
 ```sh
-st2 eval ./cells/hook-integrity/     # render the REAL hook into 2 legs → seed now.md → boot ON + --no-hooks OFF → judge
+st2 eval ./cells/hook-integrity/     # render the REAL hook into 2 legs → seed now.md → boot ON + hooks-disabled OFF → judge
 ```
 
-The whole eval is `hook-integrity.kdl`. `fixture/setup.sh` runs as the eval's `run { step "setup" }` (before boot):
+The whole eval is `hook-integrity.kdl`. `fixture/setup.sh` runs as the eval's `run "setup"` (before boot):
 it `st2 render-agent`s the **real** SessionStart hook (smalltalk `session-start.sh`) into two identical workspaces
 (`repo-on`, `repo-off`) and seeds the **same** per-run secret token into each leg's `context/now.md`. Two team
-agents boot identically **except** `hi.off` adds `--no-hooks`. Proven live: **4/4 PASS**.
+agents boot identically **except** `hi.off` adds `--settings disableAllHooks` (claude 2.1.x dropped the old
+`--no-hooks`). See the KNOWN RED note above for the current control status.
 
 ## What it proves — the ungameable core
 
@@ -28,8 +40,9 @@ block on its first turn — **only if it fires**. The diagnostic exploits that:
 2. It boots the agent in **two legs**, identical except one flag (the real SessionStart hook, written by
    `st2 render-agent`, is configured in BOTH):
    - **hooks ON** (`hi.on`, plain `exec claude`) → if the hook fires, the agent sees the token and writes it. ✅
-   - **hooks OFF** (`hi.off`, `exec claude --no-hooks`) → the negative control. Same hook configured, but
-     claude does not fire it → no injection, no token. ❌
+   - **hooks OFF** (`hi.off`, `exec claude --settings '{"disableAllHooks":true}'`) → the negative control.
+     Same hook configured, but claude does not fire it → no injection. ❌ *(KNOWN RED on claude 2.1.x — the
+     agent reaches `now.md` via `st context read` regardless; see the Status note above.)*
 3. **PASS iff the token is present with hooks ON and absent with hooks OFF.** That difference is the
    proof: a check that passes *both* ways would be testing nothing. The token is random per run, so
    no edit to the fixture can pre-satisfy it.
@@ -46,7 +59,7 @@ sidecars). If the agent commits, isolation attributes it (author-pinned to `hi-a
 ## Grading (held-out judges in `judges/`)
 
 - **HOOKS-ON FIRED (hard):** `repo-on/HOOK_OK.txt` contains exactly `REHYDRATE-<token>` → SessionStart fired + injected `now.md`.
-- **HOOKS-OFF CONTROL (hard):** `repo-off/HOOK_OK.txt` is absent/tokenless → the ON assertion depends on the hook (a check that passed both ways would test nothing).
+- **HOOKS-OFF CONTROL (hard):** `repo-off/HOOK_OK.txt` is absent/tokenless → the ON assertion depends on the hook (a check that passed both ways would test nothing). **⚠ Currently RED on claude 2.1.x** — see the Status note at the top; discriminator redesign pending Nathan.
 - **HOOK-EXCLUSIVE (attribution):** the token appears in **no agent seed input** — persona, kick, repo-seed, inbox — only in `context/now.md` (the hook channel). The agent's *outputs* (its `HOOK_OK.txt`, its bus report to the requester, its transcript) legitimately carry it and are excluded.
 
 ## Scope

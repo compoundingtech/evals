@@ -1,0 +1,79 @@
+// signal-rename.kdl — the whole eval in one file.  `st2 eval ./` runs it.
+//
+// The cross-repo coordination crown-jewel: a 4-agent tree (sig.sup + a specialist per package — sig.base,
+// sig.relay, sig.hub) carries out a coordinated PRODUCT rename `signal`→`beacon` across a base package + two
+// consumers + a config sweep, keeping every suite green and the renamed stack working end-to-end. The three
+// skills tested: DECOMPOSITION (who owns which package), SEQUENCING (base first + a compat/alias window so
+// consumers never reference a name the base no longer provides), and JUDGMENT (`signal` also names a PRIMITIVE —
+// AbortSignal/controller.signal/SIGTERM — that must NOT be renamed; a blind s/signal/beacon/g fails).
+//
+// The workspace is a bare origin + one full clone per agent (distinct authors → isolation is attributable), so
+// clones carry absolute origin URLs — a `run { step }` materializes it in-place BEFORE boot (a static fixture
+// can't). Each agent commits + pushes ONLY its lane to origin/main; the judges integrate on sig.sup's clone.
+// The cross-repo acceptance test is HELD OUT (no agent sees it). All 5 judges held-out.
+
+env {
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "sig" {                             // -> sig.sup (integration lead) + sig.base / sig.relay / sig.hub (specialists)
+  agent "sup" {
+    workspace "./sup"                    // owns config/ + workspace root + integration on main (materialized below)
+    env { ST_AGENT "sig.sup" }
+    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain your inbox), then act on the rename request you find there: immediately send each of sig.base, sig.relay, sig.hub a CLEAR go with their task (base first, dual-honor alias window) — do not waste turns probing; do your own config/ lane; actively follow up if a specialist has not pushed/reported; integrate; and send morgan your ONE final report only when the whole rename is done + every suite green + no lingering product signal.'"#
+    exec "sig.sup.ding" { command #"st2 ding sig.sup --identity sig.sup --root $CATALOG/smalltalk"# }
+  }
+  agent "base" {
+    workspace "./base"                   // owns signal/ (the base package @acme/signal + the `signal` bin)
+    env { ST_AGENT "sig.base" }
+    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain your inbox). Your inbox has (or will have via ding) your supervisor sig.sup''s brief. The MOMENT you have it, EXECUTE the full task in that same turn — make your rename in your package dir, keep node --test green, git add + commit + git push origin main your lane, then report to sig.sup. Do the whole job end to end; NEVER stop after only reading a message. If you are blocked, ask sig.sup on the bus — do not go idle.'"#
+    exec "sig.base.ding" { command #"st2 ding sig.base --identity sig.base --root $CATALOG/smalltalk"# }
+  }
+  agent "relay" {
+    workspace "./relay"                  // owns signal-relay/ (the PRIMITIVE-trap consumer)
+    env { ST_AGENT "sig.relay" }
+    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain your inbox). Your inbox has (or will have via ding) sig.sup''s brief + sig.base''s signal that the base rename landed. The MOMENT you have your brief, EXECUTE the full task in that same turn — rename the PRODUCT refs in your package dir (keep the AbortSignal/controller.signal/SIGTERM PRIMITIVE intact — that is the trap), keep node --test green, git add + commit + git push origin main your lane (pull sig.base first), then report to sig.sup. Do the whole job end to end; NEVER stop after only reading a message. If blocked, ask sig.sup on the bus — do not go idle.'"#
+    exec "sig.relay.ding" { command #"st2 ding sig.relay --identity sig.relay --root $CATALOG/smalltalk"# }
+  }
+  agent "hub" {
+    workspace "./hub"                    // owns signal-hub/ (the signal:// resource scheme)
+    env { ST_AGENT "sig.hub" }
+    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain your inbox). Your inbox has (or will have via ding) sig.sup''s brief + sig.base''s signal that the base rename landed. The MOMENT you have your brief, EXECUTE the full task in that same turn — rename the PRODUCT refs + the signal:// resource scheme to beacon:// in your package dir, keep node --test green, git add + commit + git push origin main your lane (pull sig.base first), then report to sig.sup. Do the whole job end to end; NEVER stop after only reading a message. If blocked, ask sig.sup on the bus — do not go idle.'"#
+    exec "sig.hub.ding" { command #"st2 ding sig.hub --identity sig.hub --root $CATALOG/smalltalk"# }
+  }
+}
+
+eval {
+  copy "./fixture"                       // seed-graph/ + personas/ + materialize.sh + task.md
+  run {
+    step "materialize" {                 // build the bare origin + 4 authored clones + hold out the e2e test
+      command #"bash ./materialize.sh"#
+      require-exit 0
+    }
+  }
+  message {                              // the kick — the rename request to the integration lead
+    from "morgan"
+    to "sig.sup"
+    content "./task.md"
+  }
+  max-timeout "1800s"                    // a real 4-agent cross-repo rename with sequencing; judges final state at the cap
+
+  judges {                              // all held-out; all must pass
+    judge "ISOLATION — every commit stayed in its author's package lane (base/relay/hub/sup); no cross-lane edit" {
+      exec "bash ./judges/isolation.sh"
+    }
+    judge "SUITE GREEN — node --test passes in every package on integrated main" {
+      exec "bash ./judges/suite-green.sh"
+    }
+    judge "RENAME — product fully renamed to beacon (package + scheme + protocol), no lingering product 'signal'" {
+      exec "bash ./judges/rename.sh"
+    }
+    judge "PRIMITIVE INTACT (the trap) — AbortSignal / controller.signal / SIGTERM survive undamaged in the relay" {
+      exec "bash ./judges/primitive.sh"
+    }
+    judge "HELD-OUT E2E — a rename-agnostic driver resolves the renamed base+relay+hub end-to-end" {
+      exec "bash ./judges/e2e.sh"
+    }
+  }
+}

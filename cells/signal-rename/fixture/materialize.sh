@@ -1,21 +1,18 @@
 #!/usr/bin/env bash
-# Materialize the signal-rename sandbox: a single WORKSPACE repo built from the bundled synthetic graph
-# (fixture/seed-graph/), a bare origin, and one full clone per agent. The packages (signal = base, signal-relay,
-# signal-hub, config = app.toml) are siblings in the workspace, so the consumers' relative `_signal.js` shims +
-# the integration test resolve with ZERO node_modules (hermetic, offline, deterministic).
-# The cross-repo acceptance test (signal-hub/test/integration.test.js) is HELD OUT to $SB/.held-out/ — no agent
-# sees it; grade.sh runs it against the integrated, renamed workspace.
-# Personas + `st launch` + the hermetic kick happen AFTER this (spin.sh). See ../task.toml.
-#
-#   ./setup-sandbox.sh [SANDBOX]     # default: ${EVAL_SANDBOX:-./.sandbox}/signal-rename
+# Materialize the signal-rename workspace inside the eval catalog ($CATALOG), as the eval's `run { step }` BEFORE
+# the team boots. Builds: a seed workspace from the bundled synthetic graph (signal + signal-relay + signal-hub +
+# config/app.toml), a BARE origin, and one full clone per agent (sup/base/relay/hub) with DISTINCT authors so
+# isolation is attributable. The cross-repo acceptance test is HELD OUT (no agent sees it). Each agent gets the
+# FULL workspace (so the relative _signal.js shims + the integration resolve with ZERO node_modules) but commits
+# only its lane. Clones carry absolute origin URLs, so this must run at eval time (a static fixture can't).
 set -euo pipefail
-SB="${1:-${EVAL_SANDBOX:-./.sandbox}/signal-rename}"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-GRAPH="$HERE/seed-graph"          # bundled with the cell — no external repo needed
+SB="${CATALOG:?CATALOG must be set — st2 eval provides it to run steps}"
+cd "$SB"
+GRAPH="$SB/seed-graph"           # copied in from the fixture
+SEED="$SB/.seed"
 
-echo "== clean =="
-rm -rf "$SB"; mkdir -p "$SB"
-SEED="$SB/.seed"; mkdir -p "$SEED"
+rm -rf "$SEED" "$SB"/origin.git "$SB"/sup "$SB"/base "$SB"/relay "$SB"/hub "$SB"/.held-out
+mkdir -p "$SEED"
 
 echo "== seed: assemble the workspace (signal + signal-relay + signal-hub + config) =="
 cp -R "$GRAPH/signal" "$GRAPH/signal-relay" "$GRAPH/signal-hub" "$SEED/"
@@ -26,7 +23,6 @@ echo "== HOLD OUT the cross-repo acceptance test (no agent may see it) =="
 mkdir -p "$SB/.held-out"
 mv "$SEED/signal-hub/test/integration.test.js" "$SB/.held-out/integration.test.js"
 
-echo "== seed: workspace root (documents the packages; sig-sup's lane) =="
 cat > "$SEED/package.json" <<'JSON'
 {
   "name": "signal-workspace",
@@ -36,7 +32,6 @@ cat > "$SEED/package.json" <<'JSON'
   "workspaces": ["signal", "signal-relay", "signal-hub"]
 }
 JSON
-
 cat > "$SEED/README.md" <<'MD'
 # signal-workspace
 
@@ -50,11 +45,9 @@ A workspace of interdependent packages:
 Each package runs its own tests with `node --test`. The consumers resolve the base by a relative shim
 (`src/_signal.js`), so no install is required.
 MD
-
 cat > "$SEED/.gitignore" <<'GI'
 node_modules/
 .DS_Store
-# eval agent infra — never commit into the workspace
 CLAUDE.md
 PERSONA.md
 .mcp.json
@@ -69,21 +62,19 @@ echo "== git init seed + bare origin =="
 git -C "$SEED" init -q -b main
 git -C "$SEED" add -A
 git -C "$SEED" -c user.name="eval-seed" -c user.email="seed@local" commit -q -m "seed: synthetic signal workspace (base + relay + hub + config)"
-SEED_COMMIT="$(git -C "$SEED" rev-parse --short HEAD)"
 git clone -q --bare "$SEED" "$SB/origin.git"
 
-echo "== clone one full workspace copy per agent (distinct authors -> isolation is attributable) =="
-# Each agent gets the FULL workspace (so the relative shims resolve) but only commits within its lane:
-#   sig-base -> signal/ · sig-relay -> signal-relay/ · sig-hub -> signal-hub/ · sig-sup -> config/ + root + integration.
+echo "== clone one full workspace per agent (distinct authors) + drop its persona =="
 for a in sup base relay hub; do
   git clone -q "$SB/origin.git" "$SB/$a"
   git -C "$SB/$a" remote set-url origin "$SB/origin.git"
   git -C "$SB/$a" config user.name  "sig-$a"
   git -C "$SB/$a" config user.email "sig-$a@eval.local"
+  # persona overlay (gitignored by the workspace .gitignore, so the agent never commits it)
+  cp "$SB/personas/$a.md" "$SB/$a/PERSONA.md"
+  printf '@PERSONA.md\n' > "$SB/$a/CLAUDE.md"
 done
 
 echo
-echo "SANDBOX READY: $SB   (seed $SEED_COMMIT)"
-echo "  origin.git  sup/ base/ relay/ hub/   held-out: .held-out/integration.test.js"
-echo "  packages: signal/ (base) signal-relay/ signal-hub/ config/app.toml"
-echo "next: spin.sh — compose per-agent personas, launch each (st launch), seed the kick into sig-sup's inbox."
+echo "SANDBOX READY under $SB: origin.git + sup/ base/ relay/ hub/ (held-out: .held-out/integration.test.js)"
+echo "  packages: signal/ (base @acme/signal) · signal-relay/ (primitive trap) · signal-hub/ (signal:// scheme) · config/app.toml"

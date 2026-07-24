@@ -12,18 +12,17 @@ env {                                    // cascades to the run steps (st2 pty a
 eval {                                   // team-less = arrange (nothing) → run (act) → judges (assert)
   max-timeout "120s"
 
-  run {                                  // steps run SEQUENTIALLY; each captures stdout/err/exit to $RUNS_DIR/<id>.*
-    step "spawn" {                       // a deterministic ACK-reader session, left running in the background
-      command #"st2 pty run -d --id psp -- bash -c 'echo READY; while IFS= read -r line; do echo "ACK:$line"; done'"#
-      require-exit 0
-    }
-    step "settle"   { command "sleep 2" }                       // let the process print its READY banner
-    step "peek-pre" { command "st2 pty peek --plain psp" }      // NEGATIVE CONTROL — the token must be ABSENT here
-    step "send"     {                                           // inject the random-ish token + Enter (raw text has no implicit newline)
-      command #"st2 pty send psp --seq "PSP-9f3a7c2e" --seq key:return"#
-    }
-    step "peek-post" { command #"sh -c 'sleep 2; st2 pty peek --plain psp'"# }   // the process should have ACK'd the token by now
+  // Flat run form: each `run "label"` IS one step, run in file order; each captures stdout/err/exit to
+  // $RUNS_DIR/<label>.* (and auto-logs to $LOGS_DIR/<label>.log). Exit 0 is the default gate now.
+  run "spawn" {                          // a deterministic ACK-reader session, left running in the background
+    command #"st2 pty run -d --id psp -- bash -c 'echo READY; while IFS= read -r line; do echo "ACK:$line"; done'"#
   }
+  run "settle"   { command "sleep 2" }                       // let the process print its READY banner
+  run "peek-pre" { command "st2 pty peek --plain psp" }      // NEGATIVE CONTROL — the token must be ABSENT here
+  run "send"     {                                           // inject the random-ish token + Enter (raw text has no implicit newline)
+    command #"st2 pty send psp --seq "PSP-9f3a7c2e" --seq key:return"#
+  }
+  run "peek-post" { command #"sh -c 'sleep 2; st2 pty peek --plain psp'"# }   // the process should have ACK'd the token by now
 
   judges {                               // all must pass; each one visible, nothing magic
     judge "peek returns REAL live output — the process's READY banner is present in the pre-send peek" {

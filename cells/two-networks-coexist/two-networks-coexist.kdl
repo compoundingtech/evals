@@ -13,21 +13,19 @@ env {
 eval {
   max-timeout "120s"
 
-  run {
-    step "mk" { command "mkdir -p $CATALOG/netA/pty $CATALOG/netA/smalltalk $CATALOG/netB/pty $CATALOG/netB/smalltalk" }
-    // bring both nets live: a real pty session in each, on its OWN pty root
-    step "A-spin" { command #"pty --root $CATALOG/netA/pty run -d --id 2na-sess -- bash -c 'echo A-READY; while IFS= read -r l; do echo ACKA:$l; done'"# require-exit 0 }
-    step "B-spin" { command #"pty --root $CATALOG/netB/pty run -d --id 2nb-sess -- bash -c 'echo B-READY; while IFS= read -r l; do echo ACKB:$l; done'"# require-exit 0 }
-    // real bus traffic in each net, on its OWN bus root — a distinctive per-net payload
-    step "A-msg" { command #"st2 message send 2na-peer --root $CATALOG/netA/smalltalk --as 2na-src -m 'NETA-SECRET-payload'"# }
-    step "B-msg" { command #"st2 message send 2nb-peer --root $CATALOG/netB/smalltalk --as 2nb-src -m 'NETB-SECRET-payload'"# }
-    step "settle" { command "sleep 2" }
-    // probe BOTH pty roots + BOTH bus roots — captured for the judges to assert presence/absence
-    step "A-ptyls" { command "pty --root $CATALOG/netA/pty ls" }
-    step "B-ptyls" { command "pty --root $CATALOG/netB/pty ls" }
-    step "A-bus"   { command #"sh -c 'grep -rhs SECRET $CATALOG/netA/smalltalk || true'"# }
-    step "B-bus"   { command #"sh -c 'grep -rhs SECRET $CATALOG/netB/smalltalk || true'"# }
-  }
+  run "mk" { command "mkdir -p $CATALOG/netA/pty $CATALOG/netA/smalltalk $CATALOG/netB/pty $CATALOG/netB/smalltalk" }
+  // bring both nets live: a real pty session in each, on its OWN pty root
+  run "A-spin" { command #"pty --root $CATALOG/netA/pty run -d --id 2na-sess -- bash -c 'echo A-READY; while IFS= read -r l; do echo ACKA:$l; done'"# }
+  run "B-spin" { command #"pty --root $CATALOG/netB/pty run -d --id 2nb-sess -- bash -c 'echo B-READY; while IFS= read -r l; do echo ACKB:$l; done'"# }
+  // real bus traffic in each net, on its OWN bus root — a distinctive per-net payload
+  run "A-msg" { command #"st2 message send 2na-peer --root $CATALOG/netA/smalltalk --as 2na-src -m 'NETA-SECRET-payload'"# }
+  run "B-msg" { command #"st2 message send 2nb-peer --root $CATALOG/netB/smalltalk --as 2nb-src -m 'NETB-SECRET-payload'"# }
+  run "settle" { command "sleep 2" }
+  // probe BOTH pty roots + BOTH bus roots — captured for the judges to assert presence/absence
+  run "A-ptyls" { command "pty --root $CATALOG/netA/pty ls" }
+  run "B-ptyls" { command "pty --root $CATALOG/netB/pty ls" }
+  run "A-bus"   { command #"sh -c 'grep -rhs SECRET $CATALOG/netA/smalltalk || true'"# }
+  run "B-bus"   { command #"sh -c 'grep -rhs SECRET $CATALOG/netB/smalltalk || true'"# }
 
   judges {
     judge "LIVENESS (positive control) — net A is live: its session 2na-sess shows in net A's pty root" {

@@ -13,16 +13,13 @@ eval {
   copy "./fixture"                       // repo/ (its OWN CLAUDE.md + a project skill, _git -> .git) + persona.md
   max-timeout "120s"
 
-  run {
-    step "hash-before" { command #"sh -c 'git -C $CATALOG/repo hash-object CLAUDE.md'"# }   // the repo's own CLAUDE.md, pre-compose
-    step "compose" {
-      command "st2 render-agent --identity ccl-agent --dir $CATALOG/repo --persona $CATALOG/persona.md $CATALOG"
-      require-exit 0
-    }
-    step "hash-after"  { command #"sh -c 'git -C $CATALOG/repo hash-object CLAUDE.md'"# }    // must be IDENTICAL (not clobbered)
-    step "convoy-rules" { command #"sh -c 'cat $CATALOG/repo/.claude/rules/convoy.md 2>/dev/null || echo MISSING'"# }  // the loader
-    step "own-skill"   { command #"sh -c 'test -f $CATALOG/repo/.claude/skills/greet/SKILL.md && echo SKILL-PRESENT || echo SKILL-GONE'"# }
+  run "hash-before" { command #"sh -c 'git -C $CATALOG/repo hash-object CLAUDE.md'"# }   // the repo's own CLAUDE.md, pre-compose
+  run "compose" {
+    command "st2 render-agent --identity ccl-agent --dir $CATALOG/repo --persona $CATALOG/persona.md $CATALOG"
   }
+  run "hash-after"  { command #"sh -c 'git -C $CATALOG/repo hash-object CLAUDE.md'"# }    // must be IDENTICAL (not clobbered)
+  run "convoy-rules" { command #"sh -c 'cat $CATALOG/repo/.claude/rules/convoy.md 2>/dev/null || echo MISSING'"# }  // the loader
+  run "own-skill"   { command #"sh -c 'test -f $CATALOG/repo/.claude/skills/greet/SKILL.md && echo SKILL-PRESENT || echo SKILL-GONE'"# }
 
   judges {
     judge "the overlay was composed — .convoy/PERSONA.md written into the repo (not a no-op)" {

@@ -13,15 +13,12 @@ eval {
   copy "./fixture"                       // net/hetz/dev/agent.kdl — the seat st2 up will host
   max-timeout "60s"
 
-  run {
-    // host the net: background st2 up (holds the lock + boots the seat), wait until doctor passes, then — while
-    // the host is alive — probe doctor (org live) AND deliver a message to the hosted seat's bus; then kill up.
-    step "host-and-probe" {
-      command #"sh -c 'st2 up "$CATALOG/net" --host hetz >/dev/null 2>&1 & UP=$!; for i in $(seq 1 40); do st2 doctor "$CATALOG/net" --host hetz >/dev/null 2>&1 && break; sleep 0.4; done; echo "=== doctor ==="; st2 doctor "$CATALOG/net" --host hetz; echo "=== send ==="; st2 message send hetz.dev --root "$CATALOG/smalltalk" --as tester -m "NET-ROUNDTRIP-token"; sleep 1; kill $UP 2>/dev/null; exit 0'"#
-      require-exit 0
-    }
-    step "inbox" { command #"sh -c 'grep -rhs NET-ROUNDTRIP "$CATALOG/smalltalk" || true'"# }
+  // host the net: background st2 up (holds the lock + boots the seat), wait until doctor passes, then — while
+  // the host is alive — probe doctor (org live) AND deliver a message to the hosted seat's bus; then kill up.
+  run "host-and-probe" {
+    command #"sh -c 'st2 up "$CATALOG/net" --host hetz >/dev/null 2>&1 & UP=$!; for i in $(seq 1 40); do st2 doctor "$CATALOG/net" --host hetz >/dev/null 2>&1 && break; sleep 0.4; done; echo "=== doctor ==="; st2 doctor "$CATALOG/net" --host hetz; echo "=== send ==="; st2 message send hetz.dev --root "$CATALOG/smalltalk" --as tester -m "NET-ROUNDTRIP-token"; sleep 1; kill $UP 2>/dev/null; exit 0'"#
   }
+  run "inbox" { command #"sh -c 'grep -rhs NET-ROUNDTRIP "$CATALOG/smalltalk" || true'"# }
 
   judges {
     judge "st2 up HOSTS the network — doctor reports all checks passed (supervisor live + seat's task alive)" {

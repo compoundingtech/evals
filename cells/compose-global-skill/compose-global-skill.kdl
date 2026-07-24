@@ -16,11 +16,8 @@ env {
 
 eval {
   copy "./fixture"                       // compose.sh + persona.md
-  run {
-    step "compose" {
-      command #"bash ./compose.sh"#
-      require-exit 0                      // the compose must succeed — there is nothing to inspect otherwise
-    }
+  run "compose" {
+    command #"bash ./compose.sh"#        // the compose must succeed — there is nothing to inspect otherwise (exit 0 default)
   }
   max-timeout "60s"
 

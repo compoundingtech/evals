@@ -14,21 +14,18 @@ eval {
   copy "./fixture"                       // net/hetz/dev/agent.kdl — a minimal service seat for doctor to check
   max-timeout "60s"
 
-  run {
-    // HEALTHY: background st2 up (holds the lock + boots the seat), poll until doctor first passes, then the
-    // FINAL doctor (captured) is the healthy assertion; kill up; the step's exit == doctor's exit.
-    step "healthy" {
-      command #"sh -c 'st2 up "$CATALOG/net" --host hetz >/dev/null 2>&1 & UP=$!; for i in $(seq 1 40); do st2 doctor "$CATALOG/net" --host hetz >/dev/null 2>&1 && break; sleep 0.4; done; st2 doctor "$CATALOG/net" --host hetz; RC=$?; kill $UP 2>/dev/null; exit $RC'"#
-      require-exit 0
-    }
-    // BROKEN (mutation-valid): with no live host now, doctor must FLAG the missing supervisor + exit non-zero.
-    step "broken" {
-      // `allow-nonzero`: st2 (a0fdb61+) requires exit 0 by DEFAULT; this step INTENTIONALLY exits non-zero (a
-      // broken net), so it opts out — the exit propagates into $RUN_broken_EXIT for the judge to assert, and does
-      // NOT hard-fail the run. (Also: NO trailing `; true` — the exit must reach the judge, not be masked.)
-      allow-nonzero
-      command #"sh -c 'sleep 1; st2 doctor "$CATALOG/net" --host hetz'"#
-    }
+  // HEALTHY: background st2 up (holds the lock + boots the seat), poll until doctor first passes, then the
+  // FINAL doctor (captured) is the healthy assertion; kill up; the step's exit == doctor's exit.
+  run "healthy" {
+    command #"sh -c 'st2 up "$CATALOG/net" --host hetz >/dev/null 2>&1 & UP=$!; for i in $(seq 1 40); do st2 doctor "$CATALOG/net" --host hetz >/dev/null 2>&1 && break; sleep 0.4; done; st2 doctor "$CATALOG/net" --host hetz; RC=$?; kill $UP 2>/dev/null; exit $RC'"#
+  }
+  // BROKEN (mutation-valid): with no live host now, doctor must FLAG the missing supervisor + exit non-zero.
+  run "broken" {
+    // `allow-nonzero`: st2 requires exit 0 by DEFAULT; this run INTENTIONALLY exits non-zero (a broken net),
+    // so it opts out — the exit propagates into $RUN_broken_EXIT for the judge to assert, and does NOT
+    // hard-fail the run. (Also: NO trailing `; true` — the exit must reach the judge, not be masked.)
+    allow-nonzero
+    command #"sh -c 'sleep 1; st2 doctor "$CATALOG/net" --host hetz'"#
   }
 
   judges {

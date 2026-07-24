@@ -13,15 +13,12 @@ eval {
   copy "./fixture"                       // repo/ (its own CLAUDE.md + a project skill, _git -> .git) + persona.md
   max-timeout "120s"
 
-  run {
-    step "compose" {                     // compose a seat INTO the repo (the overlay write; no boot needed)
-      command "st2 render-agent --identity cc-agent --dir $CATALOG/repo --persona $CATALOG/persona.md $CATALOG"
-      require-exit 0
-    }
-    step "porcelain"  { command #"sh -c 'cd $CATALOG/repo && git status --porcelain'"# }        // EMPTY = no pollution
-    step "plant-dirt" { command #"sh -c 'printf dirt > $CATALOG/repo/SYNTHETIC-DIRT.txt'"# }     // the mutation control
-    step "porcelain2" { command #"sh -c 'cd $CATALOG/repo && git status --porcelain'"# }         // MUST be non-empty now
+  run "compose" {                        // compose a seat INTO the repo (the overlay write; no boot needed)
+    command "st2 render-agent --identity cc-agent --dir $CATALOG/repo --persona $CATALOG/persona.md $CATALOG"
   }
+  run "porcelain"  { command #"sh -c 'cd $CATALOG/repo && git status --porcelain'"# }        // EMPTY = no pollution
+  run "plant-dirt" { command #"sh -c 'printf dirt > $CATALOG/repo/SYNTHETIC-DIRT.txt'"# }     // the mutation control
+  run "porcelain2" { command #"sh -c 'cd $CATALOG/repo && git status --porcelain'"# }         // MUST be non-empty now
 
   judges {
     judge "the overlay WAS composed — render-agent wrote .convoy/PERSONA.md into the repo (not a no-op)" {

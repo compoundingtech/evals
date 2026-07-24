@@ -46,11 +46,8 @@ team "sig" {                             // -> sig.sup (integration lead) + sig.
 
 eval {
   copy "./fixture"                       // seed-graph/ + personas/ + materialize.sh + task.md
-  run {
-    step "materialize" {                 // build the bare origin + 4 authored clones + hold out the e2e test
-      command #"bash ./materialize.sh"#
-      require-exit 0
-    }
+  run "materialize" {                    // build the bare origin + 4 authored clones + hold out the e2e test
+    command #"bash ./materialize.sh"#
   }
   message {                              // the kick — the rename request to the integration lead
     from "morgan"

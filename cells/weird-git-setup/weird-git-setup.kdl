@@ -26,13 +26,10 @@ team "wg" {                              // single worker -> wg.dev
 
 eval {
   copy "./fixture"                       // brings setup-megarepo.sh + persona/{CLAUDE.md,PERSONA.md} into $CATALOG
-  run {
-    // Materialize the bare canonical + 2 linked worktrees + the planted bug + drop the persona into wt/feature.
-    // MUST succeed (there is nothing to work in otherwise) — require-exit 0.
-    step "materialize" {
-      command #"bash ./setup-megarepo.sh"#
-      require-exit 0
-    }
+  // Materialize the bare canonical + 2 linked worktrees + the planted bug + drop the persona into wt/feature.
+  // MUST succeed (there is nothing to work in otherwise); exit 0 is the default gate now.
+  run "materialize" {
+    command #"bash ./setup-megarepo.sh"#
   }
   message {                              // the kick — says NOTHING about worktrees (the discriminator)
     from "morgan"

@@ -1,25 +1,35 @@
-# security-audit — audit cell
+# security-audit — a proactive whole-repo security audit
 
-**Discriminates:** whole-repo input->sink tracing + signal vs noise (dismiss red-herrings)
+**What it evaluates.** A real, proactive security audit — read a whole codebase adversarially, trace how
+untrusted input reaches dangerous sinks, and separate real holes from noise. The `notekeeper` HTTP service
+has **six planted vulns** woven through a realistic input→sink flow (`server.js` routes feed request
+params/headers into the sinks): a CRITICAL command-injection, HIGH path-traversal + auth-bypass, MEDIUM
+hardcoded-secret + regex-injection, and a LOW-MED weak-randomness — plus three **red-herrings** that look
+scary but are safe. A supervisor (`sa.sup`, coordinate-only) delegates to an auditor (`sa.aud`, owns the
+repo) to **read + report** (write `AUDIT.md`) — catch the real holes (especially the highs), rate severity,
+keep false positives low, and **stay in the audit lane** (do not modify `src/`).
 
-**Capabilities required:** `claude,st,pty,git,node`  ·  run `bin/evals preflight` to confirm your setup supports this cell.
+**Run it:** `st2 eval ./cells/security-audit/`
 
-## Run it
+`st2 eval` copies the fixture into a fresh catalog, boots the team, delivers `task.md` to `sa.sup`, runs
+to the supervisor's confirmation (or `max-timeout`), then runs the judges → verdict.
 
-The team is launched via the real `st launch` (the same command a user runs). `fixture/spin.sh` is
-**self-isolating** — it creates and exports its own scratch bus root at `$SB/st-root`, so nothing touches
-your live network; the st-launched agents inherit that root by env inheritance. You only need
-`PERSONAS_DIR` (a checkout of the public personas repo — `bin/ensure-personas.sh` clones it pinned; the
-runner sets it for you). No external `ST_ROOT` / `ST_HOOKS_DIR` required — spin owns the root and
-`st launch` wires the boot hooks (asyncRewake / PreCompact / StopFailure) itself.
+## The folder
 
-Run it: `fixture/spin.sh` (auto-materializes the sandbox via `fixture/setup-sandbox.sh` if absent), or
-`bin/evals run security-audit`. Tear down after grading with `bin/evals teardown <SB>`.
+| path | what it is |
+| --- | --- |
+| `security-audit.kdl` | the whole eval: the `sa` team (sup + aud) + the `eval {}` block (copy, kickoff, judges) |
+| `task.md` | the audit request delivered to `sa.sup` |
+| `fixture/` | the pre-built world, copied 1:1: `worker/` (the `notekeeper` repo with the 6 planted vulns + 3 red-herrings, owner-pinned author `sa.aud`, git db `worker/_git` → `.git` on copy) and `sup/` (coordinate-only, no repo). Each holds an `st2`-native persona. |
+| `judges/` | the held-out judges (below); `_report-text.sh` gathers the report from AUDIT.md + the bus |
+| `VULNS.manifest` | the grader's ground-truth vuln list — **kept out of `fixture/`** so it isn't copied into the sandbox (the team must not see it) |
 
-## Grading
+## What makes it pass (all judges must pass — the team never sees these)
 
-- **Grade:** `fixture/grade.sh` mechanizes the ground-truth checks (never trusts self-reports).
-- **Held-out acceptance** — see `task.toml` `[grader]`: an independent check the team never sees, so the result can not be gamed by editing a unit test.
-- **Isolation is a hard PASS/FAIL gate:** every agent changes only the module/repo it owns; all coordination flows through the message bus. A non-owner change fails the run outright.
-
-See `task.toml` for the full spec and [`../../framework.md`](../../framework.md) for the runner, axes, and grading model.
+- **audit lane / isolation** (`judges/audit-lane.sh`) — `src/` is byte-identical to base (the auditor may
+  add `AUDIT.md` but must not "fix" the code); only `sa.aud` authored; the supervisor owns no repo.
+- **report produced** (`judges/report-exists.sh`) — an `AUDIT.md` (or findings on the bus) exists.
+- **HIGH vulns caught** (`judges/high-vulns.sh`) — **hard gate**: all three high-severity vulns are flagged
+  (V1 command-injection, V2 path-traversal, V3 auth-bypass). Missing any fails the run.
+- **coverage signals** (`judges/coverage-signal.sh`) — non-gating: the mediums/low, and red-herring
+  discipline (a human read finalizes severity + false-positive judgment).

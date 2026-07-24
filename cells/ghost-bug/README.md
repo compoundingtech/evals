@@ -1,24 +1,37 @@
-# ghost-bug — debug cell
+# ghost-bug — debug a subtle shared-default-mutation bug
 
-**Discriminates:** root-cause vs paper-over + a regression test that FAILS on the base commit (held-out)
+**What it evaluates.** Real debugging, not symptom-patching. The `labelkit` library has a **ghost bug**:
+`format()` does `Object.assign(defaultOptions, options)`, mutating the shared `defaultOptions` object — so
+the first call with custom options permanently corrupts the defaults for every later call. The unit suite
+is **green** (it never formats with defaults *after* a custom call), so the bug is latent. A supervisor
+(`gb.sup`, coordinate-only) delegates to a specialist (`gb.fix`, owns the repo), who must **reproduce →
+root-cause → fix (a non-mutating merge, not a band-aid) → add a mutation-valid regression test → commit**.
 
-**Capabilities required:** `claude,st,pty,git,node`  ·  run `bin/evals preflight` to confirm your setup supports this cell.
+**Run it:** `st2 eval ./cells/ghost-bug/`
 
-## Run it
+`st2 eval` copies the fixture into a fresh catalog, boots the team, delivers `task.md` to `gb.sup`, runs
+to the supervisor's confirmation (or `max-timeout`), then runs the judges → verdict.
 
-The team is launched via the real `st launch` (the same command a user runs). `fixture/spin.sh` is
-**self-isolating** — it creates and exports its own scratch bus root at `$SB/st-root`, so nothing touches
-your live network; the st-launched agents inherit that root by env inheritance. You only need
-`PERSONAS_DIR` (a checkout of the public personas repo — `bin/ensure-personas.sh` clones it pinned; the
-runner sets it for you). No external `ST_ROOT` / `ST_HOOKS_DIR` required — spin owns the root and
-`st launch` wires the boot hooks (asyncRewake / PreCompact / StopFailure) itself.
+## The folder
 
-Run it: `fixture/spin.sh` (auto-materializes the sandbox via `fixture/setup-sandbox.sh` if absent), or
-`bin/evals run ghost-bug`. Tear down after grading with `bin/evals teardown <SB>`.
+| path | what it is |
+| --- | --- |
+| `ghost-bug.kdl` | the whole eval: the `gb` team (sup + fix) + the `eval {}` block (copy, kickoff, judges) |
+| `task.md` | the bug report delivered to `gb.sup` |
+| `fixture/` | the pre-built world, copied 1:1: `worker/` (the labelkit repo with the ghost bug, **green** suite, base commit + owner-pinned author `gb.fix`, git db `worker/_git` → `.git` on copy) and `sup/` (coordinate-only, no repo). Each holds an `st2`-native persona. |
+| `judges/` | the held-out bash judges (below) |
 
-## Grading
+## What makes it pass (all judges must pass — the team never sees these)
 
-- **Held-out acceptance** — see `task.toml` `[grader]`: an independent check the team never sees, so the result can not be gamed by editing a unit test.
-- **Isolation is a hard PASS/FAIL gate:** every agent changes only the module/repo it owns; all coordination flows through the message bus. A non-owner change fails the run outright.
-
-See `task.toml` for the full spec and [`../../framework.md`](../../framework.md) for the runner, axes, and grading model.
+- **isolation** (`judges/isolation.sh`) — only `gb.fix` authored commits (here the author **is** a gate —
+  the repo identity is pinned); the supervisor owns no repo; the change stays in `src/test/package/README`.
+- **visible suite** (`judges/suite.sh`) — `node --test` is green on HEAD (no deleting/weakening tests to pass).
+- **root cause** (`judges/root-cause.sh`) — two probes **blind to how** it was fixed: the behavior probe
+  (`format(custom)` then `format(default)` returns `[ b ]`) and the no-mutation probe (`defaultOptions` is
+  UNCHANGED after a custom call). A freeze/reset band-aid fails these. Paper-over patterns are flagged as a WARN.
+- **regression is mutation-valid** (`judges/regression.sh`) — **the integrity bar.** A test was added, and
+  the team's HEAD tests **go RED when replayed against the original buggy BASE src** (checkout HEAD tree,
+  overlay the buggy base `src/`, `node --test` must fail). A "regression test" green on the buggy base is
+  theater. *This logic is ported verbatim from the held-out grader — do not soften it.*
+- **coordination** (`judges/coordination.sh`) — the delegate → report loop is visible on the bus
+  (`gb.sup → gb.fix` delegation, `gb.fix → gb.sup` report).

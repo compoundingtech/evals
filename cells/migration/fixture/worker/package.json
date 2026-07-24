@@ -1,0 +1,10 @@
+{
+  "name": "meeting-notes",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Meeting helpers built on greetkit.",
+  "main": "src/app.js",
+  "scripts": { "test": "node --test" },
+  "dependencies": { "greetkit": "file:./lib/greetkit" }
+}

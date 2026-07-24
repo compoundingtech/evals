@@ -1,0 +1,69 @@
+// license-mit-codex.kdl — the whole eval in one file.  `st2 eval ./` runs it; `st2 up ./` just boots the team.
+// license-mit run by a full-CODEX team (cross-family): same task/world/grader as license-mit, only the family
+// changes — a single-family point next to the Claude/Mixed matrix, confirming the smallest team loop works
+// Codex-native (codex reads AGENTS.md; a `st2 ding` wake sidecar since codex has no asyncRewake).
+// All judges are held-out.
+
+env {                                    // cascades: agents + their processes inherit these
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "lmc" {                             // prefixes the agents it holds -> lmc.sup, lmc.worker
+  agent "sup" {
+    workspace "./sup"                    // coordinate-only cwd (owns no product repo)
+    env { ST_AGENT "lmc.sup" }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "lmc.sup.ding" { command #"st2 ding lmc.sup --identity lmc.sup --root $CATALOG/smalltalk"# }
+  }
+  agent "worker" {
+    workspace "./worker"                 // owns the widget repo (this dir)
+    env { ST_AGENT "lmc.worker" }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "lmc.worker.ding" { command #"st2 ding lmc.worker --identity lmc.worker --root $CATALOG/smalltalk"# }
+  }
+}
+
+eval {                                   // `st2 eval` = copy the world, boot team + judge, kick off, then judge
+  copy "./fixture"                       // pre-built starting world, 1:1 (worker/_git -> worker/.git on copy)
+  message {                              // kickoff — same as `st2 message send`
+    from "requester"
+    to "lmc.sup"
+    content "./task.md"
+  }
+  max-timeout "1200s"                    // the whole eval must finish within this
+
+  agent "judge" {                        // a real agent — its command line IS "what runs the judgment", in the open
+    workspace "./"                       // sees the whole sandbox + bus, so it can inspect
+    env { ST_AGENT "judge" }
+    command #"exec codex --model gpt-5.6-sol 'You are a judge. Read your inbox for what to evaluate, inspect the sandbox, reply in the exact format asked.'"#
+    /- ding {}
+    exec "judge.ding" { command #"st2 ding judge --identity judge --root $CATALOG/smalltalk"# }
+  }
+
+  judges {                               // all must pass; each one visible, nothing magic
+    judge "isolation — supervisor owns no repo; change stays on the license surface" {
+      exec "bash ./judges/isolation.sh"
+    }
+    judge "coordination — delegate->report->verified-confirm visible on the bus" {
+      exec "bash ./judges/coordination.sh"
+    }
+    judge "LICENSE is real MIT" {
+      file "worker/LICENSE"  has   "Permission is hereby granted, free of charge"
+      file "worker/LICENSE"  has   #"THE SOFTWARE IS PROVIDED "AS IS""#
+      file "worker/LICENSE"  lacks "proprietary"
+    }
+    judge "package.json declares MIT" {
+      json "worker/package.json"  field "license"  is "MIT"
+    }
+    judge "the change is committed + the worktree is clean" {
+      exec "bash ./judges/committed.sh"
+    }
+    judge "confirmation is verified, not a rubber-stamp" {
+      timeout "120s"                     // per-judge cap — a wedged judge can't hang the eval
+      ask "judge" #"Read the lmc.sup -> requester confirmation on the bus. PASS if it cites the real commit + the verification the supervisor ran (LICENSE is MIT, committed, tree clean); FAIL if it's a vague "done!" with no evidence. Reply: PASS or FAIL, then one sentence."#
+    }
+  }
+}

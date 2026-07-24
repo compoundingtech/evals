@@ -1,0 +1,61 @@
+// restart-continuity.kdl — the whole eval in one file.  `st2 eval ./` runs it (fault injection + supervised
+// respawn); `st2 up ./` just boots the team.  A DURABILITY eval: a team processes an ordered batch over the
+// `ledger` service; the runner COLD-RESTARTS the worker mid-batch (at the item-2 checkpoint) via an eval-only
+// injector seat that `pty kill`s it, and the `supervise` directive respawns it FROM SPEC (cold, full env).
+// The cold-booted worker must resume LOSSLESSLY from the durable substrate (git + PROGRESS.md + items.json +
+// the bus) — no item skipped.  Grade principle = AT-LEAST-ONCE: duplicates tolerated, a SKIP fails.
+// By design the team is told NOTHING about restarts (v1 tests the substrate as-is).  All judges are held-out.
+
+env {                                    // cascades: agents + their processes inherit these
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "rc" {                              // prefixes the agents it holds -> rc.sup, rc.dev, rc.inj
+  agent "sup" {
+    workspace "./sup"                    // coordinate-only cwd (owns no product repo)
+    env { ST_AGENT "rc.sup" }
+    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    exec "rc.sup.ding" { command #"st2 ding rc.sup --identity rc.sup --root $CATALOG/smalltalk"# }
+  }
+  agent "dev" {
+    workspace "./worker"                 // owns the ledger repo (this dir); the seat the injector cold-restarts
+    env { ST_AGENT "rc.dev" }
+    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    exec "rc.dev.ding" { command #"st2 ding rc.dev --identity rc.dev --root $CATALOG/smalltalk"# }
+  }
+  agent "inj" {
+    workspace "./inj"                    // eval-only fault injector — no bus voice, no product repo
+    env { ST_AGENT "rc.inj" }
+    command #"exec bash ./restart-injector.sh"#
+  }
+}
+
+eval {                                   // `st2 eval` = copy the world, boot the team, kick off, supervise, then judge
+  copy "./fixture"                       // pre-built starting world, 1:1 (worker/_git -> worker/.git on copy)
+  message {                              // kickoff — same as `st2 message send`
+    from "requester"
+    to "rc.sup"
+    content "./task.md"
+  }
+  max-timeout "1200s"                    // the whole eval must finish within this
+  supervise                              // st2 supervises the team DURING the run: a killed seat respawns FROM SPEC (cold, full env)
+
+  judges {                               // all must pass; each one visible, nothing magic (all mechanical here)
+    judge "isolation — only rc.dev authored the ledger repo; supervisor owns none; attribution survives the restart" {
+      exec "bash ./judges/isolation.sh"
+    }
+    judge "restart injected + the worker RESUMED — item commits straddle the restart (>=1 before AND >=1 after), not front-loaded" {
+      exec "bash ./judges/resumed.sh"
+    }
+    judge "no item skipped (held-out) — every items.json command is done: a PROGRESS line AND a working handler" {
+      exec "bash ./judges/no-skip.sh"
+    }
+    judge "no corruption — visible suite GREEN on HEAD, no duplicate dispatch keys, every registered command dispatches correctly" {
+      exec "bash ./judges/no-corruption.sh"
+    }
+    judge "coordination — the delegate->report loop is visible on the bus (survives the restart)" {
+      exec "bash ./judges/coordination.sh"
+    }
+  }
+}

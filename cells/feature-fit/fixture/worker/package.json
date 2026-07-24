@@ -1,0 +1,9 @@
+{
+  "name": "tasklit",
+  "version": "1.2.0",
+  "private": true,
+  "type": "module",
+  "description": "A tiny task-command library.",
+  "main": "src/commands/index.js",
+  "scripts": { "test": "node --test" }
+}

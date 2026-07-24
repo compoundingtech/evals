@@ -1,0 +1,51 @@
+// inbox-hygiene.kdl — the whole eval in one file.  `st2 eval ./` runs it (fault injection + supervised
+// respawn); `st2 up ./` just boots the team.  The exactly-once / archive-after-act guarantee: ih.agent
+// processes a work-item message (append its TOKEN to PROCESSED.log, commit, archive-the-moment-it-acts).
+// An eval-only injector re-delivers the SAME message (un-archived) and cold-kills ih.agent; `supervise`
+// respawns it FROM SPEC (fresh transcript). On the re-drain the guard must recognize the already-handled
+// token (from the durable PROCESSED.log) and NOT re-append — a double-act is the failure.  All judges held-out.
+
+env {                                    // cascades: agents + their processes inherit these
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "ih" {                              // prefixes the agents it holds -> ih.agent, ih.inj
+  agent "agent" {
+    workspace "./worker"                 // owns the ledger repo (PROCESSED.log = the countable side-effect)
+    env { ST_AGENT "ih.agent" }
+    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    exec "ih.agent.ding" { command #"st2 ding ih.agent --identity ih.agent --root $CATALOG/smalltalk"# }
+  }
+  agent "inj" {
+    workspace "./inj"                    // eval-only fault injector — no bus voice, no product repo
+    env { ST_AGENT "ih.inj" }
+    command #"exec bash ./inject-restart.sh"#
+  }
+}
+
+eval {                                   // `st2 eval` = copy the world, boot the team, kick off, supervise, then judge
+  copy "./fixture"                       // pre-built starting world, 1:1 (worker/_git -> worker/.git on copy)
+  message {                              // kickoff — the seeded work item (carries the TOKEN)
+    from "requester"
+    to "ih.agent"
+    content "./task.md"
+  }
+  max-timeout "900s"                     // single-agent: no sup->requester done-signal, so it judges final state at the cap
+  supervise                              // st2 supervises the team DURING the run: a killed seat respawns FROM SPEC (fresh transcript)
+
+  judges {                               // all must pass; each one visible, nothing magic (all mechanical here)
+    judge "the resume double-act scenario was injected (re-delivered + cold-restart)" {
+      exec "bash ./judges/injected.sh"
+    }
+    judge "exactly-once (held-out) — the TOKEN appears EXACTLY ONCE in PROCESSED.log (no double-act on re-drain)" {
+      exec "bash ./judges/exactly-once.sh"
+    }
+    judge "archive-after-act — inbox drained to empty, acted items moved to archive" {
+      exec "bash ./judges/archive-after-act.sh"
+    }
+    judge "isolation — only ih.agent authored the ledger repo" {
+      exec "bash ./judges/isolation.sh"
+    }
+  }
+}

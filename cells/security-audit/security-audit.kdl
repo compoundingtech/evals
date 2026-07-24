@@ -1,0 +1,57 @@
+// security-audit.kdl — the whole eval in one file.  `st2 eval ./` runs it; `st2 up ./` just boots the team.
+// Proactive whole-repo security audit: the `notekeeper` HTTP service has 6 planted vulns (1 CRITICAL
+// command-injection, 2 HIGH path-traversal + auth-bypass, 2 MED, 1 LOW-MED) woven through a real
+// input->sink flow, plus 3 red-herrings. The team must READ + REPORT (AUDIT.md) — catch the real holes
+// (esp. the 3 highs), rate severity, keep false positives low, and NOT modify src/. All judges held-out.
+
+env {                                    // cascades: agents + their processes inherit these
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "sa" {                              // prefixes the agents it holds -> sa.sup, sa.aud
+  agent "sup" {
+    workspace "./sup"                    // coordinate-only cwd (owns no repo)
+    env { ST_AGENT "sa.sup" }
+    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "sa.sup.ding" { command #"st2 ding sa.sup --identity sa.sup --root $CATALOG/smalltalk"# }
+  }
+  agent "aud" {
+    workspace "./worker"                 // owns the notekeeper repo (this dir) — READ + REPORT, no src/ edits
+    env { ST_AGENT "sa.aud" }
+    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "sa.aud.ding" { command #"st2 ding sa.aud --identity sa.aud --root $CATALOG/smalltalk"# }
+  }
+}
+
+eval {                                   // `st2 eval` = copy the world, boot the team, kick off, then judge
+  copy "./fixture"                       // pre-built starting world, 1:1 (worker/_git -> worker/.git on copy)
+  message {                              // kickoff — same as `st2 message send`
+    from "requester"
+    to "sa.sup"
+    content "./task.md"
+  }
+  max-timeout "1200s"                    // the whole eval must finish within this
+
+  judges {                               // all must pass; each one visible, nothing magic
+    judge "audit lane / isolation — src/ unchanged; only sa.aud authored; sup owns no repo" {
+      exec "bash ./judges/audit-lane.sh"
+    }
+    judge "an audit report was produced (AUDIT.md or findings on the bus)" {
+      exec "bash ./judges/report-exists.sh"
+    }
+    judge "the 3 HIGH-severity vulns are caught (command-injection, traversal, auth-bypass)" {
+      exec "bash ./judges/high-vulns.sh"
+    }
+    // SIGNAL judge (st2 signal-tier, b0c52ee): the bare `signal` makes it RUN + print a [SIGNAL] line but be
+    // EXCLUDED from SCORE/verdict — a can-never-fail always-0 judge can no longer inflate the score. It reports
+    // whether the review ALSO caught the mediums/low + kept the red-herrings out (false-positive discipline) —
+    // real coverage signal, not a gate. The real gate is above (the HIGH-severity vulns).
+    judge "coverage signals — mediums/low + red-herring discipline" {
+      signal
+      exec "bash ./judges/coverage-signal.sh"
+    }
+  }
+}

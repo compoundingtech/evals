@@ -1,0 +1,12 @@
+// A minimal service seat for the doctor to health-check. `st2 up` boots it (holds the host-lock);
+// `st2 doctor` then reports it running + its task alive. The seat spawns into the eval's ambient
+// PTY_ROOT (hermetic), so the eval teardown reaps it — no orphan.
+agent "dev" {
+  host "hetz"
+  type "service"
+  pty "agent" {
+    id "hetz.dev"
+    command "sleep 100000"
+    env { ST_AGENT "hetz.dev"; ST_ROOT "$CATALOG/smalltalk"; PTY_ROOT "$CATALOG/pty" }
+  }
+}

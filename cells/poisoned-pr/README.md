@@ -1,24 +1,36 @@
-# poisoned-pr — review cell
+# poisoned-pr — review an adversarial PR, catch what CI can't
 
-**Discriminates:** catch the planted security hole CI misses; request-changes not rubber-stamp
+**What it evaluates.** Code review at quality — catching defects a green CI misses and delivering a
+justified **request-changes**, not a rubber-stamp. The PR `feat/file-config` on `configstore` adds
+file-based config loading and passes CI, but carries three planted defects: a **path-traversal security
+hole** (`loadConfig()` joins an un-sanitized name onto the config dir — the headline), a **correctness
+aliasing bug** (`mergeConfig()` mutates its `base` argument), and a **test-quality trap** (the new test
+is tautological and `loadConfig` is entirely uncovered). A supervisor (`pr.sup`, coordinate-only)
+delegates a review to a reviewer (`pr.rev`, has the checkout). The outcome is **findings + a verdict on
+the bus** — the repo is not modified (review-only).
 
-**Capabilities required:** `claude,st,pty,git,node`  ·  run `bin/evals preflight` to confirm your setup supports this cell.
+**Run it:** `st2 eval ./cells/poisoned-pr/`
 
-## Run it
+`st2 eval` copies the fixture into a fresh catalog, boots the team, delivers `task.md` to `pr.sup`, runs
+to the supervisor's confirmation (or `max-timeout`), then runs the judges → verdict.
 
-The team is launched via the real `st launch` (the same command a user runs). `fixture/spin.sh` is
-**self-isolating** — it creates and exports its own scratch bus root at `$SB/st-root`, so nothing touches
-your live network; the st-launched agents inherit that root by env inheritance. You only need
-`PERSONAS_DIR` (a checkout of the public personas repo — `bin/ensure-personas.sh` clones it pinned; the
-runner sets it for you). No external `ST_ROOT` / `ST_HOOKS_DIR` required — spin owns the root and
-`st launch` wires the boot hooks (asyncRewake / PreCompact / StopFailure) itself.
+## The folder
 
-Run it: `fixture/spin.sh` (auto-materializes the sandbox via `fixture/setup-sandbox.sh` if absent), or
-`bin/evals run poisoned-pr`. Tear down after grading with `bin/evals teardown <SB>`.
+| path | what it is |
+| --- | --- |
+| `poisoned-pr.kdl` | the whole eval: the `pr` team (sup + rev) + the `eval {}` block (copy, kickoff, judges) |
+| `task.md` | the review request delivered to `pr.sup` |
+| `fixture/` | the pre-built world, copied 1:1: `rev/` (the `configstore` checkout on `feat/file-config`, green CI, git db `rev/_git` → `.git` on copy) and `sup/` (coordinate-only, no repo). Each holds an `st2`-native persona. |
+| `judges/` | the held-out judges (below); `_review-text.sh` is a sourced helper that aggregates the review off the bus |
 
-## Grading
+## What makes it pass (all judges must pass — the team never sees these)
 
-- **Held-out acceptance** — see `task.toml` `[grader]`: an independent check the team never sees, so the result can not be gamed by editing a unit test.
-- **Isolation is a hard PASS/FAIL gate:** every agent changes only the module/repo it owns; all coordination flows through the message bus. A non-owner change fails the run outright.
-
-See `task.toml` for the full spec and [`../../framework.md`](../../framework.md) for the runner, axes, and grading model.
+- **isolation / review-only** (`judges/isolation.sh`) — the reviewer authored no commit and modified no
+  code; the supervisor owns no repo.
+- **review produced** (`judges/review-exists.sh`) — findings + a verdict reached the bus (or `REVIEW.md`).
+- **verdict** (`judges/verdict.sh`) — **request-changes** (approving a PR with a path traversal is the
+  exact rubber-stamp this cell fails).
+- **SECURITY caught** (`judges/security-caught.sh`) — **the headline**: the review flags the `loadConfig`
+  path traversal. Missing it fails the run.
+- **other defects** (`judges/other-defects.sh`) — non-gating signals: the `mergeConfig` mutation + the
+  weak test / missing coverage.

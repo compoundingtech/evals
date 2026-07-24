@@ -1,0 +1,10 @@
+{
+  "name": "checkout",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "A cart + checkout-totals library.",
+  "main": "src/checkout.js",
+  "exports": "./src/checkout.js",
+  "scripts": { "test": "node --test" }
+}

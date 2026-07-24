@@ -1,18 +1,15 @@
-# ghost-bug-codex — debug cell
+# ghost-bug-codex — the ghost-bug debug loop, run by codex seats
 
-**Discriminates:** the debug loop Codex-native (cross-family)
+Same eval as [`ghost-bug`](../ghost-bug/) (root-cause a shared-default-mutation bug in `labelkit` + a
+**mutation-valid** regression test), but the team (`gbx.sup` + `gbx.fix`) runs on the **codex** harness —
+proving the folder-eval format handles codex seats. Codex reads its persona from `AGENTS.md` (not
+`CLAUDE.md`), and each seat gets a `st2 ding` wake sidecar (codex has no async re-wake).
 
-**Capabilities required:** `codex,st,pty,git,node`  ·  run `bin/evals preflight` to confirm your setup supports this cell.
+**Run it:** `st2 eval ./cells/ghost-bug-codex/`
 
-## Run it
+Held-out judges (identical logic to ghost-bug): isolation (author-gated to `gbx.fix`), suite-green,
+root-cause (two blind probes), **regression mutation-valid** (RED on the buggy BASE src — the integrity
+bar, ported verbatim), coordination.
 
-Point `ST_ROOT` at a scratch network root, `ST_HOOKS_DIR` at your smalltalk `examples/claude-code/hooks`,
-and `PERSONAS_DIR` at a checkout of the public personas repo (`bin/ensure-personas.sh` clones it pinned).
-Then: `fixture/setup-sandbox.sh` to materialize the world, then `fixture/spin.sh` to launch the team.
-
-## Grading
-
-- **Held-out acceptance** — see `task.toml` `[grader]`: an independent check the team never sees, so the result can not be gamed by editing a unit test.
-- **Isolation is a hard PASS/FAIL gate:** every agent changes only the module/repo it owns; all coordination flows through the message bus. A non-owner change fails the run outright.
-
-See `task.toml` for the full spec and [`../../framework.md`](../../framework.md) for the runner, axes, and grading model.
+Fixture `worker/` reuses ghost-bug's labelkit (owner-pinned `gbx.fix`); `worker/AGENTS.md` + `sup/AGENTS.md`
+are the codex personas.

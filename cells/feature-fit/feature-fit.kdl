@@ -1,0 +1,55 @@
+// feature-fit.kdl — the whole eval in one file.  `st2 eval ./` runs it; `st2 up ./` just boots the team.
+// Feature-in-existing-code: add a `rename` command to the `tasklit` library so it FITS the house
+// conventions (Result pattern, shared validators, module shape + registry, matching test). Harder than
+// greenfield — the request does NOT list the conventions; reading the code + matching it is the test.
+// All judges are held-out.
+
+env {                                    // cascades: agents + their processes inherit these
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "feat" {                            // prefixes the agents it holds -> feat.sup, feat.dev
+  agent "sup" {
+    workspace "./sup"                    // coordinate-only cwd (owns no product repo)
+    env { ST_AGENT "feat.sup" }
+    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "feat.sup.ding" { command #"st2 ding feat.sup --identity feat.sup --root $CATALOG/smalltalk"# }
+  }
+  agent "dev" {
+    workspace "./worker"                 // owns the tasklit repo (this dir)
+    env { ST_AGENT "feat.dev" }
+    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "feat.dev.ding" { command #"st2 ding feat.dev --identity feat.dev --root $CATALOG/smalltalk"# }
+  }
+}
+
+eval {                                   // `st2 eval` = copy the world, boot the team, kick off, then judge
+  copy "./fixture"                       // pre-built starting world, 1:1 (worker/_git -> worker/.git on copy)
+  message {                              // kickoff — same as `st2 message send`
+    from "requester"
+    to "feat.sup"
+    content "./task.md"
+  }
+  max-timeout "1200s"                    // the whole eval must finish within this
+
+  judges {                               // all must pass; each one visible, nothing magic (all mechanical here)
+    judge "isolation — only feat.dev authored; supervisor owns no repo" {
+      exec "bash ./judges/isolation.sh"
+    }
+    judge "visible suite is green on HEAD" {
+      exec "bash ./judges/suite.sh"
+    }
+    judge "functional — rename works via dispatch (registration + Result shape)" {
+      exec "bash ./judges/functional.sh"
+    }
+    judge "a matching test was added (test/commands/rename.test.js)" {
+      exec "bash ./judges/test-added.sh"
+    }
+    judge "convention fit — no throw + registered (+ idiomatic-fit signals)" {
+      exec "bash ./judges/convention-fit.sh"
+    }
+  }
+}

@@ -1,45 +1,24 @@
-# ding-mode — no-MCP participation cell
+# ding-mode — a no-MCP team coordinates over the bus
 
-**Discriminates:** is **ding-only** a first-class network experience — good boot, clean `[DING]` handling, natural coordination @ 0 rescues — or a degraded fallback? (held-out; the no-MCP shape)
+**What it evaluates.** A team coordinating a real task (implement `slugify` in the `widget` lib) purely over
+ding + the st2 CLI — no MCP. A supervisor (`dm.sup`, coordinate-only) delegates to a specialist (`dm.dev`,
+owns the repo); the boot ritual, the delegation, and the report all happen over the bus. On st2 the ding-only
+path is the *default* (there is no MCP), so this cell verifies the whole `[DING]` loop closes cleanly.
 
-**Capabilities required:** `claude,st,pty,git,node`  ·  run `bin/evals preflight` to confirm your setup supports this cell.
+**Run it:** `st2 eval ./cells/ding-mode/`
 
-## What it proves
+## The folder
 
-Some environments can't run MCP servers at all (locked-down hosts, some sandboxes). There, a Claude agent
-joins the network the way Codex does: launched with **`st launch claude --ding`** — no MCP wiring, an
-**`st ding` sidecar** delivers inbound messages as `[DING] `-prefixed pokes, and the **`st` CLI** does every
-bus op (send / ls / read / reply / archive / status). A ding-mode Claude gets **no MCP system-prompt**, so
-nothing tells it it's on a bus or how to participate — `st launch --ding` **auto-installs** that contract as
-**`DING-BUS.md`** (imported via `@DING-BUS.md` in `CLAUDE.md`), the shipped ding-mode analog of the MCP
-channel instructions. This cell launches a **fully no-MCP 2-agent team** and grades whether that shipped
-contract makes them genuinely competent. The task (implement `slugify` to an exact spec) is deliberately
-small so the focus is the *coordination experience*, not task difficulty.
+| path | what it is |
+| --- | --- |
+| `ding-mode.kdl` | the whole eval: the `dm` team (sup + dev) + the `eval {}` block (copy, kickoff, judges) |
+| `task.md` | the request delivered to `dm.sup` |
+| `fixture/` | `worker/` (the `widget` repo — slugify stub + green suite, owner-pinned `dm.dev`, `_git` → `.git` on copy) + `sup/` (coordinate-only, no repo), each with an `st2`-native persona |
+| `judges/` | the held-out bash judges (below) |
 
-## Run it
+## What makes it pass (all judges must pass)
 
-`fixture/spin.sh` is **self-isolating** — it creates and exports its own scratch bus root at `$SB/st-root`;
-`st launch` bakes that into every session's env (agent **and** ding sidecar), so nothing touches your live
-network. You only need `PERSONAS_DIR` (the runner sets it). Run it: `fixture/spin.sh` (auto-materializes the
-sandbox if absent), or `bin/evals run ding-mode`.
-
-`spin.sh` launches `dm-dev` (owns `widget`) and `dm-sup` (coordinate-only) — **both `--ding`, no MCP** — seeds
-the hermetic kick, and lets them self-organize over ding + the CLI. Each agent has two pty sessions: the
-claude session (`<id>-<stev-prefix>`) and its ding sidecar (`<id>-ding`); both are torn down zero-orphan.
-
-- Grade: `fixture/grade.sh <SB>`  ·  Tear down: `bin/evals teardown <SB>` (removes the agents **and** the ding sidecars)
-
-## Grading — the EXPERIENCE, not just delivery
-
-Held-out (`task.toml` `[grader]`), mechanized in `fixture/grade.sh`:
-- **Task correct** — `slugify` meets the spec on held-out cases (run, not eyeballed) + suite green.
-- **No MCP** (hard) — neither agent dir has a `.mcp.json`: the launch was genuinely MCP-less.
-- **(a) Boot without MCP** — the seeded kick got drained to `dm-sup`'s archive over the CLI (boot ritual ran, no channel-injection).
-- **(b) `[DING]` handled cleanly** — `dm-dev` read + archived the delegation **and** replied (the ding-delivered task was handled end-to-end via CLI).
-- **(c) Coordination natural** — the delegate → report → confirm loop is bus-visible.
-- **Isolation** (hard gate) — only `dm-dev` authored `widget` commits; the supervisor owns no repo.
-- **Autonomy is the headline: rescues = 0.** Any human poke/un-stick (or having to teach it the CLI) means ding-only was *not* first-class.
-
-This run also doubles as the **acceptance test for `st launch claude --ding`** (#58).
-
-See `task.toml` for the full spec and [`../../framework.md`](../../framework.md) for the runner, axes, and grading model.
+- **isolation** — only `dm.dev` authored; the supervisor owns no repo.
+- **no MCP** — neither agent dir has an `.mcp.json` (joined via ding + the st2 CLI).
+- **task correct** — `slugify` meets the spec on all held-out cases (run, not eyeballed); suite green; committed.
+- **coordination** — the delegate → report → confirm loop closed over the bus.

@@ -1,0 +1,9 @@
+{
+  "name": "taskflow",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "taskflow — a small task-tracking SaaS backend.",
+  "main": "src/tasks.js",
+  "scripts": { "test": "node --test" }
+}

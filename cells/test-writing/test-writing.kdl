@@ -1,0 +1,50 @@
+// test-writing.kdl — the whole eval in one file.  `st2 eval ./` runs it; `st2 up ./` just boots the team.
+// Write a regression-catching test suite for the untested `grades` module. The bar isn't "green" — it's a
+// suite that would actually catch a regression (boundary cutoffs, range edges, edge cases, error paths).
+// Test-writing lane: src/ must not change. The DISCRIMINATOR is the mutation score (how many of 12 planted
+// mutants the suite kills) — coverage theater survives; a thorough suite kills them. All judges held-out.
+
+env {                                    // cascades: agents + their processes inherit these
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "tw" {                              // prefixes the agents it holds -> tw.sup, tw.dev
+  agent "sup" {
+    workspace "./sup"                    // coordinate-only cwd (owns no repo)
+    env { ST_AGENT "tw.sup" }
+    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "tw.sup.ding" { command #"st2 ding tw.sup --identity tw.sup --root $CATALOG/smalltalk"# }
+  }
+  agent "dev" {
+    workspace "./worker"                 // owns the grades repo (this dir) — write TESTS, don't change src/
+    env { ST_AGENT "tw.dev" }
+    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "tw.dev.ding" { command #"st2 ding tw.dev --identity tw.dev --root $CATALOG/smalltalk"# }
+  }
+}
+
+eval {                                   // `st2 eval` = copy the world, boot the team, kick off, then judge
+  copy "./fixture"                       // pre-built starting world, 1:1 (worker/_git -> worker/.git on copy)
+  message {                              // kickoff — same as `st2 message send`
+    from "requester"
+    to "tw.sup"
+    content "./task.md"
+  }
+  max-timeout "1200s"                    // the whole eval must finish within this
+
+  judges {                               // all must pass; each one visible, nothing magic
+    judge "isolation + test-writing lane — only tw.dev authored; sup owns no repo; src/ unchanged" {
+      exec "bash ./judges/isolation.sh"
+    }
+    judge "a real test suite was added + is green on the original code" {
+      exec "bash ./judges/tests-added-green.sh"
+    }
+    judge "MUTATION SCORE — the suite kills >= 10/12 planted mutants (not coverage theater)" {
+      timeout "300s"                     // per-judge cap — runs the suite once per mutant (12x)
+      exec "bash ./judges/mutation-score.sh"
+    }
+  }
+}

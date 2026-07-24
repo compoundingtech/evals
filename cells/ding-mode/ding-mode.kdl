@@ -1,0 +1,51 @@
+// ding-mode.kdl — the whole eval in one file.  `st2 eval ./` runs it; `st2 up ./` just boots the team.
+// A fully no-MCP team coordinates a real task (implement slugify in the widget lib) purely over ding +
+// the st2 CLI. On st2 this is the default (there is no MCP) — the cell verifies the ding-only loop closes.
+// All judges are held-out.
+
+env {                                    // cascades: agents + their processes inherit these
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "dm" {                              // prefixes the agents it holds -> dm.sup, dm.dev
+  agent "sup" {
+    workspace "./sup"                    // coordinate-only cwd (owns no repo)
+    env { ST_AGENT "dm.sup" }
+    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "dm.sup.ding" { command #"st2 ding dm.sup --identity dm.sup --root $CATALOG/smalltalk"# }
+  }
+  agent "dev" {
+    workspace "./worker"                 // owns the widget repo (this dir)
+    env { ST_AGENT "dm.dev" }
+    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "dm.dev.ding" { command #"st2 ding dm.dev --identity dm.dev --root $CATALOG/smalltalk"# }
+  }
+}
+
+eval {                                   // `st2 eval` = copy the world, boot the team, kick off, then judge
+  copy "./fixture"                       // pre-built starting world, 1:1 (worker/_git -> worker/.git on copy)
+  message {                              // kickoff — same as `st2 message send`
+    from "requester"
+    to "dm.sup"
+    content "./task.md"
+  }
+  max-timeout "1200s"                    // the whole eval must finish within this
+
+  judges {                               // all must pass; each one visible, nothing magic
+    judge "isolation — only dm.dev authored; supervisor owns no repo" {
+      exec "bash ./judges/isolation.sh"
+    }
+    judge "no MCP — neither agent has an .mcp.json (ding + st2 CLI only)" {
+      exec "bash ./judges/no-mcp.sh"
+    }
+    judge "task correct — slugify meets the spec (held-out) + suite green + committed" {
+      exec "bash ./judges/task-correct.sh"
+    }
+    judge "coordination — delegate -> report -> confirm loop closed over the bus" {
+      exec "bash ./judges/coordination.sh"
+    }
+  }
+}

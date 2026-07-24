@@ -1,0 +1,39 @@
+// ding-reply.kdl — the whole eval in one file.  `st2 eval ./` runs it; `st2 up ./` just boots the agent.
+// Covers the no-MCP THREADED REPLY path: a ding-only agent (an `st2 ding` sidecar for inbound, the `st2` CLI
+// for all bus ops — no MCP) receives a message and REPLIES ON THE THREAD via `st2 message reply` (the CLI verb),
+// so the reply lands `in-reply-to:` the original. A plain `st2 message send` (no in-reply-to) does NOT pass —
+// this is exactly the gap the reply bug slipped through. Trivial task (read ANSWER.txt + reply); the coverage is
+// the reply path. All judges held-out.
+
+env {
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "dr" {                              // single agent -> dr.agent
+  agent "agent" {
+    workspace "./work"                   // its cwd holds ANSWER.txt
+    env { ST_AGENT "dr.agent" }
+    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    exec "dr.agent.ding" { command #"st2 ding dr.agent --identity dr.agent --root $CATALOG/smalltalk"# }
+  }
+}
+
+eval {
+  copy "./fixture"                       // work/ANSWER.txt + the persona
+  message {                              // the kick — asks for a threaded reply carrying ANSWER.txt
+    from "dr-req"
+    to "dr.agent"
+    content "./task.md"
+  }
+  max-timeout "420s"                     // single-agent, no sup->requester done-signal → judges final state at the cap
+
+  judges {                               // all must pass; each one visible, nothing magic
+    judge "THREADED REPLY (held-out) — dr.agent replied to dr-req in-reply-to the kick, carrying the ANSWER token (not a fresh send)" {
+      exec "bash ./judges/threaded-reply.sh"
+    }
+    judge "no MCP — the agent has no .mcp.json (ding + st2 CLI only)" {
+      exec "bash ./judges/no-mcp.sh"
+    }
+  }
+}

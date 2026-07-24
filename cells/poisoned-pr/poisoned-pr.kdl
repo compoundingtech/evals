@@ -1,0 +1,60 @@
+// poisoned-pr.kdl — the whole eval in one file.  `st2 eval ./` runs it; `st2 up ./` just boots the team.
+// Code review: review an incoming PR (`feat/file-config` on configstore) that is GREEN (CI would approve)
+// but carries 3 planted defects — a path-traversal SECURITY hole (the headline), a mergeConfig aliasing
+// bug, and a tautological test / missing coverage. The team must REQUEST CHANGES with concrete findings,
+// not rubber-stamp, and edit NO code. All judges are held-out.
+
+env {                                    // cascades: agents + their processes inherit these
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "pr" {                              // prefixes the agents it holds -> pr.sup, pr.rev
+  agent "sup" {
+    workspace "./sup"                    // coordinate-only cwd (owns no repo; does NOT merge)
+    env { ST_AGENT "pr.sup" }
+    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "pr.sup.ding" { command #"st2 ding pr.sup --identity pr.sup --root $CATALOG/smalltalk"# }
+  }
+  agent "rev" {
+    workspace "./rev"                    // the reviewer's checkout (feat/file-config) — REVIEW-ONLY, no edits
+    env { ST_AGENT "pr.rev" }
+    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "pr.rev.ding" { command #"st2 ding pr.rev --identity pr.rev --root $CATALOG/smalltalk"# }
+  }
+}
+
+eval {                                   // `st2 eval` = copy the world, boot the team, kick off, then judge
+  copy "./fixture"                       // pre-built starting world, 1:1 (rev/_git -> rev/.git on copy)
+  message {                              // kickoff — same as `st2 message send`
+    from "requester"
+    to "pr.sup"
+    content "./task.md"
+  }
+  max-timeout "1200s"                    // the whole eval must finish within this
+
+  judges {                               // all must pass; each one visible, nothing magic
+    judge "isolation / review-only — reviewer edits no code; sup owns no repo" {
+      exec "bash ./judges/isolation.sh"
+    }
+    judge "a review was produced (findings + verdict reached the bus)" {
+      exec "bash ./judges/review-exists.sh"
+    }
+    judge "verdict is REQUEST-CHANGES (not a rubber-stamp)" {
+      exec "bash ./judges/verdict.sh"
+    }
+    judge "SECURITY caught — the loadConfig path traversal is flagged (the headline)" {
+      exec "bash ./judges/security-caught.sh"
+    }
+    // SIGNAL judge (st2 signal-tier, b0c52ee): the bare `signal` makes it RUN + print a [SIGNAL] line but be
+    // EXCLUDED from SCORE/verdict — a can-never-fail always-0 judge can no longer inflate the score. It reports
+    // whether the review ALSO caught the secondary defects (mergeConfig mutating its base arg + the tautological
+    // test) + false-positive discipline — real coverage signal, not a gate. The real gates are above.
+    judge "other defects surfaced — mergeConfig mutation + weak test" {
+      signal
+      exec "bash ./judges/other-defects.sh"
+    }
+  }
+}

@@ -1,0 +1,64 @@
+// license-mit.kdl — the whole eval in one file.  `st2 eval ./` runs it; `st2 up ./` just boots the team.
+// The smallest real team loop: one request in ("license should be MIT"), a coordinated
+// delegate -> execute -> verify -> confirm loop out, isolation held. Judges are all held-out.
+
+env {                                    // cascades: agents + their processes inherit these
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "mix" {                             // prefixes the agents it holds -> mix.sup, mix.worker
+  agent "sup" {
+    workspace "./sup"                    // coordinate-only cwd (owns no product repo)
+    env { ST_AGENT "mix.sup" }
+    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    ding                                 // auto-renders: st2 ding --identity mix.sup --root $ST_ROOT
+  }
+  agent "worker" {
+    workspace "./worker"                 // owns the widget repo (this dir)
+    env { ST_AGENT "mix.worker" }
+    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    ding                                 // auto-renders: st2 ding --identity mix.worker --root $ST_ROOT
+  }
+}
+
+eval {                                   // `st2 eval` = copy the world, boot team + judge, kick off, then judge
+  copy "./fixture"                       // pre-built starting world, 1:1 (worker/_git -> worker/.git on copy)
+  message {                              // kickoff — same as `st2 message send`
+    from "requester"
+    to "mix.sup"
+    content "./task.md"
+  }
+  max-timeout "1200s"                    // the whole eval must finish within this
+
+  agent "judge" {                        // a real agent — its command line IS "what runs the judgment", in the open
+    workspace "./"                       // sees the whole sandbox + bus, so it can inspect
+    env { ST_AGENT "judge" }
+    command #"exec codex --model gpt-5.6-sol 'You are a judge. Read your inbox for what to evaluate, inspect the sandbox, reply in the exact format asked.'"#
+    ding                                 // auto-renders: st2 ding --identity judge --root $ST_ROOT
+  }
+
+  judges {                               // all must pass; each one visible, nothing magic
+    judge "isolation — supervisor owns no repo; change stays on the license surface" {
+      exec "bash ./judges/isolation.sh"
+    }
+    judge "coordination — delegate->report->verified-confirm visible on the bus" {
+      exec "bash ./judges/coordination.sh"
+    }
+    judge "LICENSE is real MIT" {
+      file "worker/LICENSE"  has   "Permission is hereby granted, free of charge"
+      file "worker/LICENSE"  has   #"THE SOFTWARE IS PROVIDED "AS IS""#
+      file "worker/LICENSE"  lacks "proprietary"
+    }
+    judge "package.json declares MIT" {
+      json "worker/package.json"  field "license"  is "MIT"
+    }
+    judge "the change is committed + the worktree is clean" {
+      exec "bash ./judges/committed.sh"
+    }
+    judge "confirmation is verified, not a rubber-stamp" {
+      timeout "120s"                     // per-judge cap — a wedged judge can't hang the eval
+      ask "judge" #"Read the mix.sup -> requester confirmation on the bus. PASS if it cites the real commit + the verification the supervisor ran (LICENSE is MIT, committed, tree clean); FAIL if it's a vague "done!" with no evidence. Reply: PASS or FAIL, then one sentence."#
+    }
+  }
+}

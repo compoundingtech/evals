@@ -1,26 +1,36 @@
-# docs — docs cell
+# docs — document a library so a cold reader can use it
 
-**Discriminates:** an explain-it doc a COLD reader can act on (held-out cold-reader)
+**What it evaluates.** Documentation that actually **works**: docs a fresh reader can use with only the
+docs (not the source). The `checkout` cart library has three non-obvious, silent-failure contracts a
+newcomer cannot guess — money is integer **cents**, tax is **basis points** (800 = 8%); the API is
+**immutable** (methods return a new cart — discard the return and it's a silent no-op); and you must
+**`seal()` before `total()`** or `total()` silently omits promo + tax. A supervisor (`doc.sup`,
+coordinate-only) delegates to a writer (`doc.writer`, owns the repo) to document the library so a cold
+reader can use it correctly. It's a **docs lane** — `src/` must not change.
 
-**Capabilities required:** `claude,st,pty,git,node`  ·  run `bin/evals preflight` to confirm your setup supports this cell.
+**Run it:** `st2 eval ./cells/docs/`
 
-## Run it
+`st2 eval` copies the fixture into a fresh catalog, boots the team, delivers `task.md` to `doc.sup`, runs
+to the supervisor's confirmation (or `max-timeout`), then runs the judges → verdict.
 
-The team is launched via the real `st launch` (the same command a user runs). `fixture/spin.sh` is
-**self-isolating** — it creates and exports its own scratch bus root at `$SB/st-root`, so nothing touches
-your live network; the st-launched agents inherit that root by env inheritance. You only need
-`PERSONAS_DIR` (a checkout of the public personas repo — `bin/ensure-personas.sh` clones it pinned; the
-runner sets it for you). No external `ST_ROOT` / `ST_HOOKS_DIR` required — spin owns the root and
-`st launch` wires the boot hooks (asyncRewake / PreCompact / StopFailure) itself.
+## The folder
 
-Run it: `fixture/spin.sh` (auto-materializes the sandbox via `fixture/setup-sandbox.sh` if absent), or
-`bin/evals run docs`. Tear down after grading with `bin/evals teardown <SB>`.
+| path | what it is |
+| --- | --- |
+| `docs.kdl` | the whole eval: the `doc` team (sup + writer) + the `eval {}` block (copy, kickoff, judges) |
+| `task.md` | the documentation request delivered to `doc.sup` |
+| `fixture/` | the pre-built world, copied 1:1: `worker/` (the `checkout` repo, green suite, stub README, owner-pinned author `doc.writer`, git db `worker/_git` → `.git` on copy) and `sup/` (coordinate-only, no repo). Each holds an `st2`-native persona. |
+| `judges/` | the held-out judges (below) |
 
-## Grading
+## What makes it pass (all judges must pass — the team never sees these)
 
-- **Grade:** `fixture/grade.sh` mechanizes the ground-truth checks (never trusts self-reports).
-- **Held-out:** `fixture/cold-reader.sh` — a fresh agent uses the deliverable cold; it must act correctly from it alone.
-- **Held-out acceptance** — see `task.toml` `[grader]`: an independent check the team never sees, so the result can not be gamed by editing a unit test.
-- **Isolation is a hard PASS/FAIL gate:** every agent changes only the module/repo it owns; all coordination flows through the message bus. A non-owner change fails the run outright.
-
-See `task.toml` for the full spec and [`../../framework.md`](../../framework.md) for the runner, axes, and grading model.
+- **isolation + docs lane** (`judges/isolation.sh`) — only `doc.writer` authored; sup owns no repo; **`src/`
+  is byte-identical** to base (docs-only, behavior unchanged).
+- **visible suite** (`judges/suite.sh`) — `node --test` green on HEAD.
+- **docs written** (`judges/docs-written.sh`) — the stub README is meaningfully expanded (≥25 lines) with a
+  worked example.
+- **completeness signals** (`judges/completeness.sh`) — non-gating keyword proxies for the 3 contracts +
+  return shape (the cold reader is definitive).
+- **COLD READER** (`judges/cold-reader.sh`) — **the discriminator**: a fresh `claude --print` agent gets
+  ONLY the docs + the library as a mangled black box + a task in human terms, and must compute
+  `totalCents === 1944`. Good docs → the reader succeeds; a missing contract → silently wrong.

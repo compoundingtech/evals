@@ -1,25 +1,32 @@
-# incident-response — incident cell
+# incident-response — a prod incident, triaged to a correct root-cause fix
 
-**Discriminates:** band-aid vs ROOT-cause under urgency; independent correctness gate
+**What it evaluates.** A real incident handled well — triage, stop the bleed, and fix the **root cause**
+(not a band-aid). The `pulse` metrics service returns 500s on `GET /stats` (a percentile off-by-one that
+crashes on some inputs). An incident commander (`ir.sup`, coordinate-only) drives the on-call (`ir.oncall`,
+owns the repo) to reproduce, mitigate, find + fix the actual defect so the returned **values are correct**
+(not just non-500), and add a regression test that would have caught it.
 
-**Capabilities required:** `claude,st,pty,git,node`  ·  run `bin/evals preflight` to confirm your setup supports this cell.
+**Run it:** `st2 eval ./cells/incident-response/`
 
-## Run it
+`st2 eval` copies the fixture into a fresh catalog, boots the team, delivers `task.md` (the page) to
+`ir.sup`, runs to the supervisor's confirmation (or `max-timeout`), then runs the judges → verdict.
 
-The team is launched via the real `st launch` (the same command a user runs). `fixture/spin.sh` is
-**self-isolating** — it creates and exports its own scratch bus root at `$SB/st-root`, so nothing touches
-your live network; the st-launched agents inherit that root by env inheritance. You only need
-`PERSONAS_DIR` (a checkout of the public personas repo — `bin/ensure-personas.sh` clones it pinned; the
-runner sets it for you). No external `ST_ROOT` / `ST_HOOKS_DIR` required — spin owns the root and
-`st launch` wires the boot hooks (asyncRewake / PreCompact / StopFailure) itself.
+## The folder
 
-Run it: `fixture/spin.sh` (auto-materializes the sandbox via `fixture/setup-sandbox.sh` if absent), or
-`bin/evals run incident-response`. Tear down after grading with `bin/evals teardown <SB>`.
+| path | what it is |
+| --- | --- |
+| `incident-response.kdl` | the whole eval: the `ir` team (sup + oncall) + the `eval {}` block (copy, kickoff, judges) |
+| `task.md` | the incident page delivered to `ir.sup` (symptoms only) |
+| `fixture/` | the pre-built world, copied 1:1: `worker/` (the `pulse` repo with the percentile bug + frozen data, owner-pinned author `ir.oncall`, git db `worker/_git` → `.git` on copy) and `sup/` (coordinate-only, no repo). Each holds an `st2`-native persona. |
+| `judges/` | the held-out bash judges (below) |
 
-## Grading
+## What makes it pass (all judges must pass — the team never sees these)
 
-- **Grade:** `fixture/grade.sh` mechanizes the ground-truth checks (never trusts self-reports).
-- **Held-out acceptance** — see `task.toml` `[grader]`: an independent check the team never sees, so the result can not be gamed by editing a unit test.
-- **Isolation is a hard PASS/FAIL gate:** every agent changes only the module/repo it owns; all coordination flows through the message bus. A non-owner change fails the run outright.
-
-See `task.toml` for the full spec and [`../../framework.md`](../../framework.md) for the runner, axes, and grading model.
+- **isolation** (`judges/isolation.sh`) — only `ir.oncall` authored; the supervisor owns no repo.
+- **visible suite** (`judges/suite.sh`) — `node --test` green on HEAD.
+- **root-cause correctness** (`judges/root-cause-correctness.sh`) — `/stats` returns **correct** percentile
+  values (verified independently from the frozen data) — a band-aid that stops the 500 but returns wrong
+  numbers fails here.
+- **regression is mutation-valid** (`judges/regression.sh`) — the integrity bar: a test was added that goes
+  **RED on the original buggy BASE src** (green-on-buggy-base = green-washing).
+- **two-phase / mitigation** (`judges/two-phase.sh`) — non-gating signal from the commit narrative.

@@ -1,0 +1,9 @@
+{
+  "name": "notekeeper",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "A tiny notes HTTP service.",
+  "main": "src/server.js",
+  "scripts": { "test": "node --test" }
+}

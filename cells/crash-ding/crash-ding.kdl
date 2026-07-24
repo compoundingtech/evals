@@ -1,0 +1,84 @@
+// crash-ding.kdl — the whole eval in one file.  `st2 eval ./` runs it; `st2 up ./` just boots the team.
+// The events/notifications path: when a supervised worker CRASHES (its pty session dies non-clean —
+// killed / vanished / non-zero exit), st2 respawns it AND sends a "worker crash: <id>" bus message (from
+// "st2") to EVERY ancestor up its supervisor chain (the direct sup AND the root cos), so a supervisor learns
+// its worker died without polling. A CLEAN exit (code 0 = finished) sends NOTHING — a false ding on a routine
+// finish is as bad as a missed crash. Harness-agnostic BY CONSTRUCTION: it keys on the pty SESSION dying, so
+// the SAME edge fires for a real CODEX worker (cd.xw) and a real CLAUDE worker (cd.cw). All judges held-out.
+
+env {                                    // cascades: agents + their processes inherit these
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "cd" {                              // prefixes the agents it holds; `supervisor` declares the chain st2 walks
+  agent "cos" {
+    workspace "./cos"                    // ROOT of the chain (no `supervisor` field) — a crash-ding recipient
+    env { ST_AGENT "cd.cos" }
+    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Set your status available, then stand by and do nothing (fault-injection eval).'"#
+  }
+  agent "sup" {
+    workspace "./sup"                    // supervisor tier — a crash-ding recipient
+    env { ST_AGENT "cd.sup" }
+    supervisor "cd.cos"
+    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Set your status available, then stand by and do nothing (fault-injection eval).'"#
+  }
+  agent "cw" {
+    workspace "./cw"                     // REAL claude worker — crashed by the injector (harness-agnostic path)
+    env { ST_AGENT "cd.cw" }
+    supervisor "cd.sup"
+    command #"exec claude --permission-mode auto 'You just cold-started. Set your status available, then stand by and do nothing (fault-injection eval).'"#
+  }
+  agent "xw" {
+    workspace "./xw"                     // REAL codex worker — crashed by the injector (proves harness-agnostic)
+    env { ST_AGENT "cd.xw" }
+    supervisor "cd.sup"
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started. Set your status available, then stand by and do nothing (fault-injection eval).'"#
+  }
+  agent "oom" {
+    workspace "./oom"                    // SYNTHETIC worker that exits 137 — deterministic nonzero-exit branch
+    env { ST_AGENT "cd.oom" }
+    supervisor "cd.sup"
+    command #"exec bash -c 'sleep 30; exit 137'"#
+  }
+  agent "clean" {
+    workspace "./clean"                  // NEGATIVE CONTROL — a synthetic worker that exits 0 (must stay SILENT)
+    env { ST_AGENT "cd.clean" }
+    supervisor "cd.sup"
+    command #"exec bash -c 'sleep 30; exit 0'"#
+  }
+  agent "inj" {
+    workspace "./inj"                    // eval-only fault injector — no bus voice, no supervisor chain
+    env { ST_AGENT "cd.inj" }
+    command #"exec bash ./crash-injector.sh"#
+  }
+}
+
+eval {                                   // `st2 eval` = copy the world, boot the team, kick off, supervise, then judge
+  copy "./fixture"
+  message {                              // minimal kickoff — there is no task; every seat just stands by
+    from "requester"
+    to "cd.cos"
+    content "./task.md"
+  }
+  max-timeout "180s"                     // no work loop → no done-signal; judges the final bus state at the cap
+  supervise                              // st2 supervises the team: a crash respawns the seat AND dings its chain; a clean exit is silent
+
+  judges {                               // all must pass; each one visible, nothing magic (all mechanical here)
+    judge "claude worker crash reaches the SUPERVISOR (worker crash: cd.cw → cd.sup)" {
+      exec "grep -rlq 'worker crash: cd.cw' $CATALOG/smalltalk/cd.sup/inbox $CATALOG/smalltalk/cd.sup/archive 2>/dev/null"
+    }
+    judge "claude worker crash reaches the COS too (up the chain — cos + supervisor both notified)" {
+      exec "grep -rlq 'worker crash: cd.cw' $CATALOG/smalltalk/cd.cos/inbox $CATALOG/smalltalk/cd.cos/archive 2>/dev/null"
+    }
+    judge "HARNESS-AGNOSTIC — the codex worker crash ALSO dings sup + cos (same edge, other family)" {
+      exec "grep -rlq 'worker crash: cd.xw' $CATALOG/smalltalk/cd.sup/inbox $CATALOG/smalltalk/cd.sup/archive 2>/dev/null && grep -rlq 'worker crash: cd.xw' $CATALOG/smalltalk/cd.cos/inbox $CATALOG/smalltalk/cd.cos/archive 2>/dev/null"
+    }
+    judge "nonzero-exit (137) crash dings sup + cos (the exit-code gate, not just a kill)" {
+      exec "grep -rlq 'worker crash: cd.oom' $CATALOG/smalltalk/cd.sup/inbox $CATALOG/smalltalk/cd.sup/archive 2>/dev/null && grep -rlq 'worker crash: cd.oom' $CATALOG/smalltalk/cd.cos/inbox $CATALOG/smalltalk/cd.cos/archive 2>/dev/null"
+    }
+    judge "clean exit (0) is SILENT — NO ding for cd.clean anywhere on the bus" {
+      exec "! grep -rlq 'crash: cd.clean' $CATALOG/smalltalk 2>/dev/null"
+    }
+  }
+}

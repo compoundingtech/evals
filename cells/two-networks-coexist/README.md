@@ -45,8 +45,9 @@ proving the partition isn't the trivial "two dead networks" pass. **Isolation is
 ## Run it
 
 ```sh
-bin/evals run two-networks-coexist   # (once wired) two-roots spinner → probe battery → grade
+st2 eval ./cells/two-networks-coexist/
 ```
 
-Caps: `st,pty,git,node` (+`claude` only for the live build). Spec: `task.toml`. Design:
-`TWO-NETWORKS-COEXIST-DESIGN.md` (private evals repo).
+`two-networks-coexist.kdl` is a team-less run-step eval: its `run { step … }` stands up two independent
+catalogs/roots and runs the probe battery; the held-out `judges/` assert the two coexist without cross-talk
+(isolation). Caps: `st,pty,git,node`. Design: `TWO-NETWORKS-COEXIST-DESIGN.md` (private evals repo).

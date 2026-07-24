@@ -1,0 +1,31 @@
+// st2-network.kdl — the whole eval in one file.  `st2 eval ./` runs it (team-less, deterministic).
+// The reboot acceptance test: `st2 up` HOSTS a network end-to-end — it brings a rendered seat online (the
+// supervisor holds the host-lock, the seat's task is alive) AND the bus works (a message addressed to the
+// hosted agent is delivered to its inbox). Does the host command stand up a ding-only net end-to-end.
+// All judges held-out.
+
+env {
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+eval {
+  copy "./fixture"                       // net/hetz/dev/agent.kdl — the seat st2 up will host
+  max-timeout "60s"
+
+  // host the net: background st2 up (holds the lock + boots the seat), wait until doctor passes, then — while
+  // the host is alive — probe doctor (org live) AND deliver a message to the hosted seat's bus; then kill up.
+  run "host-and-probe" {
+    command #"sh -c 'st2 up "$CATALOG/net" --host hetz >/dev/null 2>&1 & UP=$!; for i in $(seq 1 40); do st2 doctor "$CATALOG/net" --host hetz >/dev/null 2>&1 && break; sleep 0.4; done; echo "=== doctor ==="; st2 doctor "$CATALOG/net" --host hetz; echo "=== send ==="; st2 message send hetz.dev --root "$CATALOG/smalltalk" --as tester -m "NET-ROUNDTRIP-token"; sleep 1; kill $UP 2>/dev/null; exit 0'"#
+  }
+  run "inbox" { command #"sh -c 'grep -rhs NET-ROUNDTRIP "$CATALOG/smalltalk" || true'"# }
+
+  judges {
+    judge "st2 up HOSTS the network — doctor reports all checks passed (supervisor live + seat's task alive)" {
+      exec "grep -q 'all checks passed' $RUNS_DIR/host-and-probe.out"
+    }
+    judge "the bus WORKS end-to-end — a message addressed to the hosted agent lands in its inbox (round-trip)" {
+      exec "grep -q NET-ROUNDTRIP $RUNS_DIR/inbox.out"
+    }
+  }
+}

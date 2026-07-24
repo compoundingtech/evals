@@ -1,0 +1,41 @@
+// compose-config-load.kdl — the whole eval in one file.  `st2 eval ./` runs it (team-less, deterministic).
+// Proves a repo's OWN config (its CLAUDE.md + project skills) loads ALONGSIDE the composed seat overlay —
+// the overlay is ADDITIVE, not a clobber. `st2 render-agent` creates NEW overlay files (.convoy/, and a
+// .claude/rules/convoy.md LOADER that @-imports the persona) and does NOT touch the repo's own CLAUDE.md or
+// other rules. So the repo's config survives byte-unchanged AND the persona is present via the loader. All judges held-out.
+
+env {
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+eval {
+  copy "./fixture"                       // repo/ (its OWN CLAUDE.md + a project skill, _git -> .git) + persona.md
+  max-timeout "120s"
+
+  run "hash-before" { command #"sh -c 'git -C $CATALOG/repo hash-object CLAUDE.md'"# }   // the repo's own CLAUDE.md, pre-compose
+  run "compose" {
+    command "st2 render-agent --identity ccl-agent --dir $CATALOG/repo --persona $CATALOG/persona.md $CATALOG"
+  }
+  run "hash-after"  { command #"sh -c 'git -C $CATALOG/repo hash-object CLAUDE.md'"# }    // must be IDENTICAL (not clobbered)
+  run "convoy-rules" { command #"sh -c 'cat $CATALOG/repo/.claude/rules/convoy.md 2>/dev/null || echo MISSING'"# }  // the loader
+  run "own-skill"   { command #"sh -c 'test -f $CATALOG/repo/.claude/skills/greet/SKILL.md && echo SKILL-PRESENT || echo SKILL-GONE'"# }
+
+  judges {
+    judge "the overlay was composed — .convoy/PERSONA.md written into the repo (not a no-op)" {
+      exec "test -f $CATALOG/repo/.convoy/PERSONA.md"
+    }
+    judge "the repo's OWN CLAUDE.md is UNTOUCHED (additive overlay, not a clobber) — byte-identical before/after" {
+      exec #"sh -c 'test "$(cat $RUNS_DIR/hash-before.out)" = "$(cat $RUNS_DIR/hash-after.out)"'"#
+    }
+    judge "the repo's CLAUDE.md is still git-tracked (not removed/replaced)" {
+      exec "git -C $CATALOG/repo ls-files --error-unmatch CLAUDE.md"
+    }
+    judge "the composed persona loads THROUGH the overlay — .claude/rules/convoy.md contains the @-imports" {
+      exec "grep -q '@' $RUNS_DIR/convoy-rules.out"
+    }
+    judge "the repo's own project skill survives the compose (loads alongside)" {
+      exec "grep -q SKILL-PRESENT $RUNS_DIR/own-skill.out"
+    }
+  }
+}

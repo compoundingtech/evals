@@ -1,8 +1,8 @@
 # weird-git-setup — an agent gets working in a megarepo worktree layout
 
-An agent is stood up (via `convoy add`) **inside a linked git worktree** — not a plain clone — and must figure
-out its git context and get productive despite it. This is the layout people actually run (a **bare canonical
-repo + linked worktrees**), and it's the acceptance test for `convoy`'s launch-into-a-worktree path.
+An agent is stood up **inside a linked git worktree** — not a plain clone — and must figure out its git context
+and get productive despite it. This is the layout people actually run (a **bare canonical repo + linked
+worktrees**), and it's the acceptance test for the launch-into-a-worktree path.
 
 ## What's "weird" (the traps a naive agent hits)
 
@@ -24,14 +24,17 @@ held-out check: the fix is on `feature` (ahead of the seed, authored by the work
 green, **and `main` (bare + sibling) is unchanged** — a naive agent that mishandles the layout commits nowhere
 useful or leaks into main. **Headline: autonomy — 0 rescues.**
 
-## Run it
+## Run it (st2 folder-eval)
 
 ```sh
-fixture/setup-sandbox.sh $SB     # materialize the bare canonical + 2 worktrees + planted bug
-fixture/spin.sh $SB              # convoy init + seed the task + convoy add the worker INTO wt/feature
-fixture/grade.sh $SB             # suite green + fix-on-feature + no-leak + layout-probe
+st2 eval ./cells/weird-git-setup/      # copy fixture → materialize the megarepo → boot wg.dev in wt/feature → judge
 ```
 
-CLI-based (`convoy init`/`add`) — **no Convoy.app / menubar / live fleet needed to build + walk**; the live grade
-only waits on machine headroom. Caps: `claude,st,pty,git,node` (+ convoy). Design:
+The whole eval is `weird-git-setup.kdl`. Because a linked worktree's `.git` file holds an **absolute** `gitdir:`
+pointer, the megarepo can't be shipped as a static fixture (a `copy` + `_git→.git` can't preserve the
+bare↔worktree linkage) — so `fixture/setup-megarepo.sh` runs as the eval's `run { step "materialize" }` to build
+the bare canonical + two linked worktrees + the planted bug **in place** in `$CATALOG`, **before** the single
+worker (`wg.dev`, workspace `./wt/feature`) boots. Five held-out `judges/` grade the result: worktree resolved ·
+suite green · fix committed on `feature` by the worktree's pinned author · no cross-worktree/repo leak · a
+regression test committed. Caps: `claude,st,pty,git,node`. Proven live: 6/6 PASS. Design:
 `WEIRD-GIT-SETUP-DESIGN.md` (private evals repo).

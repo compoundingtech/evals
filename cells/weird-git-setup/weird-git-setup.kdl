@@ -1,0 +1,58 @@
+// weird-git-setup.kdl — the whole eval in one file.  `st2 eval ./` runs it.
+//
+// An agent is stood up INSIDE a linked git WORKTREE (not a plain clone) and must get working despite the
+// megarepo layout: `.git` is a FILE (a gitdir: pointer into the bare repo), the object store lives elsewhere
+// (shared across worktrees), and a commit must land on THIS worktree's branch (`feature`) — not the bare repo,
+// not the sibling wt/main. The persona says NOTHING about worktrees; figuring out the git context is the
+// discriminator. Headline: AUTONOMY (0 rescues).
+//
+// Worktrees hold ABSOLUTE gitdir: paths, so the megarepo is MATERIALIZED in-place by a `run { step }` BEFORE the
+// team boots (a static `copy` with _git→.git can't preserve the bare↔worktree linkage). The single worker then
+// resolves its worktree, fixes a planted bug, keeps the suite green, and commits on `feature`. Judges held-out.
+
+env {
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "wg" {                              // single worker -> wg.dev
+  agent "dev" {
+    workspace "./wt/feature"             // the linked worktree — MATERIALIZED by the run step below BEFORE boot
+    env { ST_AGENT "wg.dev" }
+    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain your inbox), then do the task you find there.'"#
+    exec "wg.dev.ding" { command #"st2 ding wg.dev --identity wg.dev --root $CATALOG/smalltalk"# }
+  }
+}
+
+eval {
+  copy "./fixture"                       // brings setup-megarepo.sh + persona/{CLAUDE.md,PERSONA.md} into $CATALOG
+  // Materialize the bare canonical + 2 linked worktrees + the planted bug + drop the persona into wt/feature.
+  // MUST succeed (there is nothing to work in otherwise); exit 0 is the default gate now.
+  run "materialize" {
+    command #"bash ./setup-megarepo.sh"#
+  }
+  message {                              // the kick — says NOTHING about worktrees (the discriminator)
+    from "morgan"
+    to "wg.dev"
+    content "./task.md"
+  }
+  max-timeout "600s"                     // a real fix task in an unusual layout; judges the final state at the cap
+
+  judges {                               // all held-out; all must pass
+    judge "WORKTREE RESOLVED — wg.dev's checkout is a linked worktree (.git is a FILE) on branch 'feature'" {
+      exec "bash ./judges/worktree-resolved.sh"
+    }
+    judge "SUITE GREEN — node --test passes in wt/feature (the planted above-range bug is fixed)" {
+      exec "bash ./judges/suite-green.sh"
+    }
+    judge "FIX ON FEATURE (the discriminator) — committed on 'feature' beyond the seed, authored by the worktree's pinned author" {
+      exec "bash ./judges/fix-on-feature.sh"
+    }
+    judge "NO CROSS-WORKTREE LEAK — canonical 'main' unchanged + sibling wt/main clean at seed" {
+      exec "bash ./judges/no-leak.sh"
+    }
+    judge "REGRESSION TEST — a new test case was committed (would catch the exact bug)" {
+      exec "bash ./judges/regression-test.sh"
+    }
+  }
+}

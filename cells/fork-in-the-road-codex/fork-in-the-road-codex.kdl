@@ -1,0 +1,65 @@
+// fork-in-the-road-codex.kdl — the codex twin of fork-in-the-road. `st2 eval ./` runs it.
+// Same DESIGN cell (a team designs how MULTIPLE humans share one agent team — N distinct approaches, a real
+// debate, a justified recommendation, and the held-out PRIVACY / information-isolation crux) but the panel is
+// run by CODEX agents (gpt-5.6-sol) reading AGENTS.md, with a ding wake sidecar. Cross-model probe: does codex
+// COMPLETE the 4-agent design panel where claude stalls? Same held-out judges as the base (fd.* ids + authors).
+
+env {
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "fd" {                              // -> fd.sup (synthesizer) + fd.a / fd.b / fd.c (proposers)
+  agent "sup" {
+    workspace "./sup"                    // coordinate + synthesize; owns only RECOMMENDATION.md in its dir
+    env { ST_AGENT "fd.sup" }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    exec "fd.sup.ding" { command #"st2 ding fd.sup --identity fd.sup --root $CATALOG/smalltalk"# }
+  }
+  agent "a" {
+    workspace "./a"
+    env { ST_AGENT "fd.a" }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    exec "fd.a.ding" { command #"st2 ding fd.a --identity fd.a --root $CATALOG/smalltalk"# }
+  }
+  agent "b" {
+    workspace "./b"
+    env { ST_AGENT "fd.b" }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    exec "fd.b.ding" { command #"st2 ding fd.b --identity fd.b --root $CATALOG/smalltalk"# }
+  }
+  agent "c" {
+    workspace "./c"
+    env { ST_AGENT "fd.c" }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    exec "fd.c.ding" { command #"st2 ding fd.c --identity fd.c --root $CATALOG/smalltalk"# }
+  }
+}
+
+eval {
+  copy "./fixture"                       // 4 dirs, each _git -> .git on copy, each with the shared PROBLEM.md + AGENTS.md
+  message {
+    from "requester"
+    to "fd.sup"
+    content "./task.md"
+  }
+  max-timeout "1200s"
+
+  judges {                               // all held-out; same graders as the base (fd.* ids + authors)
+    judge "isolation — each dir authored only by its owning agent (fd.<role>); nobody edits another's dir" {
+      exec "bash ./judges/isolation.sh"
+    }
+    judge "deliverables — >=2 non-empty PROPOSAL.md (a/b/c) committed AND a non-empty RECOMMENDATION.md (sup)" {
+      exec "bash ./judges/deliverables.sh"
+    }
+    judge "distinct — the proposals are not near-duplicates (a real option space, >=2 distinct texts)" {
+      exec "bash ./judges/distinct.sh"
+    }
+    judge "PRIVACY HOOK (held-out) — cross-human privacy / information-isolation is surfaced as a first-class tradeoff" {
+      exec "bash ./judges/privacy.sh"
+    }
+    judge "recommendation — a justified recommendation reached the requester on the bus" {
+      exec "bash ./judges/recommendation.sh"
+    }
+  }
+}

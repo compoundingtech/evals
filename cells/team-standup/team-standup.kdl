@@ -1,0 +1,46 @@
+// team-standup.kdl — the whole eval in one file.  `st2 eval ./` runs it; `st2 up ./` just boots the team.
+// Proves a chief-of-staff can stand up a WORKING specialist AT RUNTIME (not pre-declared): ts.cos reads its
+// roster, runs `st2 render-agent` + `st2 up --once` to stand up `taskflow-dev` to own the `taskflow` repo,
+// delegates completeTask(id) over the bus, taskflow-dev does the work in its own repo + commits + reports,
+// and ts.cos walks it read-only + confirms. Only ts.cos is DECLARED — taskflow-dev is a RUNTIME seat, which
+// `supervise` reaps at teardown (PTY_ROOT-scoped). Isolation is the hard gate. All judges held-out.
+
+env {                                    // cascades: agents + their processes inherit these
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "ts" {                              // only the CoS is declared; the specialist is stood up at runtime
+  agent "cos" {
+    workspace "./cos"                    // coordinate-only cwd (owns no product repo); reads team.md
+    env { ST_AGENT "ts.cos" }
+    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    exec "ts.cos.ding" { command #"st2 ding ts.cos --identity ts.cos --root $CATALOG/smalltalk"# }
+  }
+}
+
+eval {                                   // `st2 eval` = copy the world, boot the team, kick off, supervise, then judge
+  copy "./fixture"                       // pre-built world (taskflow/_git -> taskflow/.git; cos/team.md; personas/)
+  message {                              // kickoff — the standup request, from the synthetic principal
+    from "jordan"
+    to "ts.cos"
+    content "./task.md"
+  }
+  max-timeout "1200s"                    // no declared worker → no sup->requester done-signal; judges final state at the cap
+  supervise                              // supervises the team + REAPS the runtime-spawned taskflow-dev at teardown (PTY_ROOT-scoped)
+
+  judges {                               // all must pass; each one visible, nothing magic (all mechanical here)
+    judge "STANDUP — taskflow-dev was actually stood up as a live seat on the bus" {
+      exec "bash ./judges/standup.sh"
+    }
+    judge "isolation — only taskflow-dev authored the taskflow repo; the CoS owns none" {
+      exec "bash ./judges/isolation.sh"
+    }
+    judge "task correct (held-out) — completeTask BEHAVES (done id -> updated task; unknown id -> throws) + suite green + regression" {
+      exec "bash ./judges/task-correct.sh"
+    }
+    judge "coordination — the delegate->report loop is visible on the bus (cos->dev brief AND dev->cos report)" {
+      exec "bash ./judges/coordination.sh"
+    }
+  }
+}

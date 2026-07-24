@@ -1,0 +1,54 @@
+// ghost-bug-codex.kdl — the whole eval in one file.  `st2 eval ./` runs it; `st2 up ./` just boots the team.
+// The ghost-bug debug loop (labelkit shared-default-mutation bug), run by CODEX seats — proving the
+// folder-eval format handles the codex harness (codex reads AGENTS.md; a ding wake sidecar since codex has
+// no asyncRewake). Same held-out judges as ghost-bug. All judges are held-out.
+
+env {                                    // cascades: agents + their processes inherit these
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "gbx" {                             // prefixes the agents it holds -> gbx.sup, gbx.fix
+  agent "sup" {
+    workspace "./sup"                    // coordinate-only cwd (owns no product repo)
+    env { ST_AGENT "gbx.sup" }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "gbx.sup.ding" { command #"st2 ding gbx.sup --identity gbx.sup --root $CATALOG/smalltalk"# }
+  }
+  agent "fix" {
+    workspace "./worker"                 // owns the labelkit repo (this dir)
+    env { ST_AGENT "gbx.fix" }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "gbx.fix.ding" { command #"st2 ding gbx.fix --identity gbx.fix --root $CATALOG/smalltalk"# }
+  }
+}
+
+eval {                                   // `st2 eval` = copy the world, boot the team, kick off, then judge
+  copy "./fixture"                       // pre-built starting world, 1:1 (worker/_git -> worker/.git on copy)
+  message {                              // kickoff — same as `st2 message send`
+    from "requester"
+    to "gbx.sup"
+    content "./task.md"
+  }
+  max-timeout "1200s"                    // the whole eval must finish within this
+
+  judges {                               // all must pass; each one visible, nothing magic (all mechanical here)
+    judge "isolation — only gbx.fix authored; supervisor owns no repo; change stays in src/test/package/README" {
+      exec "bash ./judges/isolation.sh"
+    }
+    judge "visible suite is green on HEAD" {
+      exec "bash ./judges/suite.sh"
+    }
+    judge "root cause — the shared-default mutation is gone (behavior + no-mutation probes, blind to how)" {
+      exec "bash ./judges/root-cause.sh"
+    }
+    judge "regression test is mutation-valid — RED on the buggy BASE src" {
+      exec "bash ./judges/regression.sh"
+    }
+    judge "coordination — delegate->report visible on the bus" {
+      exec "bash ./judges/coordination.sh"
+    }
+  }
+}

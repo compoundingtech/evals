@@ -1,0 +1,38 @@
+// pty-send-peek.kdl — the whole eval in one file.  `st2 eval ./` runs it (team-less: no agents, no message —
+// the run{} steps ARE the work).  Proves pty's inject/inspect verbs work end-to-end against a real session:
+// `pty send` injects input the session's PROCESS acts on, and `pty peek` returns the session's REAL live output.
+// A deterministic ACK-reader (prints READY, then "ACK:<line>" per input line) makes it ungameable — a matching
+// "ACK:<token>" proves the process RECEIVED + ACTED on the sent bytes (not merely a terminal echo). All judges held-out.
+
+env {                                    // cascades to the run steps (st2 pty auto-sets CATALOG/ST_ROOT/PTY_ROOT)
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+eval {                                   // team-less = arrange (nothing) → run (act) → judges (assert)
+  max-timeout "120s"
+
+  // Flat run form: each `run "label"` IS one step, run in file order; each captures stdout/err/exit to
+  // $RUNS_DIR/<label>.* (and auto-logs to $LOGS_DIR/<label>.log). Exit 0 is the default gate now.
+  run "spawn" {                          // a deterministic ACK-reader session, left running in the background
+    command #"st2 pty run -d --id psp -- bash -c 'echo READY; while IFS= read -r line; do echo "ACK:$line"; done'"#
+  }
+  run "settle"   { command "sleep 2" }                       // let the process print its READY banner
+  run "peek-pre" { command "st2 pty peek --plain psp" }      // NEGATIVE CONTROL — the token must be ABSENT here
+  run "send"     {                                           // inject the random-ish token + Enter (raw text has no implicit newline)
+    command #"st2 pty send psp --seq "PSP-9f3a7c2e" --seq key:return"#
+  }
+  run "peek-post" { command #"sh -c 'sleep 2; st2 pty peek --plain psp'"# }   // the process should have ACK'd the token by now
+
+  judges {                               // all must pass; each one visible, nothing magic
+    judge "peek returns REAL live output — the process's READY banner is present in the pre-send peek" {
+      exec "grep -q 'READY' $RUNS_DIR/peek-pre.out"
+    }
+    judge "negative control — the token is ABSENT before the send (peek reflects real state, not a pre-bake)" {
+      exec "! grep -q 'PSP-9f3a7c2e' $RUNS_DIR/peek-pre.out"
+    }
+    judge "ROUND-TRIP — after the send, peek shows ACK:<token> (the PROCESS received + acted on the injected bytes)" {
+      exec "grep -q 'ACK:PSP-9f3a7c2e' $RUNS_DIR/peek-post.out"
+    }
+  }
+}

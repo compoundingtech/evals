@@ -1,0 +1,9 @@
+{
+  "name": "widget",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A tiny string-utility lib.",
+  "main": "src/index.js",
+  "scripts": { "test": "node --test" }
+}

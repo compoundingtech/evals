@@ -1,0 +1,47 @@
+// skill-inheritance.kdl — the whole eval in one file. `st2 eval ./` runs it.
+//
+// A composed worker inherits + USES user-brought Claude Code skills across TWO scopes, as a UNION:
+//   • PROJECT scope — repo/.claude/skills/evalskill-project, auto-loaded because the worker's cwd IS the repo.
+//   • PLUGIN  scope — a local plugin (evalpkg) loaded via `claude --plugin-dir` (session-only), spliced straight
+//                     into the worker's launch command.
+// Each skill's body carries a SECRET TOKEN (never in the kick) + tells the worker to write it to a sentinel file.
+// A sentinel bearing the right token proves that skill actually LOADED + FIRED — it was otherwise unobtainable.
+// Both firing = the worker sees BOTH scopes at once (union). Judges held-out; isolation-safe by construction
+// (project skills are cwd-local, --plugin-dir is session-only → the operator's ~/.claude is untouched).
+
+env {
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "si" {                              // single worker -> si.agent
+  agent "agent" {
+    workspace "./repo"                   // cwd = the repo → PROJECT scope (.claude/skills) auto-loads; sentinels land here
+    env { ST_AGENT "si.agent" }
+    // --plugin-dir splices the PLUGIN scope (session-only) straight into the launch command.
+    command #"exec claude --permission-mode auto --plugin-dir $CATALOG/plugin/evalpkg 'You just cold-started. Run your boot ritual (set status available, drain your inbox), then do the task you find there.'"#
+    exec "si.agent.ding" { command #"st2 ding si.agent --identity si.agent --root $CATALOG/smalltalk"# }
+  }
+}
+
+eval {
+  copy "./fixture"                       // repo/ (project skill + persona) + plugin/evalpkg/ (plugin skill)
+  message {                              // the kick — names NO tokens/sentinels (the worker must invoke the skills)
+    from "requester"
+    to "si.agent"
+    content "./task.md"
+  }
+  max-timeout "420s"                     // single-agent skill invocation; judges the final state at the cap
+
+  judges {                               // all held-out; all must pass
+    judge "PROJECT scope inherited — SKILL_PROJECT.txt carries the project skill's secret token (repo/.claude/skills fired)" {
+      exec "bash ./judges/project-scope.sh"
+    }
+    judge "PLUGIN scope inherited (UNION) — SKILL_PLUGIN.txt carries the plugin skill's secret token (--plugin-dir fired)" {
+      exec "bash ./judges/plugin-scope.sh"
+    }
+    judge "ISOLATION — the eval polluted no personal scope (~/.claude/skills + ~/.claude/plugins clean)" {
+      exec "bash ./judges/isolation.sh"
+    }
+  }
+}

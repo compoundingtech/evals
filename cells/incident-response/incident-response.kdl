@@ -1,0 +1,54 @@
+// incident-response.kdl — the whole eval in one file.  `st2 eval ./` runs it; `st2 up ./` just boots the team.
+// Prod incident: `pulse` /stats returns 500s (a percentile bug). An incident commander + on-call must
+// triage, stop the bleed, find + fix the ROOT cause (correct values, not a band-aid), and add a
+// mutation-valid regression test. All judges are held-out.
+
+env {                                    // cascades: agents + their processes inherit these
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "ir" {                              // prefixes the agents it holds -> ir.sup, ir.oncall
+  agent "sup" {
+    workspace "./sup"                    // coordinate-only cwd / incident commander (owns no repo)
+    env { ST_AGENT "ir.sup" }
+    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "ir.sup.ding" { command #"st2 ding ir.sup --identity ir.sup --root $CATALOG/smalltalk"# }
+  }
+  agent "oncall" {
+    workspace "./worker"                 // owns the pulse repo (this dir)
+    env { ST_AGENT "ir.oncall" }
+    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "ir.oncall.ding" { command #"st2 ding ir.oncall --identity ir.oncall --root $CATALOG/smalltalk"# }
+  }
+}
+
+eval {                                   // `st2 eval` = copy the world, boot the team, kick off, then judge
+  copy "./fixture"                       // pre-built starting world, 1:1 (worker/_git -> worker/.git on copy)
+  message {                              // kickoff — same as `st2 message send`
+    from "requester"
+    to "ir.sup"
+    content "./task.md"
+  }
+  max-timeout "1200s"                    // the whole eval must finish within this
+
+  judges {                               // all must pass; each one visible, nothing magic
+    judge "isolation — only ir.oncall authored; supervisor owns no repo" {
+      exec "bash ./judges/isolation.sh"
+    }
+    judge "visible suite is green on HEAD" {
+      exec "bash ./judges/suite.sh"
+    }
+    judge "root-cause correctness — /stats returns CORRECT values (not a band-aid)" {
+      exec "bash ./judges/root-cause-correctness.sh"
+    }
+    judge "regression test is mutation-valid — RED on the buggy BASE src" {
+      exec "bash ./judges/regression.sh"
+    }
+    judge "two-phase / mitigation narrative (non-gating signal)" {
+      exec "bash ./judges/two-phase.sh"
+    }
+  }
+}

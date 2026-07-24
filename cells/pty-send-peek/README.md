@@ -2,7 +2,7 @@
 
 **Type:** pty / verb-surface · **Ship:** ship
 
-**Capabilities required:** `pty,git` · run `bin/evals preflight` to confirm. No LLM, no bus, no convoy — pure
+**Capabilities required:** `pty,git`. No LLM, no bus — pure
 pty. Deterministic: a random per-run token + a fixed ACK-reader process, so the outcome is fully determined.
 
 **Discriminates:** does the **pty verb surface actually work** — does `pty send` deliver bytes the session's
@@ -27,9 +27,9 @@ The session runs a deterministic **ACK-reader** (`printf READY`, then `ACK:<line
 ## Run it
 
 ```sh
-fixture/probe.sh <SB>   # spawn the ACK-reader, send a random token, capture the screen before + after
-fixture/grade.sh <SB>   # assert the round-trip + negative control + isolation (from the captured screen)
+st2 eval ./cells/pty-send-peek/
 ```
 
-or `bin/evals run pty-send-peek` (runs probe then grade). Use a SHORT `<SB>` (e.g. `/tmp/psp`) so the pty unix
-socket path stays under 104 bytes. Net-free and self-cleaning (the session is `kill`+`rm`'d at the end).
+`pty-send-peek.kdl` is a team-less run-step eval: its `run { step … }` spawns the ACK-reader pty, sends a random
+token, and captures the screen before + after; the held-out `judges/` assert the round-trip + a negative control +
+isolation from the captured screen. Net-free and self-cleaning (the hermetic catalog is torn down at the end).

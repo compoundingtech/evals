@@ -1,0 +1,56 @@
+// docs.kdl — the whole eval in one file.  `st2 eval ./` runs it; `st2 up ./` just boots the team.
+// Docs / DX: document the `checkout` library so a FRESH developer with ONLY the docs can use it. Three
+// non-obvious, silent-failure contracts (integer cents; tax in basis points; immutable/return-new; seal()
+// before total()) that a newcomer can't guess — only good docs reveal them. The definitive test is the
+// held-out cold-reader judge. All judges are held-out.
+
+env {                                    // cascades: agents + their processes inherit these
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+}
+
+team "doc" {                             // prefixes the agents it holds -> doc.sup, doc.writer
+  agent "sup" {
+    workspace "./sup"                    // coordinate-only cwd (owns no product repo)
+    env { ST_AGENT "doc.sup" }
+    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "doc.sup.ding" { command #"st2 ding doc.sup --identity doc.sup --root $CATALOG/smalltalk"# }
+  }
+  agent "writer" {
+    workspace "./worker"                 // owns the checkout repo (this dir)
+    env { ST_AGENT "doc.writer" }
+    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    /- ding {}
+    exec "doc.writer.ding" { command #"st2 ding doc.writer --identity doc.writer --root $CATALOG/smalltalk"# }
+  }
+}
+
+eval {                                   // `st2 eval` = copy the world, boot the team, kick off, then judge
+  copy "./fixture"                       // pre-built starting world, 1:1 (worker/_git -> worker/.git on copy)
+  message {                              // kickoff — same as `st2 message send`
+    from "requester"
+    to "doc.sup"
+    content "./task.md"
+  }
+  max-timeout "1200s"                    // the whole eval must finish within this
+
+  judges {                               // all must pass; each one visible, nothing magic
+    judge "isolation + docs lane — only doc.writer authored; sup owns no repo; src/ unchanged" {
+      exec "bash ./judges/isolation.sh"
+    }
+    judge "visible suite is green on HEAD" {
+      exec "bash ./judges/suite.sh"
+    }
+    judge "docs actually written (README + docs/, non-trivial, worked example)" {
+      exec "bash ./judges/docs-written.sh"
+    }
+    judge "completeness signals — the 3 contracts + return shape (non-gating)" {
+      exec "bash ./judges/completeness.sh"
+    }
+    judge "COLD READER — a fresh docs-only agent computes the right total (1944)" {
+      timeout "360s"                     // per-judge cap — the cold reader runs a real `claude --print`
+      exec "bash ./judges/cold-reader.sh"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "pulse",
+  "version": "1.4.0",
+  "private": true,
+  "type": "module",
+  "description": "A tiny in-memory metrics service (event ingest + /stats percentiles).",
+  "main": "src/server.js",
+  "scripts": { "start": "node src/server.js", "test": "node --test" }
+}

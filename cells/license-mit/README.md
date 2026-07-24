@@ -1,30 +1,39 @@
-# license-mit — license cell
+# license-mit — the smallest real team loop
 
-**Discriminates:** delegate->execute->verify->confirm loop + isolation (matrix-capable)
+**What it evaluates.** One request in — *"the `widget` library's license should be MIT"* — and a
+coordinated **delegate → execute → verify → confirm** loop out, with isolation held. A supervisor
+(`mix.sup`, coordinate-only, owns no repo) delegates to a specialist (`mix.worker`, owns the `widget`
+repo); the worker relicenses + commits; the supervisor verifies read-only and confirms back to the
+`requester`. It is the smallest end-to-end proof that the team loop works.
 
-**Capabilities required:** `claude,st,pty,git`  ·  run `bin/evals preflight` to confirm your setup supports this cell.
+**Run it:** `st2 eval ./cells/license-mit/`
 
-## Run it
+`st2 eval` copies the fixture into a fresh catalog, boots the team + a judge agent, delivers `task.md`
+to `mix.sup`, runs to the supervisor's confirmation (or `max-timeout`), then runs the judges → verdict.
 
-The team is launched via the real `st launch` (the same command a user runs). `fixture/spin.sh` is
-**self-isolating** — it creates and exports its own scratch bus root at `$SB/st-root`, so nothing touches
-your live network; the st-launched agents inherit that root. You only need `PERSONAS_DIR` (a checkout of
-the public personas repo — `bin/ensure-personas.sh` clones it pinned; the runner sets it for you). No
-external `ST_ROOT` / `ST_HOOKS_DIR` required.
+## The folder
 
-Run it: `fixture/spin.sh` (auto-materializes the sandbox if absent), or `bin/evals run license-mit`.
-Tear down after grading with `bin/evals teardown <SB>`.
+| path | what it is |
+| --- | --- |
+| `license-mit.kdl` | the whole eval: the `mix` team (sup + worker) + the `eval {}` block (copy, kickoff, judges) |
+| `task.md` | the kickoff message delivered to `mix.sup` |
+| `fixture/` | the pre-built starting world, copied 1:1: `worker/` (the widget repo, **proprietary** license, base commit + owner-pinned author, git db stored as `worker/_git` → `.git` on copy) and `sup/` (coordinate-only, no repo). Each holds an `st2`-native persona. |
+| `judges/` | the held-out bash judges (below) |
 
-**Default = Claude-only** (Claude supervisor + Claude worker) — the most reliable from-scratch run, matching
-this cell's declared caps. This is the **matrix cell**, so the same task/world also runs cross-family: use
-`fixture/configure-codex-agent.sh` (Codex worker + ding wake sidecar) or `fixture/configure-glm-agent.sh`
-(GLM via the Claude-Code harness) to swap a seat's family. (Codex-native end-to-end lives in the separate
-`license-mit-codex` cell.)
+## What makes it pass (all judges must pass — the team never sees these)
 
-## Grading
-
-- **`fixture/grade.sh [SANDBOX]`** — mechanizes the ground-truth checks once the loop closes; never trusts a self-report. It reads only git metadata, the committed license text, and the smalltalk bus files, so a PASS means the loop really happened. Run it after the run, then tear down with `bin/evals teardown <SANDBOX>`.
-- **Held-out acceptance** — see `task.toml` `[grader]`: an independent check the team never sees, so the result can not be gamed by editing a unit test.
-- **Isolation is a hard PASS/FAIL gate:** every agent changes only the module/repo it owns; all coordination flows through the message bus. A non-owner change fails the run outright. Note: the worker repo's git identity is *pinned* to the worker, so git-author alone can't catch a "supervisor did it itself" violation — the honest proxy is structural (the supervisor owns no repo) **plus** coordination-visibility (a completed change with no delegate→report thread is the out-of-band signature). `grade.sh` encodes exactly that.
-
-See `task.toml` for the full spec and [`../../framework.md`](../../framework.md) for the runner, axes, and grading model.
+- **isolation** (`judges/isolation.sh`) — the supervisor's dir is not a git repo (structurally cannot
+  commit); the change stays on the license surface. (Commit author is reported but not the gate — the
+  repo identity is owner-pinned, so isolation is proven structurally + by the coordination judge.)
+- **coordination** (`judges/coordination.sh`) — the full loop is visible on the bus: a `mix.sup → mix.worker`
+  delegation, a `mix.worker → mix.sup` report, and a `mix.sup → requester` confirmation that **post-dates**
+  the worker's report (a *verified* confirmation, not the initial "on it" ack). Also reports the autonomy
+  signal (post-kick rescues).
+- **LICENSE is real MIT** (declarative) — `worker/LICENSE` has the MIT permission grant + the AS-IS
+  warranty and lacks the proprietary text.
+- **package.json declares MIT** (declarative) — the SPDX `license` field is `MIT` (a job that flips
+  LICENSE but leaves `package.json` proprietary is still proprietary to tooling).
+- **committed + clean** (`judges/committed.sh`) — the LICENSE change is in `base..HEAD` and the worktree
+  is clean.
+- **confirmation is verified, not a rubber-stamp** (ask-agent) — a cross-family judge reads the
+  supervisor's confirmation and passes only if it cites the real commit + the verification run.

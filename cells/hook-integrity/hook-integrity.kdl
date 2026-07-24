@@ -1,0 +1,65 @@
+// hook-integrity.kdl — the whole eval in one file. `st2 eval ./` runs it.
+//
+// Discriminates a Claude Code SessionStart hook FIRING (proven from ground truth) vs merely being configured —
+// the silent-hook failure mode where hooks are wired but never run. Two legs, identical except one flag:
+//   • hi.on  — hooks fire → the real smalltalk session-start.sh injects context/now.md, AND a parallel witness hook
+//              records what it injected. ✅
+//   • hi.off — hooks-disabled control (`--settings disableAllHooks`) → same hooks configured, same now.md seeded,
+//              but claude fires NEITHER. ❌  (claude 2.1.x removed the old `--no-hooks` flag; disableAllHooks is the
+//              surgical replacement — suppresses ONLY hook firing, keeps auth + the configured hooks.)
+//
+// DRIFT-PROOF discriminator (a hook SIDE-EFFECT — ZERO model-behavior). setup.sh adds a second SessionStart hook, a
+// WITNESS (hook-witness.sh), alongside the REAL, UNMODIFIED session-start.sh. The witness records the injected
+// payload (now.md, carrying a per-run secret token) to $CATALOG/hook-witness/<id>.injected. It fires iff SessionStart
+// fires (iff the real hook fires); disableAllHooks co-suppresses it on the OFF leg. The judges assert on the WITNESS,
+// not on any model output: ON present (+ the real token) / OFF absent. A produced witness is attributable to the hook
+// actually running — and it is immune to the claude-2.1.x drift that defeated the old HOOK_OK.txt control (a modern
+// agent reaches now.md via `st context read`, a non-hook path, and could write the token itself, but it CANNOT forge
+// the hook's witness). All judges held-out. Isolation-safe: each leg is a hermetic catalog workspace.
+
+env {
+  ST_ROOT  "$CATALOG/smalltalk"
+  PTY_ROOT "$CATALOG/pty"
+  ST_REHYDRATE_STALE_S "999999999"       // bypass the hook's freshness gate deterministically (now.md just-seeded)
+}
+
+team "hi" {
+  agent "on" {
+    workspace "./repo-on"                // setup.sh rendered the SessionStart hook + witness into repo-on/.claude/settings.local.json
+    env { ST_AGENT "hi.on" }
+    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain your inbox), then act on your durable working state.'"#
+    exec "hi.on.ding" { command #"st2 ding hi.on --identity hi.on --root $CATALOG/smalltalk"# }
+  }
+  agent "off" {
+    workspace "./repo-off"               // IDENTICAL config (same rendered hook + same seeded now.md)…
+    env { ST_AGENT "hi.off" }
+    // …EXCEPT --settings disableAllHooks: the SessionStart hook is configured but claude does NOT fire it (control).
+    command #"exec claude --permission-mode auto --settings '{"disableAllHooks":true}' 'You just cold-started. Run your boot ritual (set status available, drain your inbox), then act on your durable working state.'"#
+    exec "hi.off.ding" { command #"st2 ding hi.off --identity hi.off --root $CATALOG/smalltalk"# }
+  }
+}
+
+eval {
+  copy "./fixture"                       // persona.md + now.md.tmpl + setup.sh + hook-witness.sh
+  run "setup" {
+    command #"bash ./setup.sh"#          // render the real hook + add the witness hook into both legs + seed now.md
+  }
+  message {                              // benign kick (names no token/HOOK_OK/now.md) → wakes hi.on
+    from "requester"
+    to "hi.on"
+    content "./task.md"
+  }
+  max-timeout "240s"                     // ON acts on the injected now.md fast; OFF stands by → judge the final state
+
+  judges {                               // all held-out; all must pass
+    judge "HOOKS-ON FIRED — the ON-leg witness recorded the injected now.md with REHYDRATE-<token> (hook execution, from a side-effect)" {
+      exec "bash ./judges/hooks-on-fired.sh"
+    }
+    judge "HOOKS-OFF CONTROL — no OFF-leg witness (disableAllHooks: the hook did NOT fire; drift-proof — the model can't forge it)" {
+      exec "bash ./judges/hooks-off-control.sh"
+    }
+    judge "HOOK-EXCLUSIVE — the token appears in no agent SEED input beyond context/now.md (attribution to the hook)" {
+      exec "bash ./judges/hook-exclusive.sh"
+    }
+  }
+}

@@ -12,7 +12,7 @@ The point isn't the rename; it's the **three skills** a real factory needs:
   Renaming *that* breaks everything. A blind `s/signal/beacon/g` fails this cell — the suites red and the
   quality judge catches the damage.
 
-## The synthetic graph (materialized by `fixture/setup-sandbox.sh`, never cloned)
+## The synthetic graph (materialized by `fixture/materialize.sh` as a run-step, never cloned)
 
 | Repo | Role |
 |---|---|
@@ -41,9 +41,13 @@ Each specialist owns **only** its own repo worktree; the base rename ripples to 
 ## Run it
 
 ```sh
-bin/evals run signal-rename          # (once wired) spins the 4-agent tree + seeds the hermetic kick
-cells/signal-rename/fixture/grade.sh    # suite-green per repo + held-out invariant + isolation attribution
+st2 eval ./cells/signal-rename/
 ```
 
-Caps: `claude,st,pty,git,node`. Spec: `cells/signal-rename/task.toml`. Design:
+`signal-rename.kdl` is the whole eval: a `run { step "materialize" }` builds the bare origin + one full authored
+clone per agent (sup/base/relay/hub) + holds out the e2e test, BEFORE the 4-agent team boots. Then `sig.sup` gets
+the rename kick and coordinates `sig.base` / `sig.relay` / `sig.hub` over the bus; each pushes its lane to origin,
+the sup integrates on main. Six held-out judges (`judges/`, grading `sig.sup`'s integrated clone): isolation
+(per-lane author), suite-green (per package), rename (product → beacon, no product signal left), primitive-intact
+(the trap), held-out e2e. Proven live: 6/6 PASS. Caps: `claude,st,pty,git,node`. Design:
 `PTY-RENAME-SYNTHETIC-DESIGN.md` (private evals repo).

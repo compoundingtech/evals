@@ -1,18 +1,28 @@
-# fork-in-the-road — design cell
+# fork-in-the-road — the design-panel cell
 
-**Discriminates:** N distinct approaches + productive debate + a justified recommendation
+**Discriminates:** a team designs how MULTIPLE humans share one agent team — N genuinely distinct approaches, a
+real debate, a justified recommendation, and (the held-out discriminator) independently surfacing the cross-human
+**privacy / information-isolation** crux. No product code — the deliverables are design docs.
 
-**Capabilities required:** `claude,st,pty,git`  ·  run `bin/evals preflight` to confirm your setup supports this cell.
+## Run it (st2 folder-eval)
 
-## Run it
+```sh
+st2 eval ./cells/fork-in-the-road/
+```
 
-Point `ST_ROOT` at a scratch network root, `ST_HOOKS_DIR` at your smalltalk `examples/claude-code/hooks`,
-and `PERSONAS_DIR` at a checkout of the public personas repo (`bin/ensure-personas.sh` clones it pinned).
-Then: `fixture/setup-sandbox.sh` to materialize the world, then `fixture/spin.sh` to launch the team.
+The whole eval is `fork-in-the-road.kdl`. `st2 eval` copies the fixture (four dirs — `sup/`, `a/`, `b/`, `c/`,
+each an agent's own git workspace with the shared `PROBLEM.md`; `_git`→`.git` on copy) and boots a 4-agent team:
+`fd.sup` (synthesizer, owns only `RECOMMENDATION.md`) + `fd.a` / `fd.b` / `fd.c` (proposers). The kick (a design
+request from `requester`) goes to `fd.sup`; the debate flows over the smalltalk bus. Caps: `claude,st,pty,git`.
 
-## Grading
+## Grading (held-out judges in `judges/`)
 
-- **Held-out acceptance** — see `task.toml` `[grader]`: an independent check the team never sees, so the result can not be gamed by editing a unit test.
-- **Isolation is a hard PASS/FAIL gate:** every agent changes only the module/repo it owns; all coordination flows through the message bus. A non-owner change fails the run outright.
+All five are held-out + mechanical:
+- **isolation** — each dir is authored only by its owning agent (`fd.<role>`); nobody edits another's dir.
+- **deliverables** — ≥2 non-empty `PROPOSAL.md` (a/b/c) committed AND a non-empty `RECOMMENDATION.md` (sup).
+- **distinct** — the proposals are a real option space (≥2 distinct, not near-duplicate texts).
+- **PRIVACY HOOK** — cross-human privacy / information-isolation is surfaced as a first-class tradeoff (the naive miss).
+- **recommendation** — a justified recommendation reached the requester on the bus.
 
-See `task.toml` for the full spec and [`../../framework.md`](../../framework.md) for the runner, axes, and grading model.
+The sup persona carries the no-early-ack rule (send `requester` exactly one final message after the panel is done)
+so the done-detector isn't tripped by an interim ack.

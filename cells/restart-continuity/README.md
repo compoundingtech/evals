@@ -2,7 +2,7 @@
 
 **Discriminates:** does a **cold-restarted** agent resume an ordered batch **losslessly** — every item done at least once (no skip), no corrupting redo — from the durable substrate alone? (held-out)
 
-**Capabilities required:** `claude,st,pty,git,node`  ·  run `bin/evals preflight` to confirm your setup supports this cell.
+**Capabilities required:** `claude,st,pty,git,node`
 
 ## What it proves
 
@@ -18,34 +18,32 @@ the hard gate is **NO ITEM SKIPPED**; a clean **duplicate** is tolerated; the re
 **corrupts**. The fixture's ops are **idempotent by design** (`register()` is last-wins; `items.json` is the
 durable work-list) so a redo is genuinely harmless — that *is* the durability lesson.
 
-## Run it
+## Run it (st2 folder-eval)
 
-The team is launched via the real `st launch`. `fixture/spin.sh` is **self-isolating** — it creates and
-exports its own scratch bus root at `$SB/st-root`, so nothing touches your live network; the st-launched
-agents (and the cold relaunch) inherit that root by env inheritance. You only need `PERSONAS_DIR` (the
-runner sets it for you via `bin/ensure-personas.sh`). No external `ST_ROOT` / `ST_HOOKS_DIR` required.
+```sh
+st2 eval ./cells/restart-continuity/
+```
 
-Run it: `fixture/spin.sh` (auto-materializes the sandbox if absent), or `bin/evals run restart-continuity`.
-`spin.sh` launches `rc-dev` (owns `ledger`) + `rc-sup` (coordinate-only), seeds the hermetic kick, then
-**backgrounds `fixture/restart-injector.sh`** — the scripted fault injection that cold-restarts `rc-dev`
-after item 2 lands.
-
-- Watch the injection: `tail -f $SB/.stev/injector.out`  ·  the batch: `git -C $SB/ledger log --oneline`
-- Grade: `fixture/grade.sh <SB>`  ·  Tear down (zero-orphan, incl. the relaunched session): `bin/evals teardown <SB>`
+`restart-continuity.kdl` is the whole eval. It copies the pre-built world (`worker/_git`→`.git` on copy) and boots
+a team: `rc.sup` (coordinate-only) + `rc.dev` (owns the `ledger` repo) + `rc.inj` (an eval-only fault-injector seat
+— no bus voice). The kick goes to `rc.sup`; `rc.inj` cold-restarts `rc.dev` at the item-2 checkpoint (`pty kill`),
+and the `supervise` directive respawns `rc.dev` FROM SPEC (cold, full env — no `--resume`). The cold-booted worker
+must resume LOSSLESSLY from the durable substrate (git + `PROGRESS.md` + `items.json` + the bus). Four held-out
+`judges/` (grade principle = at-least-once: no SKIP; a clean duplicate is tolerated). Hermetic catalog; nothing
+touches your live network. Caps: `claude,st,pty,git,node`.
 
 ## The cold restart (the one novel harness piece)
 
-`restart-injector.sh` polls the ledger git log; on `>=2 feat: item` commits it records the restart event
-(epoch + HEAD + done-items) to `$SB/.stev/restart.log`, then `RC_RESTART=1 configure-claude-agent.sh dev`:
-`pty kill` the session, `rm .claude-session-id + pty.toml` (→ **fresh transcript** = a genuine cold boot),
-and relaunch the **same** identity/persona/repo/bus under a new collision-proof session name (still
-`role=agent`, ephemeral). Same identity ⇒ same git author ⇒ isolation attribution survives the restart.
+The `rc.inj` seat (eval-only, no bus voice) polls the ledger git log; on the item-2 checkpoint commit it records
+the restart event (epoch + HEAD + done-items) to `$CATALOG/.stev/restart.log`, then `pty kill`s `rc.dev`. The
+`supervise` directive respawns `rc.dev` FROM SPEC — cold, full env, no `--resume` (⇒ **fresh transcript** = a
+genuine cold boot). Same identity ⇒ same git author ⇒ isolation attribution survives the restart.
 
 ## Grading
 
-- **Held-out acceptance** — see `task.toml` `[grader]`: NO ITEM SKIPPED (every id done ≥1× with a working
-  handler) + NO CORRUPTION (suite green, no duplicate dispatch keys) + RESUMED-not-front-loaded (item
-  commits straddle the restart epoch). Duplicates are reported, not failed. Mechanized in `fixture/grade.sh`.
+- **Held-out judges (`judges/`):** NO ITEM SKIPPED (every id done ≥1× with a working handler) + NO CORRUPTION
+  (suite green, no duplicate dispatch keys) + RESUMED-not-front-loaded (item commits straddle the restart epoch,
+  read from `$CATALOG/.stev/restart.log`) + coordination + isolation. Duplicates are reported, not failed.
 - **Autonomy is the headline:** rescues across the restart, target **0** — the injected restart is a
   scenario poke, not a rescue; a human telling the agent what was done *is* a rescue.
 - **Isolation is a hard PASS/FAIL gate:** only `rc-dev` authors `ledger` commits (across the restart); the
@@ -53,6 +51,6 @@ and relaunch the **same** identity/persona/repo/bus under a new collision-proof 
 
 **v1 tests the substrate as-is** (no reconcile instruction in the personas) — both outcomes are publishable:
 pass ⇒ the substrate is inherently recoverable; fail ⇒ a quantified gap that motivates a one-line
-dev-practices addition (the v1→v2 iteration). See `task.toml` `[iteration]`.
+dev-practices addition (the v1→v2 iteration).
 
-See `task.toml` for the full spec and [`../../framework.md`](../../framework.md) for the runner, axes, and grading model.
+See `restart-continuity.kdl` + `judges/` for the full spec.

@@ -1,8 +1,8 @@
 # weird-git-setup — an agent gets working in a megarepo worktree layout
 
-An agent is stood up (via `convoy add`) **inside a linked git worktree** — not a plain clone — and must figure
-out its git context and get productive despite it. This is the layout people actually run (a **bare canonical
-repo + linked worktrees**), and it's the acceptance test for `convoy`'s launch-into-a-worktree path.
+An agent is stood up **inside a linked git worktree** — not a plain clone — and must figure out its git context
+and get productive despite it. This is the layout people actually run (a **bare canonical repo + linked
+worktrees**), and it's the acceptance test for the launch-into-a-worktree path.
 
 ## What's "weird" (the traps a naive agent hits)
 

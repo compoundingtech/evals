@@ -4,7 +4,7 @@
 repo or the persona overlay — still get **called** in an agent composed into a repo? i.e. does convoy's setup
 shadow/break the user's global-skill environment? (held-out)
 
-**Capabilities required:** `claude,convoy,st,pty,git` · run `bin/evals preflight`. The live arm additionally
+**Capabilities required:** `claude,st,pty,git`. The live arm additionally
 needs a supported global skill already installed (e.g. `xcodebuildmcp-cli`); else it skips-with-reason.
 
 ## What it proves (Nathan's mandate)

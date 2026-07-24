@@ -4,7 +4,7 @@
 being *configured*. Reading `settings.local.json` proves configuration — which was already true in the
 field case this comes from, where hooks were configured but silently never ran. This proves execution.
 
-**Capabilities required:** `claude,st,pty,git`  ·  run `bin/evals preflight` to confirm your setup.
+**Capabilities required:** `claude,st,pty,git`
 
 ## Run it (st2 folder-eval)
 
@@ -25,10 +25,11 @@ block on its first turn — **only if it fires**. The diagnostic exploits that:
 1. It seeds `now.md` with a **secret token** generated fresh this run — reachable **no other way**:
    not in the agent's persona, not in its repo, not in its inbox. `now.md` tells the agent to write
    `REHYDRATE-<token>` into `HOOK_OK.txt`.
-2. It launches the agent **twice**, identical except one flag:
-   - **hooks ON** (`st launch claude`) → if the hook fires, the agent sees the token and writes it. ✅
-   - **hooks OFF** (`st launch claude --no-hooks`, MCP still on) → the negative control. No hook, no
-     injection, no token. ❌
+2. It boots the agent in **two legs**, identical except one flag (the real SessionStart hook, written by
+   `st2 render-agent`, is configured in BOTH):
+   - **hooks ON** (`hi.on`, plain `exec claude`) → if the hook fires, the agent sees the token and writes it. ✅
+   - **hooks OFF** (`hi.off`, `exec claude --no-hooks`) → the negative control. Same hook configured, but
+     claude does not fire it → no injection, no token. ❌
 3. **PASS iff the token is present with hooks ON and absent with hooks OFF.** That difference is the
    proof: a check that passes *both* ways would be testing nothing. The token is random per run, so
    no edit to the fixture can pre-satisfy it.
@@ -38,9 +39,8 @@ The probe agent runs a **minimal standalone persona** that never mentions `now.m
 
 ## Isolation + safety
 
-Single agent, no team (this tests launch/hook plumbing, not coordination). Each leg **self-isolates**:
-its own scratch bus root (`$SB/st-root`) that `st launch` binds into the session env — your live
-network is never touched. Sessions are collision-proof and torn down **zero-orphan** (agents + any
+A two-agent team `hi` (`hi.on` + `hi.off`), no coordination (this tests hook plumbing). Each leg is a hermetic
+catalog workspace — your live network is never touched. Sessions are torn down **zero-orphan** (agents + any
 sidecars). If the agent commits, isolation attributes it (author-pinned to `hi-agent`).
 
 ## Grading (held-out judges in `judges/`)
@@ -54,4 +54,4 @@ sidecars). If the agent commits, isolation attributes it (author-pinned to `hi-a
 **v1 (this cell): the SessionStart leg** — deterministic, fires on every launch, load-bearing for the
 boot ritual + restart-continuity rehydrate. **v2 (planned):** StopFailure (status flip + ding on an
 API error) and PreCompact (now.md flush on compaction) — both need a deterministic fault trigger
-(likely a smalltalk-side mock); see `task.toml [v2]`.
+(likely a smalltalk-side mock); see the design notes.

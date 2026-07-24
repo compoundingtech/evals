@@ -1,18 +1,25 @@
-# fork-in-the-road-codex — design cell
+# fork-in-the-road-codex — the design-panel cell (codex twin)
 
-**Discriminates:** the design panel Codex-native (cross-family)
+**Discriminates:** the same design panel as [fork-in-the-road](../fork-in-the-road/README.md), run by **codex**
+agents (gpt-5.6-sol) reading `AGENTS.md` — a cross-model probe: does codex complete the 4-agent design panel where
+claude does? N distinct approaches, a real debate, a justified recommendation, and the cross-human privacy crux.
 
-**Capabilities required:** `codex,st,pty,git`  ·  run `bin/evals preflight` to confirm your setup supports this cell.
+## Run it (st2 folder-eval)
 
-## Run it
+```sh
+st2 eval ./cells/fork-in-the-road-codex/
+```
 
-Point `ST_ROOT` at a scratch network root, `ST_HOOKS_DIR` at your smalltalk `examples/claude-code/hooks`,
-and `PERSONAS_DIR` at a checkout of the public personas repo (`bin/ensure-personas.sh` clones it pinned).
-Then: `fixture/setup-sandbox.sh` to materialize the world, then `fixture/spin.sh` to launch the team.
+`fork-in-the-road-codex.kdl` copies the fixture (four dirs — `sup/`, `a/`, `b/`, `c/`, each an agent's own git
+workspace with the shared `PROBLEM.md`, `AGENTS.md` personas since codex reads AGENTS.md; `_git`→`.git` on copy)
+and boots 4 codex agents: `fd.sup` + `fd.a` / `fd.b` / `fd.c`, each `exec codex
+--dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol` with a `st2 ding` wake sidecar. Caps: `codex,st,pty,git`.
 
-## Grading
+## Grading (held-out judges in `judges/`)
 
-- **Held-out acceptance** — see `task.toml` `[grader]`: an independent check the team never sees, so the result can not be gamed by editing a unit test.
-- **Isolation is a hard PASS/FAIL gate:** every agent changes only the module/repo it owns; all coordination flows through the message bus. A non-owner change fails the run outright.
+The same 5 held-out judges as the base cell: **isolation** (per-lane author), **deliverables** (≥2 PROPOSAL.md +
+RECOMMENDATION.md), **distinct** (real option space), **PRIVACY HOOK** (the crux surfaced), **recommendation** (a
+justified call on the bus).
 
-See `task.toml` for the full spec and [`../../framework.md`](../../framework.md) for the runner, axes, and grading model.
+Committed as the codex twin (unproven — its Decision-2 disposition is Nathan's call; the probe run's finding was a
+codex delegation-stall distinct from the claude persona gap).

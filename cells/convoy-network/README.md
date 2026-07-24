@@ -1,41 +1,26 @@
-# convoy-network — the capstone: `convoy up` hosts a ding-only, no-MCP network end-to-end
+# convoy-network — `st2 up` hosts a network end-to-end
 
-The **reboot go/no-go proof.** It stands up, **HOSTS**, and exercises a complete agent network the way the
-rebooted world will run it: `convoy up` as the foreground host (TCC anchor + supervisor + respawn owner),
-**ding-only, no MCP, no macOS app**, with a real message→reply loop that closes — and a mid-run kill the host
-must **respawn**. If this passes, the reboot's hosting model works.
+The reboot host-proof: does **`st2 up`** actually **HOST** a network — bring a rendered seat online (the supervisor
+holds the host-lock, the seat's task stays alive) AND make the bus work (a message addressed to the hosted agent
+is delivered to its inbox)? Ding-only, no MCP. (deterministic, held-out)
 
-## The scenario
+**Capabilities required:** `st2,pty,git` (+ `claude` for the hosted seat). Contrast: **convoy-network** here = does
+the host command stand up a network; the newcomer zero-to-network onboarding path is parked separately (no st2
+init/onboarding command yet).
 
-`convoy add`s a **cos** (permanent) + **worker** (ding, no `.mcp.json`), hosts them with **`convoy up`** (which
-reconciles + respawns gone permanent sessions, emitting a `--json` event stream), and seeds a delegate→do→reply
-task. Mid-run, the **kill-injector** crashes the **permanent cos**'s process (kill its PID → it exits) — **`convoy
-up` must respawn it** (resuming its session) and the loop must still close. *(LIVE-validated: convoy up respawns
-PERMANENT sessions, not workers; and respawn fires on a crashed/exited session — a plain `pty kill` REMOVES the
-record so the reconcile can't see it to respawn.)*
+## The scenario (team-less run-steps)
 
-## The gates (parsed from `convoy up`'s `--json` log + the bus)
+`convoy-network.kdl` is a `run { }` eval over a rendered net fixture:
+- background `st2 up "$CATALOG/net" --host hetz` (the CLI host — it supervises the seat + holds the host-lock),
+- deliver a message to the hosted agent over the real bus,
+- assert the host is up and the message landed in the hosted agent's inbox.
 
-- **HOSTED** — `convoy up`'s `up` event (the CLI host supervises the agents).
-- **NO-MCP** — no `.mcp.json` in any agent dir (`convoy add` is ding-by-default).
-- **NO-APP** — hosted by `convoy up` (CLI); no `Convoy.app` invocation.
-- **RESPAWN** *(the new gate)* — a `{type:respawn, identity:cap-cos, ok:true}` event **after** the crash: the HOST
-  (not the fixture) brought the permanent cos back, resuming its session.
-- **LOOP-CLOSED** — a **threaded** reply from cos in the requester's inbox (`in-reply-to` == the kick — reuses
-  ding-reply's discriminator) carrying the `ANSWER.txt` token.
-- **autonomy — 0 rescues.**
-
-## Run it
+## Run it (st2 folder-eval)
 
 ```sh
-export CONVOY_BIN=/path/to/convoy      # a convoy WITH `up` (installed 0.1.0 lacks it — see below)
-fixture/setup-sandbox.sh $SB           # convoy init the isolated network + agent dirs
-fixture/spin.sh $SB                   # convoy add cos + worker (ding) + convoy up (host, --json log)
-fixture/kill-injector.sh $SB          # crash the PERMANENT cos mid-run → convoy up must respawn
-fixture/grade.sh $SB                 # HOSTED + respawn + no-mcp + no-app + threaded reply
+st2 eval ./cells/convoy-network/
 ```
 
-**Dependency:** the installed `convoy` (0.1.0, `/opt/homebrew/bin`) does **not** have `up` yet — set `CONVOY_BIN`
-to a built/re-published binary until it ships. Composes bootstrap + ding + respawn into one end-to-end host
-proof; binds to convoy's frozen `convoy up` interface. Design: `CONVOY-UP-CAPSTONE-DESIGN.md`. Caps:
-`claude,convoy,st,pty,git`.
+Held-out `judges/` (grading the run captures + the bus): **HOSTED** — `st2 up` supervises the seat and holds the
+lock; **DELIVERED** — the message reaches the hosted agent's inbox. Hermetic catalog; never touches the live fleet.
+Design: `CONVOY-UP-CAPSTONE-DESIGN.md`.

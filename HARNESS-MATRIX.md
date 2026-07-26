@@ -32,7 +32,7 @@ Codex matrices.
 | `inbox-hygiene` | Claude, 1 subject | no | low | deterministic message/archive hygiene | Claude cell only |
 | `incident-response` | Claude, 2 seats | no | medium | deterministic held-out incident acceptance | Claude cell only |
 | `license-mit` | Claude subjects + Codex judge | via `license-mit-codex` | low | deterministic + short model quality judge | mixed twin preserved |
-| `license-mit-codex` | Codex, 2 subjects + 1 judge | yes | low | deterministic + short Codex quality judge | native source gate PASS; live run blocked by st2 `1d8cf52` eval bus-root mismatch |
+| `license-mit-codex` | Codex, 2 subjects + 1 judge | yes | low | deterministic + short Codex quality judge | st2 `9d26245`: 6/6 PASS on 2026-07-26 |
 | `migration` | Claude, 2 seats | no | medium | deterministic migration completeness | Claude cell only |
 | `poisoned-pr` | Claude, 2 seats | via `poisoned-pr-codex` | medium | deterministic review/security | Claude twin preserved |
 | `poisoned-pr-codex` | Codex, 2 seats | yes | medium | deterministic review/security | native source gate PASS; live smoke blocked by st2 `1d8cf52` bus-root mismatch |
@@ -70,3 +70,4 @@ The real `st2 eval` smoke remains the authoritative KDL parse, runtime, coordina
 |---|---|---|---|---:|---|---:|---|---|
 | 2026-07-26 | `license-mit-codex` | 0.1.0 `1d8cf52` | 0.145.0 / `gpt-5.6-sol` | 6m26s | controlled FAIL | 0 | none | Native ding delivered the task, but the worker had ended its initial turn after flat-eval presence lookup failed; stopped before timeout. Fixed the boot contract to make presence best-effort and poll the native inbox. |
 | 2026-07-26 | `license-mit-codex` | 0.1.0 `1d8cf52` | 0.145.0 / `gpt-5.6-sol` | 1m39s | controlled FAIL | 1 | none | Retry proved a runner split: kickoff at `$CATALOG/smalltalk/lmc.sup/inbox`, while native bare `ding` watched `$CATALOG/lmc.sup/inbox`. Stopped immediately; no further Codex runs pending an st2 fix. |
+| 2026-07-26 | `license-mit-codex` | 0.1.0 `9d26245` | 0.145.0 / `gpt-5.6-sol` | 1m39s | **6/6 PASS** | 0 on fixed build | none | Kept catalog `st2e-1558207`: kickoff, native dings/seats, delegation/report/confirmation, and model judge all used the flat catalog root; no `smalltalk/` directory. Worker commit `14d0183e`; clean tree; judge reply PASS. |

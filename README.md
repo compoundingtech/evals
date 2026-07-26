@@ -53,21 +53,27 @@ you have ≥2 families installed. The `*-codex` cells run the same scenario Code
 ### Choose and validate an executable example
 
 The [Codex readiness ledger](CODEX-READINESS.md) gives immutable KDL links, team/persona/reset shapes,
-current run evidence, expected live cost, and the remaining opt-in smokes. The broader
-[harness matrix](HARNESS-MATRIX.md) covers the full corpus.
+and current run evidence for the completed five-cell Codex tranche. The
+[native Claude ledger](CLAUDE-NATIVE-READINESS.md) gives the maintained simple and coordinated Claude
+examples plus their honest static/live status. The broader [harness matrix](HARNESS-MATRIX.md) covers
+the full corpus.
 
 Before spending model usage, run the free deterministic gates:
 
 ```sh
 bin/check-codex-native.sh
 bin/check-codex-reset.sh
+bin/check-claude-native.sh
+bin/check-claude-reset.sh
 ```
 
 The supported native examples currently include a small pre-seeded team
 (`license-mit-codex`), a mutation-valid debugging team (`ghost-bug-codex`), and a dynamically
 materialized four-repo team (`signal-rename-codex`), plus a review-only security team
-(`poisoned-pr-codex`) and a four-seat design panel (`fork-in-the-road-codex`). A real `st2 eval` is the
-authoritative runtime proof and starts model seats; run one only as an explicit opt-in.
+(`poisoned-pr-codex`) and a four-seat design panel (`fork-in-the-road-codex`). For Claude,
+`ding-reply` is the one-seat pre-seeded example and `signal-rename` is the dynamically materialized
+four-seat example. A real `st2 eval` is the authoritative runtime proof and starts model seats; run one
+only as an explicit opt-in.
 
 ---
 
@@ -77,9 +83,9 @@ Each `cells/<cell>/` is one scenario, declared end-to-end in a single `.kdl`:
 
 ```
 cells/<cell>/
-  <cell>.kdl   the whole eval: env{} (scratch roots under $CATALOG) · team{}/agent{} seats
-               (workspace · command · ding) · eval{ copy fixture · run{step} · message{} kick ·
-               max-timeout · supervise · judges{} }
+  <cell>.kdl   the whole eval: team{}/agent{} seats (workspace · command · native ding) ·
+               eval{ copy fixture · run{step} · message{} kick · max-timeout · supervise ·
+               judges{} }; the runner owns scratch bus/pty roots
   fixture/     the synthetic world st2 copies into $CATALOG at boot (repos, personas, seed files)
   task.md      the single frozen instruction delivered to the supervisor (the message{} kick)
   judges/*.sh  the held-out graders — run after the team declares done; the team never sees them

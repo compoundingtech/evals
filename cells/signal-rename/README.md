@@ -44,10 +44,23 @@ Each specialist owns **only** its own repo worktree; the base rename ripples to 
 st2 eval ./cells/signal-rename/
 ```
 
-`signal-rename.kdl` is the whole eval: a `run { step "materialize" }` builds the bare origin + one full authored
-clone per agent (sup/base/relay/hub) + holds out the e2e test, BEFORE the 4-agent team boots. Then `sig.sup` gets
-the rename kick and coordinates `sig.base` / `sig.relay` / `sig.hub` over the bus; each pushes its lane to origin,
-the sup integrates on main. Six held-out judges (`judges/`, grading `sig.sup`'s integrated clone): isolation
-(per-lane author), suite-green (per package), rename (product → beacon, no product signal left), primitive-intact
-(the trap), held-out e2e. Proven live: 6/6 PASS. Caps: `claude,st,pty,git,node`. Design:
-`PTY-RENAME-SYNTHETIC-DESIGN.md` (private evals repo).
+`signal-rename.kdl` is the canonical hand-authored agent declaration. A pre-boot `materialize` run-step builds
+the bare origin, one full authored clone per agent (sup/base/relay/hub), and the held-out e2e location. It also
+copies each source persona into its clone and writes `CLAUDE.md` loading `@PERSONA.md`. The four Claude seats use
+native bare `ding`; the runner owns the bus root and wake lowering.
+
+Then `sig.sup` gets the rename kick and coordinates `sig.base` / `sig.relay` / `sig.hub` over the bus; each
+pushes its lane to origin, and the sup integrates on main. Five KDL judges (`judges/`, grading `sig.sup`'s
+integrated clone) cover isolation, suite-green, rename completeness, primitive integrity, and held-out e2e.
+Caps: `claude,st,pty,git,node`.
+
+Free preflight:
+
+```sh
+bin/check-claude-native.sh cells/signal-rename
+bin/check-claude-reset.sh cells/signal-rename
+```
+
+The scenario historically scored 6/6 in its original folder-eval conversion. The current native rewrite passes
+both static gates but has not had a model-backed rerun; see
+[`../../CLAUDE-NATIVE-READINESS.md`](../../CLAUDE-NATIVE-READINESS.md).

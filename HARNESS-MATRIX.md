@@ -13,7 +13,8 @@ concrete failure fix. Stop immediately on a rate-limit or usage warning. Never o
 Codex matrices.
 
 The concise five-cell handoff, immutable example links, persona/reset mechanisms, and completed run
-proof are in [`CODEX-READINESS.md`](CODEX-READINESS.md). After the `ghost-bug-codex` pass exposed a
+proof are in [`CODEX-READINESS.md`](CODEX-READINESS.md). The maintained static-native Claude subset is
+in [`CLAUDE-NATIVE-READINESS.md`](CLAUDE-NATIVE-READINESS.md). After the `ghost-bug-codex` pass exposed a
 usage-limit notice in both kept seat logs, Nathan explicitly reopened only the final sequential
 `poisoned-pr-codex` / `fork-in-the-road-codex` tail. That tail is complete; no additional model-backed
 eval is authorized.
@@ -27,7 +28,7 @@ eval is authorized.
 | `compose-global-skill` | model-free | N/A | none | deterministic global-skill isolation | checked-in deterministic cell |
 | `crash-ding` | mixed Claude + Codex fault targets | yes, in-cell | medium | deterministic crash/presence | existing mixed cell; not rerun in this tranche |
 | `ding-mode` | Claude, 2 seats | no | medium | deterministic task/coordination | Claude cell only |
-| `ding-reply` | Claude, 1 seat | no | low | deterministic threaded reply | Claude cell only |
+| `ding-reply` | Claude, 1 seat | no | low | deterministic threaded reply | native/reset gates PASS; current-native live smoke not run |
 | `docs` | Claude, 2 seats | no | medium | deterministic + cold-reader quality | Claude cell only |
 | `feature-fit` | Claude, 2 seats | no | medium | deterministic fit/behavior | Claude cell only |
 | `fork-in-the-road` | Claude, 4 seats | via `fork-in-the-road-codex` | high | deterministic text/privacy/coordination | Claude twin preserved |
@@ -45,12 +46,12 @@ eval is authorized.
 | `pty-send-peek` | model-free | N/A | none | deterministic PTY behavior | checked-in deterministic cell |
 | `restart-continuity` | Claude, 2 subjects | no | medium | deterministic durable-context recovery | Claude cell only |
 | `security-audit` | Claude, 2 seats | no | medium | deterministic vulnerability set | Claude cell only |
-| `signal-rename` | Claude, 4 seats | via `signal-rename-codex` | high | deterministic multi-repo + held-out E2E | Claude twin preserved |
+| `signal-rename` | Claude, 4 seats | via `signal-rename-codex` | high | deterministic multi-repo + held-out E2E | native/reset gates PASS; current-native live smoke not run |
 | `signal-rename-codex` | Codex, 4 seats | yes | high | deterministic multi-repo + held-out E2E | st2 `9d26245`: 6/6 PASS on 2026-07-26 |
 | `skill-inheritance` | Claude, 1 seat | no | low | deterministic skill-scope isolation | Claude cell only |
 | `st2-doctor-structure` | model-free | N/A | none | deterministic structure/doctor | checked-in deterministic cell |
 | `st2-network` | model-free | N/A | none | deterministic network round-trip | checked-in deterministic cell |
-| `team-standup` | Claude, 1 seat | no | low | deterministic coordination artifact | Claude cell only |
+| `team-standup` | Claude, 1 seat | no | low | deterministic coordination artifact | legacy retired-render-CLI reference; not current native |
 | `test-writing` | Claude, 2 seats | no | medium | deterministic mutation score | Claude cell only |
 | `two-networks-coexist` | model-free | N/A | none | deterministic partition/isolation | checked-in deterministic cell |
 | `weird-git-setup` | Claude, 1 seat | no | low | deterministic worktree/git isolation | Claude cell only |
@@ -62,18 +63,21 @@ Run:
 ```sh
 bin/check-codex-native.sh
 bin/check-codex-reset.sh
+bin/check-claude-native.sh
+bin/check-claude-reset.sh
 ```
 
-For every selected Codex twin the gate rejects authored legacy bus paths/commands and non-Codex agent
-commands, requires one native bare `ding` per agent, and proves every declared workspace receives a
-non-empty `AGENTS.md`. For dynamically built fixtures it materializes the synthetic graph in a fresh
-temporary directory before checking.
+For every selected Codex or Claude example, the family-specific native gate rejects authored legacy bus
+paths/commands and cross-family agent commands, requires one native bare `ding` per agent, and proves
+every declared workspace receives its non-empty family-native instructions. For dynamically built
+fixtures it materializes the synthetic graph in a fresh temporary directory before checking.
 
-The reset gate independently constructs two fresh copies of every selected fixture. It rehydrates static
-`_git` snapshots or runs the dynamic materializer, then requires matching persona/Git manifests, valid
-clean repositories, and catalog-local absolute remotes.
+The reset gates independently construct two fresh copies of every selected fixture. They rehydrate
+static `_git` snapshots or run the dynamic materializer, then require matching persona/Git manifests,
+valid clean repositories, and catalog-local absolute remotes.
 
 The real `st2 eval` smoke remains the authoritative KDL parse, runtime, coordination, and grader proof.
+No current-native Claude smoke was authorized as part of the static conversion.
 
 ## Verified Codex runs
 

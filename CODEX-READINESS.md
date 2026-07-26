@@ -36,17 +36,12 @@ catalog, not a folder-eval KDL, so the authoritative KDL/runtime proof remains a
 The five-cell tranche is current-build complete. No additional model-backed run is part of this ledger;
 the bounded authorization is exhausted.
 
-## Claude reference subset and honest gap
+## Claude-native examples
 
-Two immutable, historically run-validated Claude KDLs cover representative shapes:
+The maintained simple and coordinated Claude examples, their persona/render/reset mechanisms, free
+acceptance commands, historical provenance, and current live-proof gap are tracked separately in
+[`CLAUDE-NATIVE-READINESS.md`](CLAUDE-NATIVE-READINESS.md).
 
-| KDL | What it teaches | Cheap evidence | Model-backed command |
-|---|---|---|---|
-| [`ding-reply.kdl` at its 2/2 PASS conversion](https://github.com/compoundingtech/evals/blob/7a063abfcc10b53a18d71bdabb0c478161694650/cells/ding-reply/ding-reply.kdl) | One Claude agent, fixture-preseeded `CLAUDE.md` → `PERSONA.md`, and an exact threaded CLI reply without MCP | `git diff --exit-code 7a063abfcc10b53a18d71bdabb0c478161694650..HEAD -- cells/ding-reply/ding-reply.kdl` succeeds with no diff; `bash -n cells/ding-reply/judges/*.sh` exits 0 | `st2 eval ./cells/ding-reply/ --keep`; historical success is 2/2 PASS, current run not authorized |
-| [`team-standup.kdl` at its 4/4 PASS conversion](https://github.com/compoundingtech/evals/blob/d76f6d4b05968bd0c1694bab30d87fec8edcb8f3/cells/team-standup/team-standup.kdl) | One initial Claude CoS dynamically creates a specialist with the older `st2 render-agent` + `st2 up --once` flow | `git diff --exit-code d76f6d4b05968bd0c1694bab30d87fec8edcb8f3..HEAD -- cells/team-standup/team-standup.kdl` succeeds with no diff; `bash -n cells/team-standup/judges/*.sh` exits 0 | `st2 eval ./cells/team-standup/ --keep`; historical success is 4/4 PASS, current run not authorized |
-
-These Claude cells are historical references, not current native-only examples: both still author the
-legacy `smalltalk` bus root and explicit ding sidecars. The corpus currently contains no Claude
-folder-eval KDL using the current declarative `render {}` form. The supported native examples are
-therefore the Codex KDLs above; native declarative-render Claude coverage remains an explicit future
-conversion and current-build validation gap.
+`ding-reply` and `signal-rename` now use current native bare `ding` with no authored compatibility bus
+root or wake sidecar. `team-standup` remains a legacy retired-render-CLI reference and is not presented
+as current.

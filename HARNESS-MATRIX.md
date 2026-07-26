@@ -40,7 +40,7 @@ Codex matrices.
 | `restart-continuity` | Claude, 2 subjects | no | medium | deterministic durable-context recovery | Claude cell only |
 | `security-audit` | Claude, 2 seats | no | medium | deterministic vulnerability set | Claude cell only |
 | `signal-rename` | Claude, 4 seats | via `signal-rename-codex` | high | deterministic multi-repo + held-out E2E | Claude twin preserved |
-| `signal-rename-codex` | Codex, 4 seats | yes | high | deterministic multi-repo + held-out E2E | native source/materialization gate PASS; live smoke blocked by st2 `1d8cf52` bus-root mismatch |
+| `signal-rename-codex` | Codex, 4 seats | yes | high | deterministic multi-repo + held-out E2E | st2 `9d26245`: 6/6 PASS on 2026-07-26 |
 | `skill-inheritance` | Claude, 1 seat | no | low | deterministic skill-scope isolation | Claude cell only |
 | `st2-doctor-structure` | model-free | N/A | none | deterministic structure/doctor | checked-in deterministic cell |
 | `st2-network` | model-free | N/A | none | deterministic network round-trip | checked-in deterministic cell |
@@ -71,3 +71,4 @@ The real `st2 eval` smoke remains the authoritative KDL parse, runtime, coordina
 | 2026-07-26 | `license-mit-codex` | 0.1.0 `1d8cf52` | 0.145.0 / `gpt-5.6-sol` | 6m26s | controlled FAIL | 0 | none | Native ding delivered the task, but the worker had ended its initial turn after flat-eval presence lookup failed; stopped before timeout. Fixed the boot contract to make presence best-effort and poll the native inbox. |
 | 2026-07-26 | `license-mit-codex` | 0.1.0 `1d8cf52` | 0.145.0 / `gpt-5.6-sol` | 1m39s | controlled FAIL | 1 | none | Retry proved a runner split: kickoff at `$CATALOG/smalltalk/lmc.sup/inbox`, while native bare `ding` watched `$CATALOG/lmc.sup/inbox`. Stopped immediately; no further Codex runs pending an st2 fix. |
 | 2026-07-26 | `license-mit-codex` | 0.1.0 `9d26245` | 0.145.0 / `gpt-5.6-sol` | 1m39s | **6/6 PASS** | 0 on fixed build | none | Kept catalog `st2e-1558207`: kickoff, native dings/seats, delegation/report/confirmation, and model judge all used the flat catalog root; no `smalltalk/` directory. Worker commit `14d0183e`; clean tree; judge reply PASS. |
+| 2026-07-26 | `signal-rename-codex` | 0.1.0 `9d26245` | 0.145.0 / `gpt-5.6-sol` | 8m07s | **6/6 PASS** | 0 | none | Kept catalog `st2e-1620130`: base-first dual-honor cutover (`adac869`), supervisor root/config (`f83db58`), hub (`da65d5a`), relay (`422556f`), then alias closure (`1396823`). Flat root, clean integrated tree, all suites, isolation, rename, primitive, and held-out E2E passed. |

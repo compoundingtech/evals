@@ -11,8 +11,13 @@ Held-out judges (identical logic to ghost-bug): isolation (author-gated to `gbx.
 root-cause (two blind probes), **regression mutation-valid** (RED on the buggy BASE src — the integrity
 bar, ported verbatim), coordination.
 
-Fixture `worker/` reuses ghost-bug's labelkit (owner-pinned `gbx.fix`); `worker/AGENTS.md` + `sup/AGENTS.md`
-are intentionally pre-seeded complete Codex personas. The KDL uses native bare `ding`, with no authored
-bus path or compatibility wake command.
+Fixture `worker/` reuses ghost-bug's labelkit (owner-pinned `gbx.fix`); `worker/AGENTS.md` +
+`sup/AGENTS.md` are intentionally pre-seeded complete Codex personas. The frozen `worker/_git`
+snapshot rehydrates as `.git` only inside the throwaway catalog. The KDL uses native bare `ding`, with
+no authored bus path or compatibility wake command.
 
-Run provenance and current pass evidence live in [`../../HARNESS-MATRIX.md`](../../HARNESS-MATRIX.md).
+Free preflight: `bin/check-codex-native.sh cells/ghost-bug-codex` and
+`bin/check-codex-reset.sh cells/ghost-bug-codex`.
+
+Current 5/5 pass provenance, the post-run usage notice, and expected cost live in
+[`../../CODEX-READINESS.md`](../../CODEX-READINESS.md).

@@ -12,6 +12,10 @@ Codex practice policy: run sequentially, one initial smoke per new/native varian
 concrete failure fix. Stop immediately on a rate-limit or usage warning. Never overlap the Claude and
 Codex matrices.
 
+The concise five-cell handoff, immutable example links, persona/reset mechanisms, and remaining paid
+proof are in [`CODEX-READINESS.md`](CODEX-READINESS.md). After the `ghost-bug-codex` pass exposed a
+usage-limit notice in both kept seat logs, all model-backed evals remain held until explicitly reopened.
+
 ## Corpus matrix
 
 | Cell | Current subject harness | Codex parity | Expected Codex live cost | Grading character | Current evidence |
@@ -25,7 +29,7 @@ Codex matrices.
 | `docs` | Claude, 2 seats | no | medium | deterministic + cold-reader quality | Claude cell only |
 | `feature-fit` | Claude, 2 seats | no | medium | deterministic fit/behavior | Claude cell only |
 | `fork-in-the-road` | Claude, 4 seats | via `fork-in-the-road-codex` | high | deterministic text/privacy/coordination | Claude twin preserved |
-| `fork-in-the-road-codex` | Codex, 4 seats | yes | high | deterministic text/privacy/coordination | native source gate PASS; live smoke blocked by st2 `1d8cf52` bus-root mismatch |
+| `fork-in-the-road-codex` | Codex, 4 seats | yes | high | deterministic text/privacy/coordination | native/reset gates PASS; current-build smoke pending usage hold |
 | `ghost-bug` | Claude, 2 seats | via `ghost-bug-codex` | medium | deterministic + mutation-valid regression | Claude twin preserved |
 | `ghost-bug-codex` | Codex, 2 seats | yes | medium | deterministic + mutation-valid regression | st2 `9d26245`: 5/5 PASS on 2026-07-26 |
 | `hook-integrity` | Claude, 2 seats | no | medium | deterministic hook witness | Claude cell only |
@@ -35,7 +39,7 @@ Codex matrices.
 | `license-mit-codex` | Codex, 2 subjects + 1 judge | yes | low | deterministic + short Codex quality judge | st2 `9d26245`: 6/6 PASS on 2026-07-26 |
 | `migration` | Claude, 2 seats | no | medium | deterministic migration completeness | Claude cell only |
 | `poisoned-pr` | Claude, 2 seats | via `poisoned-pr-codex` | medium | deterministic review/security | Claude twin preserved |
-| `poisoned-pr-codex` | Codex, 2 seats | yes | medium | deterministic review/security | native source gate PASS; live smoke blocked by st2 `1d8cf52` bus-root mismatch |
+| `poisoned-pr-codex` | Codex, 2 seats | yes | medium | deterministic review/security | native/reset gates PASS; current-build smoke pending usage hold |
 | `pty-send-peek` | model-free | N/A | none | deterministic PTY behavior | checked-in deterministic cell |
 | `restart-continuity` | Claude, 2 subjects | no | medium | deterministic durable-context recovery | Claude cell only |
 | `security-audit` | Claude, 2 seats | no | medium | deterministic vulnerability set | Claude cell only |
@@ -55,12 +59,17 @@ Run:
 
 ```sh
 bin/check-codex-native.sh
+bin/check-codex-reset.sh
 ```
 
 For every selected Codex twin the gate rejects authored legacy bus paths/commands and non-Codex agent
 commands, requires one native bare `ding` per agent, and proves every declared workspace receives a
 non-empty `AGENTS.md`. For dynamically built fixtures it materializes the synthetic graph in a fresh
 temporary directory before checking.
+
+The reset gate independently constructs two fresh copies of every selected fixture. It rehydrates static
+`_git` snapshots or runs the dynamic materializer, then requires matching persona/Git manifests, valid
+clean repositories, and catalog-local absolute remotes.
 
 The real `st2 eval` smoke remains the authoritative KDL parse, runtime, coordination, and grader proof.
 

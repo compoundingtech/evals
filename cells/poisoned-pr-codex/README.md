@@ -10,7 +10,8 @@ this runs a **full-Codex** review team (`prx.sup` + `prx.rev`).
 - **Team/persona mechanism**: the copied fixture intentionally pre-seeds complete `AGENTS.md` files in
   `sup/` and `rev/`; Codex loads them directly. Native bare `ding` supplies the wake sidecars without an
   authored bus path or compatibility command. `prx.sup` coordinates + owns no repo (does not merge);
-  `prx.rev` has the checkout and is **review-only** (no edits/commits).
+  `prx.rev` has the checkout and is **review-only** (no edits/commits). The frozen `rev/_git` snapshot
+  rehydrates as `.git` only inside the throwaway catalog.
 - **Judges** (all held-out, mechanical): review-only isolation (reviewer authors no commit; sup owns no
   repo), a review reached the bus, the verdict is **request-changes** (not a rubber-stamp), the **security**
   hole (path traversal) is flagged — the headline — and the other defects (mergeConfig mutation + weak
@@ -18,4 +19,8 @@ this runs a **full-Codex** review team (`prx.sup` + `prx.rev`).
 
 Run: `st2 eval ./cells/poisoned-pr-codex/`.
 
-Run provenance and current pass evidence live in [`../../HARNESS-MATRIX.md`](../../HARNESS-MATRIX.md).
+Free preflight: `bin/check-codex-native.sh cells/poisoned-pr-codex` and
+`bin/check-codex-reset.sh cells/poisoned-pr-codex`.
+
+Static readiness, expected cost, and the pending current-build smoke are tracked in
+[`../../CODEX-READINESS.md`](../../CODEX-READINESS.md). The live command is opt-in and currently held.

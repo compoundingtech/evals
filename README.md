@@ -9,9 +9,9 @@ the team self-organizes; an independent check the team never sees grades the res
 
 The thing under test is the **whole network** — **st2** (the unified runtime that *renders* agents into
 repos, *runs* the network, and carries the *message* bus — it replaces convoy + smalltalk) and **pty**
-(the terminal-session harness) — plus the personas, and **not any one model**. Every scenario runs across
-model families (Claude / Codex / mixed). If the result still holds when you swap the model, it was the
-system that produced it.
+(the terminal-session harness) — plus the personas, and **not any one model**. The corpus spans Claude,
+Codex, and mixed harnesses; selected scenarios have cross-family twins. If the result still holds when
+you swap the model, it was the system that produced it.
 
 > **Two ideas do the heavy lifting.** *Isolation* is a hard pass/fail gate: each agent may change only
 > the module it owns; everything else happens by message. *Held-out acceptance* is a check the team can't
@@ -49,6 +49,24 @@ judges` and `VERDICT: PASS|FAIL`.
 
 **Cross-family judging** — a quality judge from a different model family than the subject — unlocks once
 you have ≥2 families installed. The `*-codex` cells run the same scenario Codex-native.
+
+### Choose and validate an executable example
+
+The [Codex readiness ledger](CODEX-READINESS.md) gives immutable KDL links, team/persona/reset shapes,
+current run evidence, expected live cost, and the remaining opt-in smokes. The broader
+[harness matrix](HARNESS-MATRIX.md) covers the full corpus.
+
+Before spending model usage, run the free deterministic gates:
+
+```sh
+bin/check-codex-native.sh
+bin/check-codex-reset.sh
+```
+
+The supported native examples currently include a small pre-seeded team
+(`license-mit-codex`), a mutation-valid debugging team (`ghost-bug-codex`), and a dynamically
+materialized four-repo team (`signal-rename-codex`). A real `st2 eval` is the authoritative runtime
+proof and starts model seats; run one only as an explicit opt-in.
 
 ---
 
@@ -95,15 +113,17 @@ cell's own `README.md` carries its full discriminator and held-out acceptance; t
 | `license-mit` | team loop | the smallest delegate→execute→verify→confirm loop with isolation held (the **matrix** cell) |
 | `hook-integrity`, `st2-network`, `st2-doctor-structure` | infra | the runtime itself: a hook that *fires* (not just configured), `st2 up` hosting a net, `st2 doctor` failing closed |
 
-`*-codex` variants (`ghost-bug`, `poisoned-pr`, `fork-in-the-road`, `license-mit`) run the same scenario
-Codex-native — the cross-family proof.
+`*-codex` variants (`ghost-bug`, `poisoned-pr`, `fork-in-the-road`, `license-mit`, `signal-rename`) run
+the same scenario Codex-native. See [the readiness ledger](CODEX-READINESS.md) for the exact supported
+subset and pending live proof.
 
 ---
 
 ## Write your own cell
 
-1. `cells/<name>/<name>.kdl` — declare the whole eval: `env{}` with `ST_ROOT`/`PTY_ROOT` inside
-   `$CATALOG`, `copy "./fixture"`, a `max-timeout`, `supervise` for a team cell, and the `judges{}`.
+1. `cells/<name>/<name>.kdl` — declare the whole eval: native `ding` seats, `copy "./fixture"`, a
+   `max-timeout`, `supervise` for a team cell, and the `judges{}`. The eval runner owns `ST_ROOT` and
+   `PTY_ROOT`; do not author a compatibility bus path or an explicit `st2 ding` sidecar.
 2. `cells/<name>/fixture/` — materialize a small, **synthetic** world (no real repos/identities). Build
    any absolute-path git topology in a `run{step "materialize"}` (a static copy can't preserve it).
 3. `cells/<name>/task.md` — the single frozen instruction the supervisor wakes to (the `message{}`

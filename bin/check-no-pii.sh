@@ -4,7 +4,7 @@
 # the tree for machine-specific absolute paths (and any private tokens you name)
 # that shouldn't leave your machine. Exit 1 with offenders if any hit; 0 = clean.
 #
-#   check-no-pii.sh [DIR]                         # scan DIR (default: repo root)
+#   check-no-pii.sh [DIR]                         # scan DIR (default: publishable repo files)
 #   PII_TOKENS='alex|widgetco|acme-internal' check-no-pii.sh cells/my-cell
 #
 # By default it flags absolute home/volume paths (…/Users/<you>/…, /home/<you>/…,
@@ -13,7 +13,8 @@
 # ─────────────────────────────────────────────────────────────────────────────
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="${1:-$(cd "$HERE/.." && pwd)}"
+REPO="$(cd "$HERE/.." && pwd)"
+ROOT="${1:-$REPO}"
 
 # Things that almost never belong in a portable, shareable fixture:
 #  - absolute machine paths (raw and the dash-encoded scratchpad form)
@@ -26,12 +27,23 @@ AGENT_HANDLE='(^|[^$A-Za-z0-9_/])[a-z][a-z0-9]{2,}-claude([^-A-Za-z0-9]|$)'
 DEFAULT="${MACHINE_PATHS}|${SESSION_UUID}|${AGENT_HANDLE}"
 FORBIDDEN="${PII_TOKENS:+${PII_TOKENS}|}${DEFAULT}"
 
-mapfile -t HITS < <(
-  grep -rInEi "$FORBIDDEN" "$ROOT" \
-    --exclude-dir=.git --exclude-dir=.build --exclude-dir=.sandbox \
-    --exclude-dir=.personas --exclude-dir=node_modules \
-    --exclude='check-no-pii.sh' 2>/dev/null
-)
+if [ "$ROOT" = "$REPO" ]; then
+  # Scan exactly what could be published: tracked files plus unignored untracked files. Runtime-local
+  # state such as .claude/, .codex/, .convoy/, and smoke logs is intentionally gitignored and excluded.
+  mapfile -t HITS < <(
+    cd "$REPO"
+    git ls-files -z --cached --others --exclude-standard |
+      xargs -0 -r grep -IHnEi "$FORBIDDEN" 2>/dev/null |
+      grep -vE '^bin/check-no-pii\.sh:' || true
+  )
+else
+  mapfile -t HITS < <(
+    grep -rIHnEi "$FORBIDDEN" "$ROOT" \
+      --exclude-dir=.git --exclude-dir=.build --exclude-dir=.sandbox \
+      --exclude-dir=.personas --exclude-dir=node_modules \
+      --exclude='check-no-pii.sh' 2>/dev/null
+  )
+fi
 
 if [ "${#HITS[@]}" -eq 0 ]; then
   echo "✓ check-no-pii CLEAN — no machine paths / listed tokens in $ROOT"

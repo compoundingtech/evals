@@ -21,4 +21,8 @@ The same 5 held-out judges as the base cell: **isolation** (per-lane author), **
 RECOMMENDATION.md), **distinct** (real option space), **PRIVACY HOOK** (the crux surfaced), **recommendation** (a
 justified call on the bus).
 
-Run provenance and current pass evidence live in [`../../HARNESS-MATRIX.md`](../../HARNESS-MATRIX.md).
+Free preflight: `bin/check-codex-native.sh cells/fork-in-the-road-codex` and
+`bin/check-codex-reset.sh cells/fork-in-the-road-codex`.
+
+Static readiness, expected cost, and the pending current-build smoke are tracked in
+[`../../CODEX-READINESS.md`](../../CODEX-READINESS.md). The live command is opt-in and currently held.

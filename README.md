@@ -72,8 +72,8 @@ The supported native examples currently include a small pre-seeded team
 materialized four-repo team (`signal-rename-codex`), plus a review-only security team
 (`poisoned-pr-codex`) and a four-seat design panel (`fork-in-the-road-codex`). For Claude,
 `ding-reply` is the one-seat pre-seeded example and `signal-rename` is the dynamically materialized
-four-seat example. A real `st2 eval` is the authoritative runtime proof and starts model seats; run one
-only as an explicit opt-in.
+four-seat example; both teach event-first DING standby rather than inbox polling. A real `st2 eval` is
+the authoritative runtime proof and starts model seats; run one only as an explicit opt-in.
 
 ---
 

@@ -8,10 +8,11 @@ via the MCP tool, or only check that *a* message came back — which a fresh sen
 ## The task + the discriminator
 
 A synthetic requester (`dr-req`) seeds one message into `dr.agent`'s inbox: *"read `ANSWER.txt` and reply to THIS
-message with its contents, on the thread."* The agent boots through native bare `ding`, reads it, reads
-`ANSWER.txt`, and **replies via `st2 message reply`**. The held-out check: the reply lands `in-reply-to:` == the
-seeded kick — which `st2 message reply` sets and a plain `st2 message send` does **not** — plus the reply carries
-the `ANSWER.txt` token. **So it FAILS LOUD if the CLI reply verb is missing or broken.**
+message with its contents, on the thread."* The agent boots through event-first native bare `ding`: it drains
+once, stands by for DING when idle, then drains, acts, and archives after the event. It reads `ANSWER.txt` and
+**replies via `st2 message reply`**. The held-out check: the reply lands `in-reply-to:` == the seeded kick —
+which `st2 message reply` sets and a plain `st2 message send` does **not** — plus the reply carries the
+`ANSWER.txt` token. **So it FAILS LOUD if the CLI reply verb is missing or broken.**
 
 ## Run it (st2 folder-eval)
 

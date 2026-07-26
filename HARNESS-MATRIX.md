@@ -71,6 +71,8 @@ For every selected Codex or Claude example, the family-specific native gate reje
 paths/commands and cross-family agent commands, requires one native bare `ding` per agent, and proves
 every declared workspace receives its non-empty family-native instructions. For dynamically built
 fixtures it materializes the synthetic graph in a fresh temporary directory before checking.
+The Claude gate additionally rejects polling/sleep/timer/inbox-loop language and requires every command
+to teach the cold-start-drain → available/DING-standby → post-DING drain/act/archive → bus-report lifecycle.
 
 The reset gates independently construct two fresh copies of every selected fixture. They rehydrate
 static `_git` snapshots or run the dynamic materializer, then require matching persona/Git manifests,

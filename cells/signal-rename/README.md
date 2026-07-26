@@ -47,7 +47,8 @@ st2 eval ./cells/signal-rename/
 `signal-rename.kdl` is the canonical hand-authored agent declaration. A pre-boot `materialize` run-step builds
 the bare origin, one full authored clone per agent (sup/base/relay/hub), and the held-out e2e location. It also
 copies each source persona into its clone and writes `CLAUDE.md` loading `@PERSONA.md`. The four Claude seats use
-native bare `ding`; the runner owns the bus root and wake lowering.
+event-first native bare `ding`: drain once, stand by for DING when idle, then drain, act, and archive after the
+event. The runner owns the bus root and wake lowering.
 
 Then `sig.sup` gets the rename kick and coordinates `sig.base` / `sig.relay` / `sig.hub` over the bus; each
 pushes its lane to origin, and the sup integrates on main. Five KDL judges (`judges/`, grading `sig.sup`'s

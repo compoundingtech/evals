@@ -42,6 +42,6 @@ The maintained simple and coordinated Claude examples, their persona/render/rese
 acceptance commands, historical provenance, and current live-proof gap are tracked separately in
 [`CLAUDE-NATIVE-READINESS.md`](CLAUDE-NATIVE-READINESS.md).
 
-`ding-reply` and `signal-rename` now use current native bare `ding` with no authored compatibility bus
-root or wake sidecar. `team-standup` remains a legacy retired-render-CLI reference and is not presented
-as current.
+`ding-reply` and `signal-rename` now use event-first native bare `ding` with no authored compatibility
+bus root or wake sidecar. `team-standup` remains a legacy retired-render-CLI reference and is not
+presented as current.

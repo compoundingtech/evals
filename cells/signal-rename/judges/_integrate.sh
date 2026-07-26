@@ -8,6 +8,6 @@ git -C "$W" fetch -q origin 2>/dev/null || true
 git -C "$W" merge -q --ff-only origin/main 2>/dev/null || true
 BASE="$(git -C "$W" rev-list --max-parents=0 HEAD 2>/dev/null | tail -1)"
 # grep the COMMITTED product code — `git grep` searches only git-TRACKED files, so it excludes the gitignored eval
-# infra overlay (PERSONA.md / CLAUDE.md / .convoy / .claude, which mention the old product name in task text) and
+# infra overlay (PERSONA.md / CLAUDE.md / .claude, which mention the old product name in task text) and
 # any untracked scratch. This grades what the agents actually committed, not the working-tree infra.
 wgrep(){ ( cd "$W" && git grep -In "$@" 2>/dev/null ); }

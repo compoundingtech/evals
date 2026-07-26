@@ -3,7 +3,7 @@
 # kick), carrying the ANSWER.txt token. A plain `st2 message send` (no in-reply-to) does NOT pass — the exact
 # gap this cell covers.
 set -uo pipefail
-ROOT="${CATALOG:-$PWD}"; SM="${ST_ROOT:-$ROOT/${STBUS:-smalltalk}}"
+ROOT="${CATALOG:-$PWD}"; SM="${ST_ROOT:-$ROOT}"
 AGENT="${AGENT:-dr.agent}"; REQ="${REQ:-dr-req}"
 TOKEN="$(tr -d '\r\n' < "$ROOT/work/ANSWER.txt" 2>/dev/null)"
 busdir(){ local id="$1" d; d="$(ls -d "$SM"/*."$id" "$SM/$id" 2>/dev/null | head -1)"; printf '%s\n' "${d:-$SM/$id}"; }

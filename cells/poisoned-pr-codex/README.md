@@ -22,5 +22,5 @@ Run: `st2 eval ./cells/poisoned-pr-codex/`.
 Free preflight: `bin/check-codex-native.sh cells/poisoned-pr-codex` and
 `bin/check-codex-reset.sh cells/poisoned-pr-codex`.
 
-Static readiness, expected cost, and the pending current-build smoke are tracked in
-[`../../CODEX-READINESS.md`](../../CODEX-READINESS.md). The live command is opt-in and currently held.
+Current 4/4 gating pass provenance, the non-gating defect signal, and expected cost live in
+[`../../CODEX-READINESS.md`](../../CODEX-READINESS.md).

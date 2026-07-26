@@ -14,7 +14,8 @@ Codex matrices.
 
 The concise five-cell handoff, immutable example links, persona/reset mechanisms, and remaining paid
 proof are in [`CODEX-READINESS.md`](CODEX-READINESS.md). After the `ghost-bug-codex` pass exposed a
-usage-limit notice in both kept seat logs, all model-backed evals remain held until explicitly reopened.
+usage-limit notice in both kept seat logs, Nathan explicitly reopened only the final sequential
+`poisoned-pr-codex` / `fork-in-the-road-codex` tail; all other model-backed evals remain held.
 
 ## Corpus matrix
 
@@ -39,7 +40,7 @@ usage-limit notice in both kept seat logs, all model-backed evals remain held un
 | `license-mit-codex` | Codex, 2 subjects + 1 judge | yes | low | deterministic + short Codex quality judge | st2 `9d26245`: 6/6 PASS on 2026-07-26 |
 | `migration` | Claude, 2 seats | no | medium | deterministic migration completeness | Claude cell only |
 | `poisoned-pr` | Claude, 2 seats | via `poisoned-pr-codex` | medium | deterministic review/security | Claude twin preserved |
-| `poisoned-pr-codex` | Codex, 2 seats | yes | medium | deterministic review/security | native/reset gates PASS; current-build smoke pending usage hold |
+| `poisoned-pr-codex` | Codex, 2 seats | yes | medium | deterministic review/security | st2 `25d8371`: 4/4 gating PASS + signal on 2026-07-26 |
 | `pty-send-peek` | model-free | N/A | none | deterministic PTY behavior | checked-in deterministic cell |
 | `restart-continuity` | Claude, 2 subjects | no | medium | deterministic durable-context recovery | Claude cell only |
 | `security-audit` | Claude, 2 seats | no | medium | deterministic vulnerability set | Claude cell only |
@@ -82,3 +83,4 @@ The real `st2 eval` smoke remains the authoritative KDL parse, runtime, coordina
 | 2026-07-26 | `license-mit-codex` | 0.1.0 `9d26245` | 0.145.0 / `gpt-5.6-sol` | 1m39s | **6/6 PASS** | 0 on fixed build | none | Kept catalog `st2e-1558207`: kickoff, native dings/seats, delegation/report/confirmation, and model judge all used the flat catalog root; no `smalltalk/` directory. Worker commit `14d0183e`; clean tree; judge reply PASS. |
 | 2026-07-26 | `signal-rename-codex` | 0.1.0 `9d26245` | 0.145.0 / `gpt-5.6-sol` | 8m07s | **6/6 PASS** | 0 | none | Kept catalog `st2e-1620130`: base-first dual-honor cutover (`adac869`), supervisor root/config (`f83db58`), hub (`da65d5a`), relay (`422556f`), then alias closure (`1396823`). Flat root, clean integrated tree, all suites, isolation, rename, primitive, and held-out E2E passed. |
 | 2026-07-26 | `ghost-bug-codex` | 0.1.0 `9d26245` | 0.145.0 / `gpt-5.6-sol` | 1m38s | **5/5 PASS** | 0 | Both seats printed `3 usage limit resets available`; detected in kept logs after completion, then paid work stopped | Kept catalog `st2e-1842971`: flat root with no `smalltalk/`; worker commit `81b16c3`, clean tree, shared-default mutation removed, visible suite 4/4, and regression RED on buggy base / GREEN on HEAD. Delegate/report/verified-confirm present; both ding PIDs dead and no eval process remained. |
+| 2026-07-26 | `poisoned-pr-codex` | 0.1.0 `25d8371` | 0.145.0 / `gpt-5.6-sol` | 1m52s | **4/4 gating PASS** + signal | 0 | Both seats printed `3 usage limit resets available`; this exact tail had been explicitly reopened after disclosure | Kept catalog `st2e-4016244`: flat root with no `smalltalk/`; review-only branch clean with no reviewer commit; request-changes, path traversal, prototype mutation, aliasing, and weak-test findings verified. Delegate/report/verified-confirm present; both ding PIDs dead and no eval process remained. |

@@ -1,10 +1,10 @@
 # Codex-native readiness ledger
 
-This ledger is the executable handoff for the five-cell Codex tranche. Source and live-run evidence are
-pinned to immutable evals commit
-[`dc7ad3abd8d13fb2e9e2920d15e69ef0a23d0819`](https://github.com/compoundingtech/evals/commit/dc7ad3abd8d13fb2e9e2920d15e69ef0a23d0819);
-the detailed run ledger is the
-[`HARNESS-MATRIX.md` blob at that commit](https://github.com/compoundingtech/evals/blob/dc7ad3abd8d13fb2e9e2920d15e69ef0a23d0819/HARNESS-MATRIX.md).
+This ledger is the executable handoff for the five-cell Codex tranche. The completed non-paid source
+state is pinned to immutable evals commit
+[`9cae486aafb2ef9bbb6766db6657b294922b65e2`](https://github.com/compoundingtech/evals/commit/9cae486aafb2ef9bbb6766db6657b294922b65e2).
+Exact paid-run rows live in [`HARNESS-MATRIX.md`](HARNESS-MATRIX.md); each pushed evidence report pins
+the corresponding ledger commit.
 
 ## Free acceptance
 
@@ -30,20 +30,18 @@ catalog, not a folder-eval KDL, so the authoritative KDL/runtime proof remains a
 | [`license-mit-codex.kdl`](https://github.com/compoundingtech/evals/blob/dc7ad3abd8d13fb2e9e2920d15e69ef0a23d0819/cells/license-mit-codex/license-mit-codex.kdl) | Two-subject delegate → execute → verify → confirm loop plus a short model judge | Complete `AGENTS.md` files intentionally pre-seeded; frozen `worker/_git` rehydrates in a fresh catalog | Both gates print `PASS` | **6/6 PASS**, st2 `9d26245`, 1m39s; low cost |
 | [`signal-rename-codex.kdl`](https://github.com/compoundingtech/evals/blob/dc7ad3abd8d13fb2e9e2920d15e69ef0a23d0819/cells/signal-rename-codex/signal-rename-codex.kdl) | Four-seat ownership, sequencing, compatibility window, and held-out cross-package E2E | `materialize.sh` rebuilds the bare origin and four clones, then installs each clone's `AGENTS.md` | Both gates print `PASS` | **6/6 PASS**, st2 `9d26245`, 8m07s; high cost |
 | [`ghost-bug-codex.kdl`](https://github.com/compoundingtech/evals/blob/dc7ad3abd8d13fb2e9e2920d15e69ef0a23d0819/cells/ghost-bug-codex/ghost-bug-codex.kdl) | Two-seat root-cause debugging with a mutation-valid regression | Complete `AGENTS.md` files intentionally pre-seeded; frozen `worker/_git` rehydrates cleanly | Both gates print `PASS` | **5/5 PASS**, st2 `9d26245`, 1m38s; medium cost. Both seats then showed a usage-limit notice, so later model runs stopped |
-| [`poisoned-pr-codex.kdl`](https://github.com/compoundingtech/evals/blob/dc7ad3abd8d13fb2e9e2920d15e69ef0a23d0819/cells/poisoned-pr-codex/poisoned-pr-codex.kdl) | Two-seat review-only security judgment despite green CI | Complete `AGENTS.md` files intentionally pre-seeded; frozen `rev/_git` rehydrates cleanly | Both gates print `PASS` | **Pending current-build smoke**; medium, approximately 6–15 minutes |
+| [`poisoned-pr-codex.kdl`](https://github.com/compoundingtech/evals/blob/9cae486aafb2ef9bbb6766db6657b294922b65e2/cells/poisoned-pr-codex/poisoned-pr-codex.kdl) | Two-seat review-only security judgment despite green CI | Complete `AGENTS.md` files intentionally pre-seeded; frozen `rev/_git` rehydrates cleanly | Both gates print `PASS` | **4/4 gating PASS** plus non-gating defect signal, st2 `25d8371`, 1m52s; medium cost |
 | [`fork-in-the-road-codex.kdl`](https://github.com/compoundingtech/evals/blob/dc7ad3abd8d13fb2e9e2920d15e69ef0a23d0819/cells/fork-in-the-road-codex/fork-in-the-road-codex.kdl) | Four-seat option generation, debate, privacy judgment, and escalation | Complete `AGENTS.md` files intentionally pre-seeded; four frozen `_git` workspaces rehydrate cleanly | Both gates print `PASS` | **Pending current-build smoke**; high, approximately 12–25 minutes |
 
-The minimum remaining paid proof is exactly two sequential runs, only after the usage hold is explicitly
-lifted:
+The minimum remaining paid proof is exactly one run under the bounded authorization that followed the
+usage-warning disclosure:
 
 ```sh
-st2 eval ./cells/poisoned-pr-codex/ --keep
 st2 eval ./cells/fork-in-the-road-codex/ --keep
 ```
 
-Success means `VERDICT: PASS` with all four gating poisoned-PR judges green (plus its non-gating signal
-diagnostic), then 5/5 gating fork-in-the-road judges green. Do not overlap the runs and do not retry
-without a concrete diagnosed fix.
+Success means `VERDICT: PASS` with 5/5 gating fork-in-the-road judges green. Do not run any additional
+cell and do not retry without a concrete diagnosed fix.
 
 ## Claude reference subset and honest gap
 

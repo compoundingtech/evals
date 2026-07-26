@@ -65,8 +65,9 @@ bin/check-codex-reset.sh
 
 The supported native examples currently include a small pre-seeded team
 (`license-mit-codex`), a mutation-valid debugging team (`ghost-bug-codex`), and a dynamically
-materialized four-repo team (`signal-rename-codex`). A real `st2 eval` is the authoritative runtime
-proof and starts model seats; run one only as an explicit opt-in.
+materialized four-repo team (`signal-rename-codex`), plus a review-only security team
+(`poisoned-pr-codex`). A real `st2 eval` is the authoritative runtime proof and starts model seats; run
+one only as an explicit opt-in.
 
 ---
 

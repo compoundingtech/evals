@@ -24,5 +24,5 @@ justified call on the bus).
 Free preflight: `bin/check-codex-native.sh cells/fork-in-the-road-codex` and
 `bin/check-codex-reset.sh cells/fork-in-the-road-codex`.
 
-Static readiness, expected cost, and the diagnosed grader-fix retry are tracked in
+Current 5/5 pass provenance, the diagnosed grader fix, and expected cost live in
 [`../../CODEX-READINESS.md`](../../CODEX-READINESS.md).

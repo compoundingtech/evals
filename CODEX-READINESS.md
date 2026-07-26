@@ -31,17 +31,10 @@ catalog, not a folder-eval KDL, so the authoritative KDL/runtime proof remains a
 | [`signal-rename-codex.kdl`](https://github.com/compoundingtech/evals/blob/dc7ad3abd8d13fb2e9e2920d15e69ef0a23d0819/cells/signal-rename-codex/signal-rename-codex.kdl) | Four-seat ownership, sequencing, compatibility window, and held-out cross-package E2E | `materialize.sh` rebuilds the bare origin and four clones, then installs each clone's `AGENTS.md` | Both gates print `PASS` | **6/6 PASS**, st2 `9d26245`, 8m07s; high cost |
 | [`ghost-bug-codex.kdl`](https://github.com/compoundingtech/evals/blob/dc7ad3abd8d13fb2e9e2920d15e69ef0a23d0819/cells/ghost-bug-codex/ghost-bug-codex.kdl) | Two-seat root-cause debugging with a mutation-valid regression | Complete `AGENTS.md` files intentionally pre-seeded; frozen `worker/_git` rehydrates cleanly | Both gates print `PASS` | **5/5 PASS**, st2 `9d26245`, 1m38s; medium cost. Both seats then showed a usage-limit notice, so later model runs stopped |
 | [`poisoned-pr-codex.kdl`](https://github.com/compoundingtech/evals/blob/9cae486aafb2ef9bbb6766db6657b294922b65e2/cells/poisoned-pr-codex/poisoned-pr-codex.kdl) | Two-seat review-only security judgment despite green CI | Complete `AGENTS.md` files intentionally pre-seeded; frozen `rev/_git` rehydrates cleanly | Both gates print `PASS` | **4/4 gating PASS** plus non-gating defect signal, st2 `25d8371`, 1m52s; medium cost |
-| [`fork-in-the-road-codex.kdl`](https://github.com/compoundingtech/evals/blob/9cae486aafb2ef9bbb6766db6657b294922b65e2/cells/fork-in-the-road-codex/fork-in-the-road-codex.kdl) | Four-seat option generation, debate, privacy judgment, and escalation | Complete `AGENTS.md` files intentionally pre-seeded; four frozen `_git` workspaces rehydrate cleanly | Both gates print `PASS` | First smoke was a diagnosed 4/5 grader false negative: the recommendation was present, but a missing optional archive made grep return 2 under `pipefail`. Minimal fix validated; one diagnosed retry pending |
+| [`fork-in-the-road-codex.kdl`](https://github.com/compoundingtech/evals/blob/9cae486aafb2ef9bbb6766db6657b294922b65e2/cells/fork-in-the-road-codex/fork-in-the-road-codex.kdl) | Four-seat option generation, debate, privacy judgment, and escalation | Complete `AGENTS.md` files intentionally pre-seeded; four frozen `_git` workspaces rehydrate cleanly | Both gates print `PASS` | **5/5 PASS**, st2 `25d8371`, 7m21s; one retry after a concrete missing-optional-archive grader diagnosis and fix |
 
-The minimum remaining paid proof is exactly one run under the bounded authorization that followed the
-usage-warning disclosure:
-
-```sh
-st2 eval ./cells/fork-in-the-road-codex/ --keep
-```
-
-Success means `VERDICT: PASS` with 5/5 gating fork-in-the-road judges green. This is the single retry
-after a concrete grader diagnosis; do not run any additional cell or further retry.
+The five-cell tranche is current-build complete. No additional model-backed run is part of this ledger;
+the bounded authorization is exhausted.
 
 ## Claude reference subset and honest gap
 

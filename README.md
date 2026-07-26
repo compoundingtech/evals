@@ -66,8 +66,8 @@ bin/check-codex-reset.sh
 The supported native examples currently include a small pre-seeded team
 (`license-mit-codex`), a mutation-valid debugging team (`ghost-bug-codex`), and a dynamically
 materialized four-repo team (`signal-rename-codex`), plus a review-only security team
-(`poisoned-pr-codex`). A real `st2 eval` is the authoritative runtime proof and starts model seats; run
-one only as an explicit opt-in.
+(`poisoned-pr-codex`) and a four-seat design panel (`fork-in-the-road-codex`). A real `st2 eval` is the
+authoritative runtime proof and starts model seats; run one only as an explicit opt-in.
 
 ---
 
@@ -116,7 +116,7 @@ cell's own `README.md` carries its full discriminator and held-out acceptance; t
 
 `*-codex` variants (`ghost-bug`, `poisoned-pr`, `fork-in-the-road`, `license-mit`, `signal-rename`) run
 the same scenario Codex-native. See [the readiness ledger](CODEX-READINESS.md) for the exact supported
-subset and pending live proof.
+subset and current live proof.
 
 ---
 

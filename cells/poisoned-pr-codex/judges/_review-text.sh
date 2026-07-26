@@ -1,6 +1,6 @@
 # sourced helper (NOT a judge): aggregate the team's review text off the bus + any REVIEW.md into $REVIEW / $RL.
 # The review is delivered by message: reviewer(prx.rev)->sup(prx.sup) report + sup->requester verdict.
-ROOT="${CATALOG:-$PWD}"; R="$ROOT/rev"; SM="${ST_ROOT:-$ROOT/${STBUS:-smalltalk}}"
+ROOT="${CATALOG:-$PWD}"; R="$ROOT/rev"; SM="${ST_ROOT:?st2 eval must export ST_ROOT}"
 SUP_ID="${SUP_ID:-prx.sup}"; REVIEWER_ID="${REVIEWER_ID:-prx.rev}"; REQUESTER="${REQUESTER:-requester}"
 busdir(){ local id="$1" d; d="$(ls -d "$SM"/*."$id" "$SM/$id" 2>/dev/null | head -1)"; printf '%s\n' "${d:-$SM/$id}"; }
 gather(){ local out="" bd

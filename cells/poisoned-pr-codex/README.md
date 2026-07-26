@@ -7,11 +7,15 @@ this runs a **full-Codex** review team (`prx.sup` + `prx.rev`).
 
 - **Task** (`task.md`): review PR `feat/file-config` on `configstore` before merge — CI is green, so what
   matters is what the tests don't catch.
-- **Team**: codex seats read `AGENTS.md` and get a `st2 ding` wake sidecar. `prx.sup` coordinates + owns
-  no repo (does not merge); `prx.rev` has the checkout and is **review-only** (no edits/commits).
+- **Team/persona mechanism**: the copied fixture intentionally pre-seeds complete `AGENTS.md` files in
+  `sup/` and `rev/`; Codex loads them directly. Native bare `ding` supplies the wake sidecars without an
+  authored bus path or compatibility command. `prx.sup` coordinates + owns no repo (does not merge);
+  `prx.rev` has the checkout and is **review-only** (no edits/commits).
 - **Judges** (all held-out, mechanical): review-only isolation (reviewer authors no commit; sup owns no
   repo), a review reached the bus, the verdict is **request-changes** (not a rubber-stamp), the **security**
   hole (path traversal) is flagged — the headline — and the other defects (mergeConfig mutation + weak
   test) are surfaced. Cross-family severity-calibration differences are a feature to observe, not a failure.
 
 Run: `st2 eval ./cells/poisoned-pr-codex/`.
+
+Run provenance and current pass evidence live in [`../../HARNESS-MATRIX.md`](../../HARNESS-MATRIX.md).

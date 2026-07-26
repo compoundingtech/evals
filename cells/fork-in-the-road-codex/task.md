@@ -15,11 +15,11 @@ You're the supervisor — run this as a design panel, don't decide it solo. Plea
 - **decompose** the space and assign each proposer (`fd-a`, `fd-b`, `fd-c`) a **genuinely distinct**
   approach to champion;
 - have them each write a strong, honest proposal (steelman it AND own its weaknesses), then **debate the
-  tradeoffs** with each other over smalltalk — I want real disagreement that updates, not instant consensus;
+  tradeoffs** with each other over the st2 bus — I want real disagreement that updates, not instant consensus;
 - **synthesize a recommendation** (or "prototype X first, because Y") that's **justified by the analysis**;
 - and be explicit about **what's ours to recommend vs. what's the humans' call to make** — escalate the
   latter to me rather than deciding it for them.
 
 Reply to me (`eval-runner`) with the option set, the key tradeoffs, your recommendation + why, and the
 escalation. Each proposer keeps their proposal in their own dir; you keep the recommendation in yours;
-coordinate everything through smalltalk. Nobody edits anyone else's dir.
+coordinate everything through the st2 bus. Nobody edits anyone else's dir.

@@ -1,9 +1,9 @@
 # ghost-bug-codex — the ghost-bug debug loop, run by codex seats
 
 Same eval as [`ghost-bug`](../ghost-bug/) (root-cause a shared-default-mutation bug in `labelkit` + a
-**mutation-valid** regression test), but the team (`gbx.sup` + `gbx.fix`) runs on the **codex** harness —
-proving the folder-eval format handles codex seats. Codex reads its persona from `AGENTS.md` (not
-`CLAUDE.md`), and each seat gets a `st2 ding` wake sidecar (codex has no async re-wake).
+**mutation-valid** regression test), but the team (`gbx.sup` + `gbx.fix`) runs on the **Codex** harness.
+This teaches a bounded delegate-debug-verify loop where a shallow patch or a test that never failed
+cannot pass.
 
 **Run it:** `st2 eval ./cells/ghost-bug-codex/`
 
@@ -12,4 +12,7 @@ root-cause (two blind probes), **regression mutation-valid** (RED on the buggy B
 bar, ported verbatim), coordination.
 
 Fixture `worker/` reuses ghost-bug's labelkit (owner-pinned `gbx.fix`); `worker/AGENTS.md` + `sup/AGENTS.md`
-are the codex personas.
+are intentionally pre-seeded complete Codex personas. The KDL uses native bare `ding`, with no authored
+bus path or compatibility wake command.
+
+Run provenance and current pass evidence live in [`../../HARNESS-MATRIX.md`](../../HARNESS-MATRIX.md).

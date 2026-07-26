@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # JUDGE: coordination — the full team loop is visible on the bus, and the confirmation is VERIFIED (not a bare ack).
 #
-# The loop must show, on the smalltalk bus:
+# The loop must show, on the st2 bus:
 #   (1) a supervisor -> worker delegation,
 #   (2) a worker -> supervisor report, and
 #   (3) a supervisor -> requester confirmation that POST-DATES the worker's report — i.e. the sup confirmed
@@ -11,7 +11,7 @@
 # PASS (exit 0): all three present, with (3) post-dating the oldest report.
 set -uo pipefail
 ROOT="${CATALOG:-$PWD}"
-SM="${ST_ROOT:-$ROOT/${STBUS:-smalltalk}}"                    # bus root (st2 ding runs under $CATALOG/smalltalk)
+SM="${ST_ROOT:?st2 eval must export ST_ROOT}"
 SUP_ID="${SUP_ID:-lmc.sup}"; WORKER_ID="${WORKER_ID:-lmc.worker}"; REQUESTER="${REQUESTER:-requester}"
 
 # Resolve an id to its on-disk bus dir, tolerating a host/team prefix (e.g. hetz.lmc.sup or lmc.sup).
@@ -20,7 +20,7 @@ busdir(){ local id="$1" d; d="$(ls -d "$SM"/*."$id" "$SM/$id" 2>/dev/null | head
 msgs_from(){ local owner from; owner="$(busdir "$1")"; from="$2"
   grep -lRE "^from:[[:space:]]*([a-z0-9][a-z0-9._-]*\.)?$from([[:space:]]|\$)" "$owner/inbox" "$owner/archive" 2>/dev/null; }
 nlines(){ [ -z "$1" ] && echo 0 || printf '%s\n' "$1" | grep -c .; }
-# smalltalk messages are named <epoch-ms>-<sfx>.md — newest / oldest ms among a newline-separated file list.
+# st2 messages are named <epoch-ms>-<sfx>.md — newest / oldest ms among a newline-separated file list.
 newest_ts(){ local t max=0;             for f in $1; do t="$(basename "$f" | grep -oE '^[0-9]+')"; [ "${t:-0}" -gt "$max" ] && max="$t"; done; echo "$max"; }
 oldest_ts(){ local t min=9999999999999; for f in $1; do t="$(basename "$f" | grep -oE '^[0-9]+')"; [ -n "$t" ] && [ "$t" -lt "$min" ] && min="$t"; done; [ -n "$1" ] && echo "$min" || echo 0; }
 

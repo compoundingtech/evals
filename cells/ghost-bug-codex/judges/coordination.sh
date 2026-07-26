@@ -7,7 +7,7 @@
 # PASS (exit 0): both the delegation and the report are present on the bus.
 set -uo pipefail
 ROOT="${CATALOG:-$PWD}"
-SM="${ST_ROOT:-$ROOT/${STBUS:-smalltalk}}"                    # bus root (st2 ding runs under $CATALOG/smalltalk)
+SM="${ST_ROOT:?st2 eval must export ST_ROOT}"
 SUP_ID="${SUP_ID:-gbx.sup}"; WORKER_ID="${WORKER_ID:-gbx.fix}"
 
 # Resolve an id to its on-disk bus dir, tolerating a leading team/host prefix.

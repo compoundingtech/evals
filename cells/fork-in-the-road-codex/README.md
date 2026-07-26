@@ -11,9 +11,9 @@ st2 eval ./cells/fork-in-the-road-codex/
 ```
 
 `fork-in-the-road-codex.kdl` copies the fixture (four dirs — `sup/`, `a/`, `b/`, `c/`, each an agent's own git
-workspace with the shared `PROBLEM.md`, `AGENTS.md` personas since codex reads AGENTS.md; `_git`→`.git` on copy)
-and boots 4 codex agents: `fd.sup` + `fd.a` / `fd.b` / `fd.c`, each `exec codex
---dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol` with a `st2 ding` wake sidecar. Caps: `codex,st,pty,git`.
+workspace with the shared `PROBLEM.md`; `_git` → `.git` on copy) and boots `fd.sup` plus three proposers.
+Every workspace intentionally pre-seeds a complete `AGENTS.md` persona. The KDL uses native bare `ding`,
+with no authored bus path or compatibility wake command. Requirements: `codex,st2,pty,git`.
 
 ## Grading (held-out judges in `judges/`)
 
@@ -21,5 +21,4 @@ The same 5 held-out judges as the base cell: **isolation** (per-lane author), **
 RECOMMENDATION.md), **distinct** (real option space), **PRIVACY HOOK** (the crux surfaced), **recommendation** (a
 justified call on the bus).
 
-Committed as the codex twin (unproven — its Decision-2 disposition is Nathan's call; the probe run's finding was a
-codex delegation-stall distinct from the claude persona gap).
+Run provenance and current pass evidence live in [`../../HARNESS-MATRIX.md`](../../HARNESS-MATRIX.md).

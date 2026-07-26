@@ -1,28 +1,22 @@
 // license-mit-codex.kdl — the whole eval in one file.  `st2 eval ./` runs it; `st2 up ./` just boots the team.
 // license-mit run by a full-CODEX team (cross-family): same task/world/grader as license-mit, only the family
 // changes — a single-family point next to the Claude/Mixed matrix, confirming the smallest team loop works
-// Codex-native (codex reads AGENTS.md; a `st2 ding` wake sidecar since codex has no asyncRewake).
+// Codex-native: each fixture workspace intentionally pre-seeds AGENTS.md, and bare `ding` asks st2
+// to render the wake sidecar. The spec authors no compatibility bus path or command.
 // All judges are held-out.
-
-env {                                    // cascades: agents + their processes inherit these
-  ST_ROOT  "$CATALOG/smalltalk"
-  PTY_ROOT "$CATALOG/pty"
-}
 
 team "lmc" {                             // prefixes the agents it holds -> lmc.sup, lmc.worker
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no product repo)
     env { ST_AGENT "lmc.sup" }
-    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
-    /- ding {}
-    exec "lmc.sup.ding" { command #"st2 ding lmc.sup --identity lmc.sup --root $CATALOG/smalltalk"# }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started in a hermetic st2 eval. Read AGENTS.md. Presence is best-effort: if st2 status cannot resolve this flat eval seat, continue. Drain the inbox with st2 message using $ST_ROOT and $ST_AGENT. If no request is present, poll that inbox in this turn until it arrives; then coordinate the whole task end-to-end. Never stop solely because presence is unavailable.'"#
+    ding
   }
   agent "worker" {
     workspace "./worker"                 // owns the widget repo (this dir)
     env { ST_AGENT "lmc.worker" }
-    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
-    /- ding {}
-    exec "lmc.worker.ding" { command #"st2 ding lmc.worker --identity lmc.worker --root $CATALOG/smalltalk"# }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started in a hermetic st2 eval. Read AGENTS.md. Presence is best-effort: if st2 status cannot resolve this flat eval seat, continue. Drain the inbox with st2 message using $ST_ROOT and $ST_AGENT. If no delegation is present, poll that inbox in this turn until it arrives; then execute it end-to-end. Never stop solely because presence is unavailable.'"#
+    ding
   }
 }
 
@@ -38,9 +32,8 @@ eval {                                   // `st2 eval` = copy the world, boot te
   agent "judge" {                        // a real agent — its command line IS "what runs the judgment", in the open
     workspace "./"                       // sees the whole sandbox + bus, so it can inspect
     env { ST_AGENT "judge" }
-    command #"exec codex --model gpt-5.6-sol 'You are a judge. Read your inbox for what to evaluate, inspect the sandbox, reply in the exact format asked.'"#
-    /- ding {}
-    exec "judge.ding" { command #"st2 ding judge --identity judge --root $CATALOG/smalltalk"# }
+    command #"exec codex --model gpt-5.6-sol 'You are the hermetic eval judge. Read AGENTS.md. Poll your st2 inbox using $ST_ROOT and $ST_AGENT until an ask arrives, inspect the sandbox, and reply on the bus in the exact format requested. Presence is best-effort; never stop solely because status cannot resolve the flat eval seat.'"#
+    ding
   }
 
   judges {                               // all must pass; each one visible, nothing magic

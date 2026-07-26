@@ -1,38 +1,34 @@
 // fork-in-the-road-codex.kdl — the codex twin of fork-in-the-road. `st2 eval ./` runs it.
 // Same DESIGN cell (a team designs how MULTIPLE humans share one agent team — N distinct approaches, a real
 // debate, a justified recommendation, and the held-out PRIVACY / information-isolation crux) but the panel is
-// run by CODEX agents (gpt-5.6-sol) reading AGENTS.md, with a ding wake sidecar. Cross-model probe: does codex
-// COMPLETE the 4-agent design panel where claude stalls? Same held-out judges as the base (fd.* ids + authors).
-
-env {
-  ST_ROOT  "$CATALOG/smalltalk"
-  PTY_ROOT "$CATALOG/pty"
-}
+// run by CODEX agents (gpt-5.6-sol). Each fixture workspace intentionally pre-seeds AGENTS.md, and bare
+// `ding` is the native st2 wake declaration. Cross-model probe: does codex complete the full 4-agent design
+// panel? Same held-out judges as the base (fd.* ids + authors).
 
 team "fd" {                              // -> fd.sup (synthesizer) + fd.a / fd.b / fd.c (proposers)
   agent "sup" {
     workspace "./sup"                    // coordinate + synthesize; owns only RECOMMENDATION.md in its dir
     env { ST_AGENT "fd.sup" }
-    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
-    exec "fd.sup.ding" { command #"st2 ding fd.sup --identity fd.sup --root $CATALOG/smalltalk"# }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started in a hermetic st2 eval. Read AGENTS.md. Presence is best-effort: if st2 status cannot resolve this flat eval seat, continue. Drain with st2 message using $ST_ROOT and $ST_AGENT; if no request is present, poll in this turn until it arrives. Then drive the complete panel, synthesis, and handoff.'"#
+    ding
   }
   agent "a" {
     workspace "./a"
     env { ST_AGENT "fd.a" }
-    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
-    exec "fd.a.ding" { command #"st2 ding fd.a --identity fd.a --root $CATALOG/smalltalk"# }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started in a hermetic st2 eval. Read AGENTS.md. Presence is best-effort: if st2 status cannot resolve this flat eval seat, continue. Drain with st2 message using $ST_ROOT and $ST_AGENT; if no assignment is present, poll in this turn until it arrives. Then execute, debate, commit, and report end-to-end.'"#
+    ding
   }
   agent "b" {
     workspace "./b"
     env { ST_AGENT "fd.b" }
-    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
-    exec "fd.b.ding" { command #"st2 ding fd.b --identity fd.b --root $CATALOG/smalltalk"# }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started in a hermetic st2 eval. Read AGENTS.md. Presence is best-effort: if st2 status cannot resolve this flat eval seat, continue. Drain with st2 message using $ST_ROOT and $ST_AGENT; if no assignment is present, poll in this turn until it arrives. Then execute, debate, commit, and report end-to-end.'"#
+    ding
   }
   agent "c" {
     workspace "./c"
     env { ST_AGENT "fd.c" }
-    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
-    exec "fd.c.ding" { command #"st2 ding fd.c --identity fd.c --root $CATALOG/smalltalk"# }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started in a hermetic st2 eval. Read AGENTS.md. Presence is best-effort: if st2 status cannot resolve this flat eval seat, continue. Drain with st2 message using $ST_ROOT and $ST_AGENT; if no assignment is present, poll in this turn until it arrives. Then execute, debate, commit, and report end-to-end.'"#
+    ding
   }
 }
 

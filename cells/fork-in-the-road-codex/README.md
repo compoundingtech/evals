@@ -24,5 +24,5 @@ justified call on the bus).
 Free preflight: `bin/check-codex-native.sh cells/fork-in-the-road-codex` and
 `bin/check-codex-reset.sh cells/fork-in-the-road-codex`.
 
-Static readiness, expected cost, and the pending current-build smoke are tracked in
-[`../../CODEX-READINESS.md`](../../CODEX-READINESS.md). The live command is opt-in and currently held.
+Static readiness, expected cost, and the diagnosed grader-fix retry are tracked in
+[`../../CODEX-READINESS.md`](../../CODEX-READINESS.md).

@@ -8,12 +8,13 @@ cd "$repo_root"
 plan="$(mktemp)"
 opt_in_plan="$(mktemp)"
 queue_plan="$(mktemp)"
+model_free_plan="$(mktemp)"
 dry_prefix="$(mktemp)"
 rejection_output="$(mktemp)"
 fake_bin="$(mktemp -d)"
 provider_marker="$fake_bin/provider-reached"
 cleanup() {
-  rm -f -- "$plan" "$opt_in_plan" "$queue_plan" "$dry_prefix" "$rejection_output"
+  rm -f -- "$plan" "$opt_in_plan" "$queue_plan" "$model_free_plan" "$dry_prefix" "$rejection_output"
   rm -rf -- "$fake_bin"
 }
 trap cleanup EXIT
@@ -33,6 +34,7 @@ for cell in "${queue[@]}"; do
   queue_args+=(--cell "$cell")
 done
 bin/overnight.sh --dry-run "${queue_args[@]}" > "$queue_plan"
+bin/overnight.sh --dry-run --cell hook-integrity > "$model_free_plan"
 
 mapfile -t inventory_rows < <(bin/corpus-inventory.sh --no-header)
 expected_first="${inventory_rows[0]%%$'\t'*}"
@@ -63,6 +65,12 @@ mapfile -t planned_queue < <(sed -n "2,$((1 + ${#queue[@]}))p" "$queue_plan" | a
 }
 grep -Fq "${#queue[@]} selected cells; explicit CLI order; sequential, no overlap." "$queue_plan"
 grep -Fq 'DRY RUN ONLY: no preflight command, model, judge, or eval was started.' "$queue_plan"
+grep -Eq '^hook-integrity[[:space:]]+model-free[[:space:]]+-[[:space:]]+-[[:space:]]+0[[:space:]]+none[[:space:]]+90s$' \
+  "$model_free_plan"
+grep -Fq '1 selected cells; explicit CLI order; sequential, no overlap.' "$model_free_plan"
+grep -Fq 'PROVIDER CHECKS: none; this selected subset is entirely model-free.' "$model_free_plan"
+grep -Fq 'DRY RUN ONLY: no preflight command, model, judge, or eval was started.' "$model_free_plan"
+grep -Fq 'PROVIDER CHECKS: Claude Codex binary and auth status before execution.' "$queue_plan"
 
 printf '%s\n' \
   '#!/usr/bin/env bash' \
@@ -100,9 +108,6 @@ assert_rejected_before_provider \
 assert_rejected_before_provider \
   'FAIL: unknown or retired cell: clean-compose' --run --cell clean-compose
 assert_rejected_before_provider \
-  'FAIL: paid queue cannot select model-free cell: hook-integrity' \
-  --run --cell hook-integrity
-assert_rejected_before_provider \
   'FAIL: --cell requires a name' --run --cell
 
 dry_exit="$(rg -n -F 'if [ "$mode" = "dry-run" ]' bin/overnight.sh | cut -d: -f1)"
@@ -122,6 +127,14 @@ grep -Fxq 'bin/corpus-inventory.sh --no-header > "$full_inventory"' "$dry_prefix
   echo "FAIL: overnight dry-run prefix does not derive the inventory through the reviewed static helper" >&2
   exit 1
 }
+if rg -n 'claude auth status|codex login status' "$dry_prefix"; then
+  echo "FAIL: provider auth checks are reachable before the dry-run exit" >&2
+  exit 1
+fi
+grep -Fq 'if [ "$requires_claude" -eq 1 ]; then' bin/overnight.sh
+grep -Fq 'if [ "$requires_codex" -eq 1 ]; then' bin/overnight.sh
+grep -Fq 'claude auth status --json >/dev/null 2>&1' bin/overnight.sh
+grep -Fq 'codex login status >/dev/null 2>&1' bin/overnight.sh
 
 grep -Fq "hard_usage_pattern='usage[ -]?limit" bin/overnight.sh
 grep -Fq "informational_usage_pattern='[0-9]+ usage limit resets available'" bin/overnight.sh
@@ -130,5 +143,5 @@ grep -Fq '[ "$hard_usage_seen" -eq 1 ]; then' bin/overnight.sh
 grep -Fq '[ "$informational_usage_seen" -eq 1 ] &&' bin/overnight.sh
 grep -Fq '[ "$allow_informational_reset_banner" -eq 0 ]; then' bin/overnight.sh
 
-printf 'PASS: dry-run exposes %s-cell inventory and exact six-cell CLI order; selector rejections cannot reach providers; conservative usage stops remain enforced\n' \
+printf 'PASS: dry-run exposes %s-cell inventory, exact six-cell order, and explicit model-free selection; invalid selectors cannot reach providers; conservative usage stops remain enforced\n' \
   "$expected_cells"

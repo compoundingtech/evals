@@ -19,7 +19,7 @@ usage: bin/overnight.sh [--dry-run|--run] [--cell NAME ...|--all] [--state-dir P
 
 --dry-run                 Print the complete stable inventory; start nothing (default).
 --run                     Run the free preflight, then execute the explicitly selected cells.
---cell NAME               Select one maintained model-backed cell; repeat to set exact order.
+--cell NAME               Select one maintained cell; repeat to set exact order.
 --all                     Select the complete maintained inventory explicitly.
 --state-dir PATH          Durable logs/receipts root (default: .eval-runs/overnight).
 --acknowledge-usage-stop  Archive an existing STOPPED guard before an explicitly resumed --run.
@@ -118,11 +118,6 @@ if [ "${#selected_cells[@]}" -gt 0 ]; then
       echo "FAIL: unknown or retired cell: $cell" >&2
       exit 2
     fi
-    IFS=$'\t' read -r _cell harness _models _effort seats _cost _timeout _judges <<< "$row"
-    if [ "$harness" = "model-free" ] || [ "$seats" = "0" ]; then
-      echo "FAIL: paid queue cannot select model-free cell: $cell" >&2
-      exit 2
-    fi
     printf '%s\n' "$row" >> "$selected_inventory"
   done
   inventory="$selected_inventory"
@@ -130,6 +125,13 @@ if [ "${#selected_cells[@]}" -gt 0 ]; then
 elif [ "$run_all" -eq 1 ]; then
   selection_label="explicit full lexical inventory (--all)"
 fi
+
+requires_claude=0
+requires_codex=0
+while IFS=$'\t' read -r _cell _harness models _effort _seats _cost _timeout _judges; do
+  [[ "$models" != *claude-sonnet-5* ]] || requires_claude=1
+  [[ "$models" != *gpt-5.6-sol* ]] || requires_codex=1
+done < "$inventory"
 
 printf '%-30s %-10s %-35s %-7s %-5s %-8s %s\n' \
   CELL HARNESS MODEL EFFORT SEATS COST TIMEOUT
@@ -151,6 +153,14 @@ else
   echo 'A future human-reviewed full run may explicitly add --allow-informational-reset-banner;'
   echo 'that choice can spend more model quota and is not implied by --run.'
 fi
+if [ "$requires_claude" -eq 0 ] && [ "$requires_codex" -eq 0 ]; then
+  echo 'PROVIDER CHECKS: none; this selected subset is entirely model-free.'
+else
+  providers=()
+  [ "$requires_claude" -eq 0 ] || providers+=(Claude)
+  [ "$requires_codex" -eq 0 ] || providers+=(Codex)
+  printf 'PROVIDER CHECKS: %s binary and auth status before execution.\n' "${providers[*]}"
+fi
 if [ "$mode" = "dry-run" ]; then
   echo "DRY RUN ONLY: no preflight command, model, judge, or eval was started."
   if [ "$run_all" -eq 0 ] && [ "${#selected_cells[@]}" -eq 0 ]; then
@@ -171,6 +181,27 @@ fi
 echo
 echo "== free preflight (no model seats) =="
 bin/check-corpus.sh
+
+if [ "$requires_claude" -eq 1 ]; then
+  command -v claude >/dev/null || {
+    echo "FAIL: selected cells require Claude, but claude is not on PATH" >&2
+    exit 1
+  }
+  claude auth status --json >/dev/null 2>&1 || {
+    echo "FAIL: selected cells require Claude, but claude auth status failed" >&2
+    exit 1
+  }
+fi
+if [ "$requires_codex" -eq 1 ]; then
+  command -v codex >/dev/null || {
+    echo "FAIL: selected cells require Codex, but codex is not on PATH" >&2
+    exit 1
+  }
+  codex login status >/dev/null 2>&1 || {
+    echo "FAIL: selected cells require Codex, but codex login status failed" >&2
+    exit 1
+  }
+fi
 
 mkdir -p "$state_dir/logs" "$state_dir/receipts" "$state_dir/failures" "$state_dir/history"
 stop_guard="$state_dir/STOPPED"

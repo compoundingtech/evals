@@ -96,9 +96,11 @@ command makes both its complete-inventory selection and separately reviewed high
 bin/overnight.sh --run --all --allow-informational-reset-banner --state-dir .eval-runs/overnight
 ```
 
-With no selector, dry-run remains inventory-only; paid `--run` rejects omitted, duplicate, unknown, retired,
-and model-free selections. Neither `--all` nor the informational-banner opt-in is approved merely because it
-is documented or shown by `--dry-run`.
+With no selector, dry-run remains inventory-only; paid `--run` rejects omitted, duplicate, unknown, and
+retired selections. Explicitly selected maintained model-free cells execute through the same st2 lifecycle
+and receipts without provider checks; Claude/Codex binary and authentication checks apply only when the
+selected subset needs that provider. Neither `--all` nor the informational-banner opt-in is approved merely
+because it is documented or shown by `--dry-run`.
 
 The runner executes one cell at a time, applies each cell's declared timeout plus a watchdog grace period,
 keeps durable logs and atomic PASS receipts, and skips matching completed receipts on resume. Hard quota/rate

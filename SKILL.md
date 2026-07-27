@@ -45,8 +45,10 @@ run therefore requires separate human review of both `--all` and the higher-spen
 bin/overnight.sh --run --all --allow-informational-reset-banner --state-dir .eval-runs/overnight
 ```
 
-Paid `--run` rejects an omitted selector, duplicate, unknown, retired, and model-free cells. Hard
-quota/rate-limit errors stop unconditionally in both modes. Never infer approval for either paid command.
+Paid `--run` rejects an omitted selector, duplicate, unknown, or retired cell. Explicitly selected maintained
+model-free cells execute through the same st2 lifecycle and receipts without provider checks; Claude/Codex
+binary and authentication checks apply only when the selected subset needs that provider. Hard quota/rate-limit
+errors stop unconditionally in both modes. Never infer approval for either paid command.
 
 ## Cell rules
 

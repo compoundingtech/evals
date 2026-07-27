@@ -57,6 +57,10 @@ bin/overnight.sh --run \
   --state-dir .eval-runs/overnight
 ```
 
+An explicit selection may include maintained model-free cells; they still execute through st2 and receive the
+same cleanup and durable receipts. Claude/Codex binary and authentication checks run only when the selected
+subset actually contains work for that provider.
+
 The exact future full-run command must be separately reviewed because it may spend more model quota after an
 informational Codex banner:
 

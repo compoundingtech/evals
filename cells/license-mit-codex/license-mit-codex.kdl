@@ -5,6 +5,8 @@
 // to render the wake sidecar. The spec authors no compatibility bus path or command.
 // All judges are held-out.
 
+// Harness loaders, personas, and hooks are intentionally baked into fixture workspaces;
+// bin/check-harness-contract.sh verifies every current bus-connected model agent.
 team "lmc" {                             // prefixes the agents it holds -> lmc.sup, lmc.worker
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no product repo)

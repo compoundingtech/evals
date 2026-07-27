@@ -4,6 +4,8 @@
 // pre-seeds CLAUDE.md -> PERSONA.md. Bare `ding` delegates wake wiring to the current st2 folder-eval
 // renderer; the cell authors no compatibility bus root or sidecar command. All judges are held out.
 
+// Harness loaders, personas, and hooks are intentionally baked into fixture workspaces;
+// bin/check-harness-contract.sh verifies every current bus-connected model agent.
 team "dr" {                              // single agent -> dr.agent
   agent "agent" {
     workspace "./work"                   // its cwd holds ANSWER.txt

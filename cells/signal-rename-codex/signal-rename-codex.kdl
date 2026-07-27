@@ -6,6 +6,8 @@
 // matching clone's AGENTS.md; bare `ding` is the native st2 wake declaration. The KDL authors no
 // compatibility bus path or command. All five judges are held out.
 
+// Harness loaders, personas, and hooks are intentionally baked into fixture workspaces;
+// bin/check-harness-contract.sh verifies every current bus-connected model agent.
 team "sig" {
   agent "sup" {
     workspace "./sup"

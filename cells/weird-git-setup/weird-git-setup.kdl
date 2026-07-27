@@ -11,6 +11,8 @@
 // resolves its worktree, fixes a planted bug, keeps the suite green, and commits on `feature`. Judges held-out.
 
 
+// Harness loaders, personas, and hooks are intentionally baked into fixture workspaces;
+// bin/check-harness-contract.sh verifies every current bus-connected model agent.
 team "wg" {                              // single worker -> wg.dev
   agent "dev" {
     workspace "./wt/feature"             // the linked worktree — MATERIALIZED by the run step below BEFORE boot

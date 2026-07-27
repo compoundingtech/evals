@@ -19,6 +19,13 @@ The corpus contains Claude, Codex, mixed-family, and model-free cells.
 
 Do not add another agent spec, readiness ledger, or hand-maintained corpus matrix.
 
+## Product behavior contract
+
+Before changing product behavior, read the approved [vision](docs/vrs/vision.md),
+[requirements](docs/vrs/requirements.md), and [specification](docs/vrs/spec.md). Update
+`docs/vrs/spec.md` with the implementation. Nathan must explicitly approve changes to the
+vision or requirements.
+
 ## Safety first
 
 The complete free preflight never starts Claude or Codex:
@@ -100,6 +107,11 @@ cells/<cell>/
 
 The eval runner owns `CATALOG`, flat native `ST_ROOT`, and `PTY_ROOT`. Active cell KDL must not author a
 compatibility bus path or wake sidecar.
+
+Folder evals intentionally bake Claude or Codex loaders, personas, and canonical or custom hooks into fixture
+workspaces copied by `eval { copy ... }`. Those agents execute real hooks through `ST_HOOKS`; mutable personal
+defaults are not part of the eval. `bin/check-harness-contract.sh` verifies the canonical files used by every
+current bus-connected model agent.
 
 Team-less cells use deterministic `run` steps and judges without a model. Current examples cover native hook
 materialization, network health, catalog/pty isolation, and pty send/peek behavior.

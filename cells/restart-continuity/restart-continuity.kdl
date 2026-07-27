@@ -7,6 +7,8 @@
 // By design the team is told NOTHING about restarts (v1 tests the substrate as-is).  All judges are held-out.
 
 
+// Harness loaders, personas, and hooks are intentionally baked into fixture workspaces;
+// bin/check-harness-contract.sh verifies every current bus-connected model agent.
 team "rc" {                              // prefixes the agents it holds -> rc.sup, rc.dev, rc.inj
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no product repo)

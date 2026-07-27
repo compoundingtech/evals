@@ -5,6 +5,8 @@
 // agent owns its own dir (sup/, a/, b/, c/); the debate flows over the bus. All judges are held-out.
 
 
+// Harness loaders, personas, and hooks are intentionally baked into fixture workspaces;
+// bin/check-harness-contract.sh verifies every current bus-connected model agent.
 team "fd" {                              // -> fd.sup (synthesizer) + fd.a / fd.b / fd.c (proposers)
   agent "sup" {
     workspace "./sup"                    // coordinate + synthesize; owns only RECOMMENDATION.md in its dir

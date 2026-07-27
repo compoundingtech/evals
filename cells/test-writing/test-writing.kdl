@@ -5,6 +5,8 @@
 // mutants the suite kills) — coverage theater survives; a thorough suite kills them. All judges held-out.
 
 
+// Harness loaders, personas, and hooks are intentionally baked into fixture workspaces;
+// bin/check-harness-contract.sh verifies every current bus-connected model agent.
 team "tw" {                              // prefixes the agents it holds -> tw.sup, tw.dev
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no repo)

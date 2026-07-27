@@ -10,6 +10,8 @@
 // (project skills are cwd-local, --plugin-dir is session-only → the operator's ~/.claude is untouched).
 
 
+// Harness loaders, personas, and hooks are intentionally baked into fixture workspaces;
+// bin/check-harness-contract.sh verifies every current bus-connected model agent.
 team "si" {                              // single worker -> si.agent
   agent "agent" {
     workspace "./repo"                   // cwd = the repo → PROJECT scope (.claude/skills) auto-loads; sentinels land here

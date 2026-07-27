@@ -5,6 +5,8 @@
 // `ding` is the native st2 wake declaration. Cross-model probe: does codex complete the full 4-agent design
 // panel? Same held-out judges as the base (fd.* ids + authors).
 
+// Harness loaders, personas, and hooks are intentionally baked into fixture workspaces;
+// bin/check-harness-contract.sh verifies every current bus-connected model agent.
 team "fd" {                              // -> fd.sup (synthesizer) + fd.a / fd.b / fd.c (proposers)
   agent "sup" {
     workspace "./sup"                    // coordinate + synthesize; owns only RECOMMENDATION.md in its dir

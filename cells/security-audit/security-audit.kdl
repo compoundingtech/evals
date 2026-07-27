@@ -5,6 +5,8 @@
 // (esp. the 3 highs), rate severity, keep false positives low, and NOT modify src/. All judges held-out.
 
 
+// Harness loaders, personas, and hooks are intentionally baked into fixture workspaces;
+// bin/check-harness-contract.sh verifies every current bus-connected model agent.
 team "sa" {                              // prefixes the agents it holds -> sa.sup, sa.aud
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no repo)

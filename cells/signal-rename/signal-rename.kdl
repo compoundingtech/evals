@@ -14,6 +14,8 @@
 // ONLY its lane to origin/main; the judges integrate on sig.sup's clone. The cross-repo acceptance test is
 // HELD OUT (no agent sees it). All 5 judges are held out.
 
+// Harness loaders, personas, and hooks are intentionally baked into fixture workspaces;
+// bin/check-harness-contract.sh verifies every current bus-connected model agent.
 team "sig" {                             // -> sig.sup (integration lead) + sig.base / sig.relay / sig.hub (specialists)
   agent "sup" {
     workspace "./sup"                    // owns config/ + workspace root + integration on main (materialized below)

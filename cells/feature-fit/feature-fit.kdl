@@ -5,6 +5,8 @@
 // All judges are held-out.
 
 
+// Harness loaders, personas, and hooks are intentionally baked into fixture workspaces;
+// bin/check-harness-contract.sh verifies every current bus-connected model agent.
 team "feat" {                            // prefixes the agents it holds -> feat.sup, feat.dev
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no product repo)

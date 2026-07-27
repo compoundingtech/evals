@@ -3,6 +3,8 @@
 // delegate -> execute -> verify -> confirm loop out, isolation held. Judges are all held-out.
 
 
+// Harness loaders, personas, and hooks are intentionally baked into fixture workspaces;
+// bin/check-harness-contract.sh verifies every current bus-connected model agent.
 team "mix" {                             // prefixes the agents it holds -> mix.sup, mix.worker
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no product repo)

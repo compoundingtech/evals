@@ -3,6 +3,8 @@
 // folder-eval format handles the codex harness. Each fixture workspace intentionally pre-seeds AGENTS.md,
 // and bare `ding` asks st2 to render the wake sidecar. Same held-out judges as ghost-bug; all are held-out.
 
+// Harness loaders, personas, and hooks are intentionally baked into fixture workspaces;
+// bin/check-harness-contract.sh verifies every current bus-connected model agent.
 team "gbx" {                             // prefixes the agents it holds -> gbx.sup, gbx.fix
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no product repo)

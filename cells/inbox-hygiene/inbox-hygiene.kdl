@@ -6,6 +6,8 @@
 // token (from the durable PROCESSED.log) and NOT re-append — a double-act is the failure.  All judges held-out.
 
 
+// Harness loaders, personas, and hooks are intentionally baked into fixture workspaces;
+// bin/check-harness-contract.sh verifies every current bus-connected model agent.
 team "ih" {                              // prefixes the agents it holds -> ih.agent, ih.inj
   agent "agent" {
     workspace "./worker"                 // owns the ledger repo (PROCESSED.log = the countable side-effect)

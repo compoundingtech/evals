@@ -5,6 +5,8 @@
 // mutation-valid regression test. All judges are held-out.
 
 
+// Harness loaders, personas, and hooks are intentionally baked into fixture workspaces;
+// bin/check-harness-contract.sh verifies every current bus-connected model agent.
 team "gb" {                              // prefixes the agents it holds -> gb.sup, gb.fix
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no product repo)

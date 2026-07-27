@@ -7,6 +7,8 @@
 // the SAME edge fires for a real CODEX worker (cd.xw) and a real CLAUDE worker (cd.cw). All judges held-out.
 
 
+// Harness loaders, personas, and hooks are intentionally baked into fixture workspaces;
+// bin/check-harness-contract.sh verifies every current bus-connected model agent.
 team "cd" {                              // prefixes the agents it holds; `supervisor` declares the chain st2 walks
   agent "cos" {
     workspace "./cos"                    // ROOT of the chain (no `supervisor` field) — a crash-ding recipient

@@ -7,13 +7,13 @@ team "gbx" {                             // prefixes the agents it holds -> gbx.
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no product repo)
     env { ST_AGENT "gbx.sup" }
-    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started in a hermetic st2 eval. Read AGENTS.md. Presence is best-effort: if st2 status cannot resolve this flat eval seat, continue. Drain with st2 message using $ST_ROOT and $ST_AGENT; if no request is present, poll in this turn until it arrives. Then coordinate and verify the whole task end-to-end.'"#
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You just cold-started in a hermetic st2 eval. Read AGENTS.md. Presence is best-effort: if st2 status cannot resolve this flat eval seat, continue. Drain with st2 message using $ST_ROOT and $ST_AGENT; if no request is present, poll in this turn until it arrives. Then coordinate and verify the whole task end-to-end.'"#
     ding
   }
   agent "fix" {
     workspace "./worker"                 // owns the labelkit repo (this dir)
     env { ST_AGENT "gbx.fix" }
-    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started in a hermetic st2 eval. Read AGENTS.md. Presence is best-effort: if st2 status cannot resolve this flat eval seat, continue. Drain with st2 message using $ST_ROOT and $ST_AGENT; if no delegation is present, poll in this turn until it arrives. Then execute it end-to-end.'"#
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You just cold-started in a hermetic st2 eval. Read AGENTS.md. Presence is best-effort: if st2 status cannot resolve this flat eval seat, continue. Drain with st2 message using $ST_ROOT and $ST_AGENT; if no delegation is present, poll in this turn until it arrives. Then execute it end-to-end.'"#
     ding
   }
 }

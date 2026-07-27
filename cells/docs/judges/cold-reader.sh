@@ -70,7 +70,8 @@ e["hasTrustDialogAccepted"] = True; e["hasCompletedProjectOnboarding"] = True
 json.dump(d, open(p, "w"), indent=2)
 PY
 echo "  running fresh cold-reader agent (docs-only)..."
-( cd "$R" && timeout 300 claude --print --permission-mode bypassPermissions --session-id "$sid" \
+( cd "$R" && timeout 300 claude --model claude-sonnet-5 --effort medium --print \
+  --permission-mode bypassPermissions --session-id "$sid" \
   "Read task.md and do exactly what it asks. Learn the checkout API from README.md / docs only; treat the library as a black box. Write ./result.json." \
   > "$R/reader.log" 2>&1 ) || echo "  (reader print exited nonzero/timed out; grading result.json anyway)"
 

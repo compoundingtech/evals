@@ -19,7 +19,7 @@ team "si" {                              // single worker -> si.agent
     workspace "./repo"                   // cwd = the repo → PROJECT scope (.claude/skills) auto-loads; sentinels land here
     env { ST_AGENT "si.agent" }
     // --plugin-dir splices the PLUGIN scope (session-only) straight into the launch command.
-    command #"exec claude --permission-mode auto --plugin-dir $CATALOG/plugin/evalpkg 'You just cold-started. Run your boot ritual (set status available, drain your inbox), then do the task you find there.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto --plugin-dir $CATALOG/plugin/evalpkg 'You just cold-started. Run your boot ritual (set status available, drain your inbox), then do the task you find there.'"#
     exec "si.agent.ding" { command #"st2 ding si.agent --identity si.agent --root $CATALOG/smalltalk"# }
   }
 }

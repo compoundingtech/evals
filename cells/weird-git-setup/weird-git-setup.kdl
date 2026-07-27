@@ -19,7 +19,7 @@ team "wg" {                              // single worker -> wg.dev
   agent "dev" {
     workspace "./wt/feature"             // the linked worktree — MATERIALIZED by the run step below BEFORE boot
     env { ST_AGENT "wg.dev" }
-    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain your inbox), then do the task you find there.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain your inbox), then do the task you find there.'"#
     exec "wg.dev.ding" { command #"st2 ding wg.dev --identity wg.dev --root $CATALOG/smalltalk"# }
   }
 }

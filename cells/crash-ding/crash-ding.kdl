@@ -15,25 +15,25 @@ team "cd" {                              // prefixes the agents it holds; `super
   agent "cos" {
     workspace "./cos"                    // ROOT of the chain (no `supervisor` field) — a crash-ding recipient
     env { ST_AGENT "cd.cos" }
-    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Set your status available, then stand by and do nothing (fault-injection eval).'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started. Set your status available, then stand by and do nothing (fault-injection eval).'"#
   }
   agent "sup" {
     workspace "./sup"                    // supervisor tier — a crash-ding recipient
     env { ST_AGENT "cd.sup" }
     supervisor "cd.cos"
-    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Set your status available, then stand by and do nothing (fault-injection eval).'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started. Set your status available, then stand by and do nothing (fault-injection eval).'"#
   }
   agent "cw" {
     workspace "./cw"                     // REAL claude worker — crashed by the injector (harness-agnostic path)
     env { ST_AGENT "cd.cw" }
     supervisor "cd.sup"
-    command #"exec claude --permission-mode auto 'You just cold-started. Set your status available, then stand by and do nothing (fault-injection eval).'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Set your status available, then stand by and do nothing (fault-injection eval).'"#
   }
   agent "xw" {
     workspace "./xw"                     // REAL codex worker — crashed by the injector (proves harness-agnostic)
     env { ST_AGENT "cd.xw" }
     supervisor "cd.sup"
-    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol 'You just cold-started. Set your status available, then stand by and do nothing (fault-injection eval).'"#
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You just cold-started. Set your status available, then stand by and do nothing (fault-injection eval).'"#
   }
   agent "oom" {
     workspace "./oom"                    // SYNTHETIC worker that exits 137 — deterministic nonzero-exit branch

@@ -15,13 +15,13 @@ team "rc" {                              // prefixes the agents it holds -> rc.s
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no product repo)
     env { ST_AGENT "rc.sup" }
-    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     exec "rc.sup.ding" { command #"st2 ding rc.sup --identity rc.sup --root $CATALOG/smalltalk"# }
   }
   agent "dev" {
     workspace "./worker"                 // owns the ledger repo (this dir); the seat the injector cold-restarts
     env { ST_AGENT "rc.dev" }
-    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     exec "rc.dev.ding" { command #"st2 ding rc.dev --identity rc.dev --root $CATALOG/smalltalk"# }
   }
   agent "inj" {

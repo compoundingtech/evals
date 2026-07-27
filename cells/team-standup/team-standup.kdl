@@ -14,7 +14,7 @@ team "ts" {                              // only the CoS is declared; the specia
   agent "cos" {
     workspace "./cos"                    // coordinate-only cwd (owns no product repo); reads team.md
     env { ST_AGENT "ts.cos" }
-    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     exec "ts.cos.ding" { command #"st2 ding ts.cos --identity ts.cos --root $CATALOG/smalltalk"# }
   }
 }

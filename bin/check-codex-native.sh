@@ -2,6 +2,10 @@
 # Verify that selected Codex evals are native-only and that every declared workspace receives AGENTS.md.
 set -euo pipefail
 
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+"$repo_root/bin/check-model-policy.sh"
+cd "$repo_root"
+
 if [ "$#" -eq 0 ]; then
   set -- \
     cells/license-mit-codex \

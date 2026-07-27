@@ -12,14 +12,14 @@ team "ir" {                              // prefixes the agents it holds -> ir.s
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd / incident commander (owns no repo)
     env { ST_AGENT "ir.sup" }
-    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     /- ding {}
     exec "ir.sup.ding" { command #"st2 ding ir.sup --identity ir.sup --root $CATALOG/smalltalk"# }
   }
   agent "oncall" {
     workspace "./worker"                 // owns the pulse repo (this dir)
     env { ST_AGENT "ir.oncall" }
-    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     /- ding {}
     exec "ir.oncall.ding" { command #"st2 ding ir.oncall --identity ir.oncall --root $CATALOG/smalltalk"# }
   }

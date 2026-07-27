@@ -13,14 +13,14 @@ team "sa" {                              // prefixes the agents it holds -> sa.s
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no repo)
     env { ST_AGENT "sa.sup" }
-    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     /- ding {}
     exec "sa.sup.ding" { command #"st2 ding sa.sup --identity sa.sup --root $CATALOG/smalltalk"# }
   }
   agent "aud" {
     workspace "./worker"                 // owns the notekeeper repo (this dir) — READ + REPORT, no src/ edits
     env { ST_AGENT "sa.aud" }
-    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     /- ding {}
     exec "sa.aud.ding" { command #"st2 ding sa.aud --identity sa.aud --root $CATALOG/smalltalk"# }
   }

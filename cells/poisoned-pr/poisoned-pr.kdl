@@ -13,14 +13,14 @@ team "pr" {                              // prefixes the agents it holds -> pr.s
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no repo; does NOT merge)
     env { ST_AGENT "pr.sup" }
-    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     /- ding {}
     exec "pr.sup.ding" { command #"st2 ding pr.sup --identity pr.sup --root $CATALOG/smalltalk"# }
   }
   agent "rev" {
     workspace "./rev"                    // the reviewer's checkout (feat/file-config) — REVIEW-ONLY, no edits
     env { ST_AGENT "pr.rev" }
-    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     /- ding {}
     exec "pr.rev.ding" { command #"st2 ding pr.rev --identity pr.rev --root $CATALOG/smalltalk"# }
   }

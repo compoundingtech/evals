@@ -13,14 +13,14 @@ team "gb" {                              // prefixes the agents it holds -> gb.s
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no product repo)
     env { ST_AGENT "gb.sup" }
-    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     /- ding {}
     exec "gb.sup.ding" { command #"st2 ding gb.sup --identity gb.sup --root $CATALOG/smalltalk"# }
   }
   agent "fix" {
     workspace "./worker"                 // owns the labelkit repo (this dir)
     env { ST_AGENT "gb.fix" }
-    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     /- ding {}
     exec "gb.fix.ding" { command #"st2 ding gb.fix --identity gb.fix --root $CATALOG/smalltalk"# }
   }

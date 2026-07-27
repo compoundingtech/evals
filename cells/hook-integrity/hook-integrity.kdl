@@ -27,14 +27,14 @@ team "hi" {
   agent "on" {
     workspace "./repo-on"                // setup.sh rendered the SessionStart hook + witness into repo-on/.claude/settings.local.json
     env { ST_AGENT "hi.on" }
-    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain your inbox), then act on your durable working state.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain your inbox), then act on your durable working state.'"#
     exec "hi.on.ding" { command #"st2 ding hi.on --identity hi.on --root $CATALOG/smalltalk"# }
   }
   agent "off" {
     workspace "./repo-off"               // IDENTICAL config (same rendered hook + same seeded now.md)…
     env { ST_AGENT "hi.off" }
     // …EXCEPT --settings disableAllHooks: the SessionStart hook is configured but claude does NOT fire it (control).
-    command #"exec claude --permission-mode auto --settings '{"disableAllHooks":true}' 'You just cold-started. Run your boot ritual (set status available, drain your inbox), then act on your durable working state.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto --settings '{"disableAllHooks":true}' 'You just cold-started. Run your boot ritual (set status available, drain your inbox), then act on your durable working state.'"#
     exec "hi.off.ding" { command #"st2 ding hi.off --identity hi.off --root $CATALOG/smalltalk"# }
   }
 }

@@ -11,13 +11,13 @@ team "mix" {                             // prefixes the agents it holds -> mix.
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no product repo)
     env { ST_AGENT "mix.sup" }
-    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     ding                                 // auto-renders: st2 ding --identity mix.sup --root $ST_ROOT
   }
   agent "worker" {
     workspace "./worker"                 // owns the widget repo (this dir)
     env { ST_AGENT "mix.worker" }
-    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     ding                                 // auto-renders: st2 ding --identity mix.worker --root $ST_ROOT
   }
 }
@@ -34,7 +34,7 @@ eval {                                   // `st2 eval` = copy the world, boot te
   agent "judge" {                        // a real agent — its command line IS "what runs the judgment", in the open
     workspace "./"                       // sees the whole sandbox + bus, so it can inspect
     env { ST_AGENT "judge" }
-    command #"exec codex --model gpt-5.6-sol 'You are a judge. Read your inbox for what to evaluate, inspect the sandbox, reply in the exact format asked.'"#
+    command #"exec codex --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You are a judge. Read your inbox for what to evaluate, inspect the sandbox, reply in the exact format asked.'"#
     ding                                 // auto-renders: st2 ding --identity judge --root $ST_ROOT
   }
 

@@ -13,14 +13,14 @@ team "feat" {                            // prefixes the agents it holds -> feat
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no product repo)
     env { ST_AGENT "feat.sup" }
-    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     /- ding {}
     exec "feat.sup.ding" { command #"st2 ding feat.sup --identity feat.sup --root $CATALOG/smalltalk"# }
   }
   agent "dev" {
     workspace "./worker"                 // owns the tasklit repo (this dir)
     env { ST_AGENT "feat.dev" }
-    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     /- ding {}
     exec "feat.dev.ding" { command #"st2 ding feat.dev --identity feat.dev --root $CATALOG/smalltalk"# }
   }

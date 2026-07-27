@@ -2,6 +2,10 @@
 # Verify that selected Claude evals use event-first native ding and deliver explicit Claude personas.
 set -euo pipefail
 
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+"$repo_root/bin/check-model-policy.sh"
+cd "$repo_root"
+
 if [ "$#" -eq 0 ]; then
   set -- \
     cells/ding-reply \

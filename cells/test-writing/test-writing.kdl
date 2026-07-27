@@ -13,14 +13,14 @@ team "tw" {                              // prefixes the agents it holds -> tw.s
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no repo)
     env { ST_AGENT "tw.sup" }
-    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     /- ding {}
     exec "tw.sup.ding" { command #"st2 ding tw.sup --identity tw.sup --root $CATALOG/smalltalk"# }
   }
   agent "dev" {
     workspace "./worker"                 // owns the grades repo (this dir) — write TESTS, don't change src/
     env { ST_AGENT "tw.dev" }
-    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     /- ding {}
     exec "tw.dev.ding" { command #"st2 ding tw.dev --identity tw.dev --root $CATALOG/smalltalk"# }
   }

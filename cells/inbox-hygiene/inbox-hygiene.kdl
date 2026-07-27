@@ -14,7 +14,7 @@ team "ih" {                              // prefixes the agents it holds -> ih.a
   agent "agent" {
     workspace "./worker"                 // owns the ledger repo (PROCESSED.log = the countable side-effect)
     env { ST_AGENT "ih.agent" }
-    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     exec "ih.agent.ding" { command #"st2 ding ih.agent --identity ih.agent --root $CATALOG/smalltalk"# }
   }
   agent "inj" {

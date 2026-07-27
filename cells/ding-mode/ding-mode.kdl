@@ -12,14 +12,14 @@ team "dm" {                              // prefixes the agents it holds -> dm.s
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no repo)
     env { ST_AGENT "dm.sup" }
-    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     /- ding {}
     exec "dm.sup.ding" { command #"st2 ding dm.sup --identity dm.sup --root $CATALOG/smalltalk"# }
   }
   agent "dev" {
     workspace "./worker"                 // owns the widget repo (this dir)
     env { ST_AGENT "dm.dev" }
-    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     /- ding {}
     exec "dm.dev.ding" { command #"st2 ding dm.dev --identity dm.dev --root $CATALOG/smalltalk"# }
   }

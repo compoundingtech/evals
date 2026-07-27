@@ -13,25 +13,25 @@ team "fd" {                              // -> fd.sup (synthesizer) + fd.a / fd.
   agent "sup" {
     workspace "./sup"                    // coordinate + synthesize; owns only RECOMMENDATION.md in its dir
     env { ST_AGENT "fd.sup" }
-    command #"exec claude --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     exec "fd.sup.ding" { command #"st2 ding fd.sup --identity fd.sup --root $CATALOG/smalltalk"# }
   }
   agent "a" {
     workspace "./a"
     env { ST_AGENT "fd.a" }
-    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     exec "fd.a.ding" { command #"st2 ding fd.a --identity fd.a --root $CATALOG/smalltalk"# }
   }
   agent "b" {
     workspace "./b"
     env { ST_AGENT "fd.b" }
-    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     exec "fd.b.ding" { command #"st2 ding fd.b --identity fd.b --root $CATALOG/smalltalk"# }
   }
   agent "c" {
     workspace "./c"
     env { ST_AGENT "fd.c" }
-    command #"exec claude --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
     exec "fd.c.ding" { command #"st2 ding fd.c --identity fd.c --root $CATALOG/smalltalk"# }
   }
 }

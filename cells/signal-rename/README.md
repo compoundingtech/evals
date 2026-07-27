@@ -58,10 +58,9 @@ Caps: `claude,st,pty,git,node`.
 Free preflight:
 
 ```sh
-bin/check-claude-native.sh cells/signal-rename
-bin/check-claude-reset.sh cells/signal-rename
+bin/check-corpus.sh
 ```
 
 The scenario historically scored 6/6 in its original folder-eval conversion. The current native rewrite passes
-both static gates but has not had a model-backed rerun; see
-[`../../CLAUDE-NATIVE-READINESS.md`](../../CLAUDE-NATIVE-READINESS.md).
+both static gates but has not had a model-backed rerun; see the generated
+[`../../CATALOG.md`](../../CATALOG.md).

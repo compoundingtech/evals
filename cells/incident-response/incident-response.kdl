@@ -3,25 +3,19 @@
 // triage, stop the bleed, find + fix the ROOT cause (correct values, not a band-aid), and add a
 // mutation-valid regression test. All judges are held-out.
 
-env {                                    // cascades: agents + their processes inherit these
-  ST_ROOT  "$CATALOG/smalltalk"
-  PTY_ROOT "$CATALOG/pty"
-}
 
 team "ir" {                              // prefixes the agents it holds -> ir.sup, ir.oncall
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd / incident commander (owns no repo)
     env { ST_AGENT "ir.sup" }
-    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
-    /- ding {}
-    exec "ir.sup.ding" { command #"st2 ding ir.sup --identity ir.sup --root $CATALOG/smalltalk"# }
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act on every message, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding
   }
   agent "oncall" {
     workspace "./worker"                 // owns the pulse repo (this dir)
     env { ST_AGENT "ir.oncall" }
-    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
-    /- ding {}
-    exec "ir.oncall.ding" { command #"st2 ding ir.oncall --identity ir.oncall --root $CATALOG/smalltalk"# }
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act on every message, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding
   }
 }
 

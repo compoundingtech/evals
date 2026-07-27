@@ -1,31 +1,29 @@
 // two-networks-coexist.kdl — the whole eval in one file.  `st2 eval ./` runs it (team-less: the run{} steps
 // ARE the work — deterministic, no agents).  Raises the isolation hard-gate from WITHIN one network to TENANT
-// PARTITION across TWO: two independent networks (each its own PTY_ROOT + bus/ST_ROOT) run concurrently on one
+// PARTITION across TWO: two independent catalogs (each its own PTY_ROOT + flat bus root) run concurrently on one
 // host and must stay hermetically partitioned — neither can SEE/inject into the other's pty sessions, nor read
 // the other's bus. The sharp surface is PTY: a globally-keyed pty daemon would let net A `pty ls` net B's
 // sessions; a per-root daemon partitions them (the acceptance test for the exec-state/pty isolation work). All judges held-out.
 
-env {
-  ST_ROOT  "$CATALOG/smalltalk"
-  PTY_ROOT "$CATALOG/pty"
-}
-
 eval {
   max-timeout "120s"
 
-  run "mk" { command "mkdir -p $CATALOG/netA/pty $CATALOG/netA/smalltalk $CATALOG/netB/pty $CATALOG/netB/smalltalk" }
+  run "mk" { command "mkdir -p $CATALOG/netA/pty $CATALOG/netB/pty" }
   // bring both nets live: a real pty session in each, on its OWN pty root
-  run "A-spin" { command #"pty --root $CATALOG/netA/pty run -d --id 2na-sess -- bash -c 'echo A-READY; while IFS= read -r l; do echo ACKA:$l; done'"# }
-  run "B-spin" { command #"pty --root $CATALOG/netB/pty run -d --id 2nb-sess -- bash -c 'echo B-READY; while IFS= read -r l; do echo ACKB:$l; done'"# }
-  // real bus traffic in each net, on its OWN bus root — a distinctive per-net payload
-  run "A-msg" { command #"st2 message send 2na-peer --root $CATALOG/netA/smalltalk --as 2na-src -m 'NETA-SECRET-payload'"# }
-  run "B-msg" { command #"st2 message send 2nb-peer --root $CATALOG/netB/smalltalk --as 2nb-src -m 'NETB-SECRET-payload'"# }
+  run "A-spin" { command #"st2 pty --catalog "$CATALOG/netA" run -d --id 2na-sess -- bash -c 'echo A-READY; while IFS= read -r l; do echo ACKA:$l; done'"# }
+  run "B-spin" { command #"st2 pty --catalog "$CATALOG/netB" run -d --id 2nb-sess -- bash -c 'echo B-READY; while IFS= read -r l; do echo ACKB:$l; done'"# }
+  // real bus traffic in each catalog, on its OWN flat bus root — a distinctive per-net payload
+  run "A-msg" { command #"st2 message send 2na-peer --catalog "$CATALOG/netA" --as 2na-src -m 'NETA-SECRET-payload'"# }
+  run "B-msg" { command #"st2 message send 2nb-peer --catalog "$CATALOG/netB" --as 2nb-src -m 'NETB-SECRET-payload'"# }
   run "settle" { command "sleep 2" }
   // probe BOTH pty roots + BOTH bus roots — captured for the judges to assert presence/absence
-  run "A-ptyls" { command "pty --root $CATALOG/netA/pty ls" }
-  run "B-ptyls" { command "pty --root $CATALOG/netB/pty ls" }
-  run "A-bus"   { command #"sh -c 'grep -rhs SECRET $CATALOG/netA/smalltalk || true'"# }
-  run "B-bus"   { command #"sh -c 'grep -rhs SECRET $CATALOG/netB/smalltalk || true'"# }
+  run "A-ptyls" { command #"st2 pty --catalog "$CATALOG/netA" ls"# }
+  run "B-ptyls" { command #"st2 pty --catalog "$CATALOG/netB" ls"# }
+  run "A-bus"   { command #"sh -c 'grep -rhs SECRET "$CATALOG/netA" || true'"# }
+  run "B-bus"   { command #"sh -c 'grep -rhs SECRET "$CATALOG/netB" || true'"# }
+  run "cleanup" {
+    command #"sh -c 'st2 pty --catalog "$CATALOG/netA" kill 2na-sess; st2 pty --catalog "$CATALOG/netB" kill 2nb-sess'"#
+  }
 
   judges {
     judge "LIVENESS (positive control) — net A is live: its session 2na-sess shows in net A's pty root" {

@@ -6,7 +6,7 @@
 # already-handled token and NOT re-append. Then this injector sleeps forever, so supervise never respawns it.
 set -uo pipefail
 L="$CATALOG/worker"                        # ih.agent's repo (PROCESSED.log)
-BUS="$CATALOG/smalltalk"; IB="$BUS/ih.agent"
+BUS="${ST_ROOT:-$CATALOG}"; IB="$BUS/ih.agent"
 S="$CATALOG/.stev"; mkdir -p "$S"
 RLOG="$S/restart.log"; STAMP="$S/restart.done"
 TOKEN="${IH_TOKEN:-IH-9f3a7c2e}"

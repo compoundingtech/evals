@@ -26,8 +26,7 @@ Five held-out judges grade the integrated `sig.sup` clone: per-author path isola
 green, complete product rename, primitive preservation, and an end-to-end driver that resolves the renamed
 base/relay/hub stack.
 
-Free preflight: `bin/check-codex-native.sh cells/signal-rename-codex` and
-`bin/check-codex-reset.sh cells/signal-rename-codex`.
+Free preflight: `bin/check-corpus.sh`.
 
-Current 6/6 pass provenance and expected cost live in
-[`../../CODEX-READINESS.md`](../../CODEX-READINESS.md).
+Current 6/6 pass provenance and expected cost live in the generated
+[`../../CATALOG.md`](../../CATALOG.md).

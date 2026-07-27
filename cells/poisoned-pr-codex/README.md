@@ -19,8 +19,7 @@ this runs a **full-Codex** review team (`prx.sup` + `prx.rev`).
 
 Run: `st2 eval ./cells/poisoned-pr-codex/`.
 
-Free preflight: `bin/check-codex-native.sh cells/poisoned-pr-codex` and
-`bin/check-codex-reset.sh cells/poisoned-pr-codex`.
+Free preflight: `bin/check-corpus.sh`.
 
-Current 4/4 gating pass provenance, the non-gating defect signal, and expected cost live in
-[`../../CODEX-READINESS.md`](../../CODEX-READINESS.md).
+Current 4/4 gating pass provenance, the non-gating defect signal, and expected cost live in the generated
+[`../../CATALOG.md`](../../CATALOG.md).

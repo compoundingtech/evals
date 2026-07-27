@@ -10,17 +10,13 @@
 // team boots (a static `copy` with _git→.git can't preserve the bare↔worktree linkage). The single worker then
 // resolves its worktree, fixes a planted bug, keeps the suite green, and commits on `feature`. Judges held-out.
 
-env {
-  ST_ROOT  "$CATALOG/smalltalk"
-  PTY_ROOT "$CATALOG/pty"
-}
 
 team "wg" {                              // single worker -> wg.dev
   agent "dev" {
     workspace "./wt/feature"             // the linked worktree — MATERIALIZED by the run step below BEFORE boot
     env { ST_AGENT "wg.dev" }
-    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain your inbox), then do the task you find there.'"#
-    exec "wg.dev.ding" { command #"st2 ding wg.dev --identity wg.dev --root $CATALOG/smalltalk"# }
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act on every message, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding
   }
 }
 

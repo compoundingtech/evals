@@ -53,8 +53,6 @@ PERSONA.md
 .mcp.json
 .claude-session-id
 .claude/
-pty.toml
-pty.toml.done
 .seed/
 GI
 
@@ -73,6 +71,8 @@ for a in sup base relay hub; do
   # persona overlay (gitignored by the workspace .gitignore, so the agent never commits it)
   cp "$SB/personas/$a.md" "$SB/$a/PERSONA.md"
   printf '@PERSONA.md\n' > "$SB/$a/CLAUDE.md"
+  mkdir -p "$SB/$a/.claude"
+  cp "$SB/harness/claude-settings.local.json" "$SB/$a/.claude/settings.local.json"
 done
 
 echo

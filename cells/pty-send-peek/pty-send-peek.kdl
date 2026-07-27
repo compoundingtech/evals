@@ -4,11 +4,6 @@
 // A deterministic ACK-reader (prints READY, then "ACK:<line>" per input line) makes it ungameable — a matching
 // "ACK:<token>" proves the process RECEIVED + ACTED on the sent bytes (not merely a terminal echo). All judges held-out.
 
-env {                                    // cascades to the run steps (st2 pty auto-sets CATALOG/ST_ROOT/PTY_ROOT)
-  ST_ROOT  "$CATALOG/smalltalk"
-  PTY_ROOT "$CATALOG/pty"
-}
-
 eval {                                   // team-less = arrange (nothing) → run (act) → judges (assert)
   max-timeout "120s"
 

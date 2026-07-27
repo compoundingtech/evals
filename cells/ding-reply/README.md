@@ -29,10 +29,9 @@ lowering; the cell authors neither. Caps: `claude,st,pty,git`.
 Free preflight:
 
 ```sh
-bin/check-claude-native.sh cells/ding-reply
-bin/check-claude-reset.sh cells/ding-reply
+bin/check-corpus.sh
 ```
 
 The scenario historically scored 2/2 in its original folder-eval conversion. The current native rewrite passes
-both static gates but has not had a model-backed rerun; see
-[`../../CLAUDE-NATIVE-READINESS.md`](../../CLAUDE-NATIVE-READINESS.md).
+both static gates but has not had a model-backed rerun; see the generated
+[`../../CATALOG.md`](../../CATALOG.md).

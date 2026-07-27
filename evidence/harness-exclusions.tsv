@@ -1,0 +1,7 @@
+cell	surface	reason
+docs	judge:cold-reader	one-shot offline Claude print grader; no bus identity, DING, or hook surface
+hook-integrity	cell	deterministic native hook-installation probe; no live harness seat
+pty-send-peek	cell	deterministic PTY transport probe; no harness seat
+st2-doctor-structure	cell	deterministic catalog-health probe; no harness seat
+st2-network	cell	deterministic catalog/message round-trip probe; no harness seat
+two-networks-coexist	cell	deterministic catalog-isolation probe; no harness seat

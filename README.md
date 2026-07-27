@@ -1,155 +1,130 @@
 # evals
 
-**Isolation-gated, held-out-graded evals for agent _teams_.**
+Isolation-gated, held-out-graded evals for agent teams.
 
-Most agent evals score one model on one task. evals scores a **team** — a supervisor plus
-specialists, each a real agent on a real message bus — doing real software work: debugging, review,
-incident response, migration, security audit, design, docs, tests, and more. You seed one instruction;
-the team self-organizes; an independent check the team never sees grades the result.
+Most agent evals score one model on one task. This corpus scores a supervisor and specialists working through
+the native st2 message bus on synthetic software tasks. One frozen instruction starts the scenario; graders the
+team never sees verify ownership, coordination, and correctness.
 
-The thing under test is the **whole network** — **st2** (the unified runtime that *renders* agents into
-repos, *runs* the network, and carries the *message* bus — it replaces convoy + smalltalk) and **pty**
-(the terminal-session harness) — plus the personas, and **not any one model**. The corpus spans Claude,
-Codex, and mixed harnesses; selected scenarios have cross-family twins. If the result still holds when
-you swap the model, it was the system that produced it.
+The unit under test is the whole network: st2, pty, the harness commands, personas, team shape, and graders.
+The corpus contains Claude, Codex, mixed-family, and model-free cells.
 
-> **Two ideas do the heavy lifting.** *Isolation* is a hard pass/fail gate: each agent may change only
-> the module it owns; everything else happens by message. *Held-out acceptance* is a check the team can't
-> see and can't game — a regression test replayed against the original bug, a correctness gate independent
-> of the team's own tests, a fresh reader who only gets the docs. Pass both, on real work, across
-> families, and you've shown the system works.
+## Authoritative surfaces
 
----
+- [`AGENT-SPEC.md`](AGENT-SPEC.md) is the sole hand-authored st2 agent specification, pinned to the exact
+  stabilization commit.
+- [`CATALOG.md`](CATALOG.md) is the generated current cell inventory, cost view, exclusions, and model-evidence
+  surface.
+- `cells/<cell>/<cell>.kdl` is the canonical executable definition for one cell.
 
-## Adopt it — standalone, end to end
+Do not add another agent spec, readiness ledger, or hand-maintained corpus matrix.
 
-evals is self-contained: clone this repo, put `st2` on your `PATH`, run a cell. Each cell is a
-**self-contained folder**, and the runner is `st2 eval`:
+## Safety first
+
+The complete free preflight never starts Claude or Codex:
 
 ```sh
-git clone https://github.com/compoundingtech/evals
-cd evals
-
-st2 eval ./cells/ghost-bug/     # run a cell end-to-end
-st2 eval ./cells/ghost-bug/ --keep   # …and preserve the throwaway catalog for inspection
+bin/check-corpus.sh
 ```
 
-`st2 eval` copies the cell's fixture into a throwaway **catalog** (`$CATALOG`), points the scratch bus +
-pty roots inside it, boots the team and the held-out judges, delivers the one kick, waits for the
-supervisor's confirmation, then runs the judges → **verdict**. Every run is isolated; the live network is
-never touched, and the catalog is reaped at the end. Output ends in `SCORE: N PASS / M FAIL / K gating
-judges` and `VERDICT: PASS|FAIL`.
+It enforces the pinned st2 build, shell and KDL parsing, explicit model/effort selection, absence of retired
+runtime surfaces, reproducible fixture resets, the one-drain/DING lifecycle, harness-native loaders and hooks,
+PII safety, and an up-to-date generated catalog.
 
-**Requirements** (all on your `PATH`):
-
-- [`st2`](https://github.com/compoundingtech/st2) — the network runtime: render / run / message + `st2 eval`
-- [`pty`](https://github.com/compoundingtech/pty) — the terminal-session harness (`st2 pty` wraps it)
-- `git`, and `node` for cells whose sample services are JS
-- at least one agent harness: `claude` and/or `codex`
-
-**Cross-family judging** — a quality judge from a different model family than the subject — unlocks once
-you have ≥2 families installed. The `*-codex` cells run the same scenario Codex-native.
-
-### Choose and validate an executable example
-
-The [Codex readiness ledger](CODEX-READINESS.md) gives immutable KDL links, team/persona/reset shapes,
-and current run evidence for the completed five-cell Codex tranche. The
-[native Claude ledger](CLAUDE-NATIVE-READINESS.md) gives the maintained simple and coordinated Claude
-examples plus their honest static/live status. The broader [harness matrix](HARNESS-MATRIX.md) covers
-the full corpus.
-
-Before spending model usage, run the free deterministic gates:
+Preview the exact overnight order and cost shape:
 
 ```sh
-bin/check-codex-native.sh
-bin/check-codex-reset.sh
-bin/check-claude-native.sh
-bin/check-claude-reset.sh
+bin/overnight.sh --dry-run
+bin/overnight.sh --dry-run --cell ghost-bug --cell ghost-bug-codex
 ```
 
-The supported native examples currently include a small pre-seeded team
-(`license-mit-codex`), a mutation-valid debugging team (`ghost-bug-codex`), and a dynamically
-materialized four-repo team (`signal-rename-codex`), plus a review-only security team
-(`poisoned-pr-codex`) and a four-seat design panel (`fork-in-the-road-codex`). For Claude,
-`ding-reply` is the one-seat pre-seeded example and `signal-rename` is the dynamically materialized
-four-seat example; both teach event-first DING standby rather than inbox polling. A real `st2 eval` is
-the authoritative runtime proof and starts model seats; run one only as an explicit opt-in.
+Paid execution requires `--run`, a clean `main` worktree, and either one or more explicit `--cell` selections
+or separately reviewed `--all`. Repeated selectors preserve CLI order. With no selector, the default dry run
+is inventory-only and can never imply a 28-cell paid launch. The conservative default stops before the next
+cell on either a hard usage error or an informational reset-available banner:
 
----
-
-## How a cell works
-
-Each `cells/<cell>/` is one scenario, declared end-to-end in a single `.kdl`:
-
+```sh
+bin/overnight.sh --run \
+  --cell ghost-bug \
+  --cell ghost-bug-codex \
+  --state-dir .eval-runs/overnight
 ```
+
+The exact future full-run command must be separately reviewed because it may spend more model quota after an
+informational Codex banner:
+
+```sh
+bin/overnight.sh --run --all \
+  --allow-informational-reset-banner \
+  --state-dir .eval-runs/overnight
+```
+
+The overnight runner is sequential. Each cell has a declared timeout and watchdog, durable log, and atomic PASS
+receipt. A resumed run skips only matching completed receipts. Hard quota/rate-limit errors always write a
+`STOPPED` guard. An informational Codex “N usage limit resets available” banner lets that active cell tear down
+and record its result first, then stops by default; only the explicit informational-banner opt-in permits the
+next paid cell to start.
+
+## Run one cell
+
+`st2 eval` creates a hermetic temporary catalog, copies the fixture, boots declared agents and model judges,
+delivers the kickoff, waits for completion or the cell timeout, tears seats down, and runs the held-out judges:
+
+```sh
+st2 eval ./cells/ghost-bug/
+st2 eval ./cells/ghost-bug/ --keep
+```
+
+`--keep` preserves the scratch catalog for inspection after teardown. Successful output ends with:
+
+```text
+SCORE: N PASS / 0 FAIL / K gating judges
+VERDICT: PASS
+```
+
+Requirements are `st2 0.1.0` from source
+[`9ab1723`](https://github.com/compoundingtech/st2/commit/9ab17232bc9ed0892d6d5060559867094a62c5e2),
+`pty`, Bash, Git, `jq`, Rust/Cargo for the pinned KDL parser gate, and Node for JavaScript fixtures. A paid cell
+also needs every harness named by its dry-run row.
+
+## Cell layout
+
+```text
 cells/<cell>/
-  <cell>.kdl   the whole eval: team{}/agent{} seats (workspace · command · native ding) ·
-               eval{ copy fixture · run{step} · message{} kick · max-timeout · supervise ·
-               judges{} }; the runner owns scratch bus/pty roots
-  fixture/     the synthetic world st2 copies into $CATALOG at boot (repos, personas, seed files)
-  task.md      the single frozen instruction delivered to the supervisor (the message{} kick)
-  judges/*.sh  the held-out graders — run after the team declares done; the team never sees them
-  README.md    what the cell discriminates + how to run it
+  <cell>.kdl   team/agents, native ding, fixture copy, kickoff, timeout, run steps, and judges
+  fixture/     synthetic repos, harness overlays/hooks, and deterministic setup inputs
+  task.md      frozen kickoff content when the cell has a team
+  judges/*.sh  held-out graders
+  README.md    discriminator and cell-specific notes
 ```
 
-`st2 eval` **materializes a hermetic catalog** at a frozen base commit (the live system is never touched),
-delivers the one frozen kick to the supervisor, and lets the team run to a self-declared done. Then the
-graders attribute every change (isolation first), and run the **held-out** acceptance the team never saw.
-Anything that needs an absolute-path git topology is built in a `run{step "materialize"}` that runs
-*before* the team boots. Team-less deterministic cells (the `st2 up`/`doctor`/`pty` infra cells) skip
-`task.md` and drive everything from `run{step}` + inline judges — pure ground-truth, no agents.
+The eval runner owns `CATALOG`, flat native `ST_ROOT`, and `PTY_ROOT`. Active cell KDL must not author a
+compatibility bus path or wake sidecar.
 
----
+Team-less cells use deterministic `run` steps and judges without a model. Current examples cover native hook
+materialization, network health, catalog/pty isolation, and pty send/peek behavior.
 
-## The catalogue
+## Add or change a cell
 
-SDLC work-types, whole-network infrastructure cells (**st2** · **pty**), and cross-family variants. Each
-cell's own `README.md` carries its full discriminator and held-out acceptance; the short version:
+1. Create exactly one `cells/<name>/<name>.kdl`.
+2. Give it exactly one `max-timeout`.
+3. Pin every Claude launch to `claude-sonnet-5 --effort medium` and every Codex launch to
+   `gpt-5.6-sol` with medium reasoning effort. This includes model judges.
+4. Use native bare `ding` for each bus-connected model agent. Teach one cold-start inbox drain; when empty,
+   stand by for DING, then drain once again, act, archive, and report over the bus.
+5. Materialize the harness contract in every model workspace. Claude loads `PERSONA.md` through `CLAUDE.md`
+   and uses the canonical `.claude/settings.local.json`; Codex loads `AGENTS.md`, uses the canonical
+   `.codex/hooks.json`, and launches with hook trust enabled.
+6. Keep the fixture synthetic. Freeze checked-in repositories as `_git`, or build absolute-path topologies in a
+   deterministic pre-boot materializer.
+7. Add held-out checks that accept any correct implementation but reject a deliberately wrong one. Attribute
+   writes before grading behavior.
+8. Run `bin/check-corpus.sh`. Run the paid cell only when explicitly authorized.
+9. Regenerate the sole catalog surface with `bin/generate-catalog.sh --write`.
 
-| Cell | Work-type | The discriminator (what a weak team fails) |
-|---|---|---|
-| `ghost-bug` | debug | root-cause the aliasing bug + add a regression test that FAILS on the base commit |
-| `poisoned-pr` | review | catch the planted security hole CI misses; request-changes, don't rubber-stamp |
-| `incident-response` | incident | the ROOT fix, not a band-aid that stops the 500 but ships wrong numbers |
-| `migration` | dependency-bump | migrate every call site + don't silently drop removed APIs; tests not weakened |
-| `security-audit` | audit | trace input→sink across the repo + dismiss the red-herrings (signal vs noise) |
-| `feature-fit` | feature | add a feature *indistinguishable* from the existing code, not a bolt-on |
-| `docs` | docs | a doc a **cold reader** can act on correctly with no other context |
-| `test-writing` | tests | tests that **kill mutants** (mutation score), not coverage theater |
-| `fork-in-the-road` | design | N genuinely distinct approaches → real debate → a justified, escalated call |
-| `license-mit` | team loop | the smallest delegate→execute→verify→confirm loop with isolation held (the **matrix** cell) |
-| `hook-integrity`, `st2-network`, `st2-doctor-structure` | infra | the runtime itself: a hook that *fires* (not just configured), `st2 up` hosting a net, `st2 doctor` failing closed |
+## Public boundary
 
-`*-codex` variants (`ghost-bug`, `poisoned-pr`, `fork-in-the-road`, `license-mit`, `signal-rename`) run
-the same scenario Codex-native. See [the readiness ledger](CODEX-READINESS.md) for the exact supported
-subset and current live proof.
+This repository contains public synthetic scenarios and structured run provenance, not private network state.
+`bin/check-no-pii.sh` rejects machine-specific paths and configured private tokens before publication.
 
----
-
-## Write your own cell
-
-1. `cells/<name>/<name>.kdl` — declare the whole eval: native `ding` seats, `copy "./fixture"`, a
-   `max-timeout`, `supervise` for a team cell, and the `judges{}`. The eval runner owns `ST_ROOT` and
-   `PTY_ROOT`; do not author a compatibility bus path or an explicit `st2 ding` sidecar.
-2. `cells/<name>/fixture/` — materialize a small, **synthetic** world (no real repos/identities). Build
-   any absolute-path git topology in a `run{step "materialize"}` (a static copy can't preserve it).
-3. `cells/<name>/task.md` — the single frozen instruction the supervisor wakes to (the `message{}`
-   content). Don't over-specify the solution; the system should have to *emerge* it.
-4. `cells/<name>/judges/*.sh` — mechanize the ground-truth checks. Include a **held-out** check a
-   unit-test edit can't fake (replay against the base commit, an independent correctness gate, a
-   cold-reader, a mutation score). Judges `git grep` **tracked** files — never the working tree.
-5. `cells/<name>/README.md` — the discriminator + how to run it.
-
-Keep the fixture synthetic and the grader honest: it must accept *any* correct solution, not one canonical
-diff, and it must still discriminate a bad solution from a good one (validate it on a deliberately-wrong
-mock). Prove every PASS on a real `st2 eval` run before you commit — never eyeball a green.
-
----
-
-## Public / private
-
-This is the public cut: the framework, the cells, and the folder-eval spec — de-personalized, with a
-`check-no-pii` grep-gate as the backstop. It does **not** ship graded run-history against any private
-network. Scripted principals are fully synthetic — no real data crosses the public/private line.
-
-MIT licensed — see [`LICENSE`](LICENSE).
+MIT licensed; see [`LICENSE`](LICENSE).

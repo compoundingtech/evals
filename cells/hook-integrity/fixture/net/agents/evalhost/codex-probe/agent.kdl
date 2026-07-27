@@ -1,0 +1,57 @@
+agent "codex-probe" {
+  host "evalhost"
+  role "worker"
+  workspace "$CATALOG/codex-workspace"
+  env {
+    ST_AGENT "evalhost.codex-probe"
+  }
+
+  command #"exec sh -c 'while :; do sleep 3600; done'"#
+  ding
+
+  render {
+    copy "_templates/evalhost.codex-probe.AGENTS.md" "AGENTS.md"
+    json-upsert ".codex/hooks.json" #"""
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$ST_HOOKS/codex-session-start.sh",
+            "timeout": 5,
+            "statusMessage": "Restoring st2 context"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$ST_HOOKS/codex-pre-compact.sh",
+            "timeout": 5,
+            "statusMessage": "Checkpointing st2 context"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$ST_HOOKS/codex-stop.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
+"""#
+    git-exclude "AGENTS.md" ".codex/hooks.json"
+  }
+}

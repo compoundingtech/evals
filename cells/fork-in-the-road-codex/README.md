@@ -21,8 +21,7 @@ The same 5 held-out judges as the base cell: **isolation** (per-lane author), **
 RECOMMENDATION.md), **distinct** (real option space), **PRIVACY HOOK** (the crux surfaced), **recommendation** (a
 justified call on the bus).
 
-Free preflight: `bin/check-codex-native.sh cells/fork-in-the-road-codex` and
-`bin/check-codex-reset.sh cells/fork-in-the-road-codex`.
+Free preflight: `bin/check-corpus.sh`.
 
-Current 5/5 pass provenance, the diagnosed grader fix, and expected cost live in
-[`../../CODEX-READINESS.md`](../../CODEX-READINESS.md).
+Current 5/5 pass provenance, the diagnosed grader fix, and expected cost live in the generated
+[`../../CATALOG.md`](../../CATALOG.md).

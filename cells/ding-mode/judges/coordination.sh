@@ -2,7 +2,7 @@
 # JUDGE: coordination over ding — the sup drained the seeded kick, delegated to dm.dev, dm.dev reported
 # back, and the sup confirmed to the requester (the [DING] loop closed over the st2 bus, no MCP).
 set -uo pipefail
-ROOT="${CATALOG:-$PWD}"; SM="${ST_ROOT:-$ROOT/${STBUS:-smalltalk}}"
+ROOT="${CATALOG:-$PWD}"; SM="${ST_ROOT:-$ROOT}"
 SUP_ID="${SUP_ID:-dm.sup}"; WORKER_ID="${WORKER_ID:-dm.dev}"; REQUESTER="${REQUESTER:-requester}"
 busdir(){ local id="$1" d; d="$(ls -d "$SM"/*."$id" "$SM/$id" 2>/dev/null | head -1)"; printf '%s\n' "${d:-$SM/$id}"; }
 msgs_from(){ local owner from; owner="$(busdir "$1")"; from="$2"; grep -lRE "^from:[[:space:]]*([a-z0-9][a-z0-9._-]*\.)?$from([[:space:]]|\$)" "$owner/inbox" "$owner/archive" 2>/dev/null; }

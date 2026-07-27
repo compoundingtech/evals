@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Enforce explicit, cost-controlled model selection at every tracked model launch site.
+# Enforce explicit, cost-controlled model selection at every maintained working-tree launch site.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -27,10 +27,10 @@ while IFS=: read -r file line text; do
 
   provider=""
   if [[ "$code" =~ exec[[:space:]]+claude([[:space:]]|$) ]] ||
-    [[ "$code" =~ (^|[^[:alnum:]_-])claude[[:space:]]+-- ]]; then
+    [[ "$code" =~ (^|[^[:alnum:]_-])claude[[:space:]]+- ]]; then
     provider="claude"
   elif [[ "$code" =~ exec[[:space:]]+codex([[:space:]]|$) ]] ||
-    [[ "$code" =~ (^|[^[:alnum:]_-])codex[[:space:]]+-- ]]; then
+    [[ "$code" =~ (^|[^[:alnum:]_-])codex[[:space:]]+- ]]; then
     provider="codex"
   fi
   [ -n "$provider" ] || continue
@@ -52,17 +52,19 @@ while IFS=: read -r file line text; do
       fail "$file:$line launches Codex without --model gpt-5.6-sol"
     [[ "$code" == *"model_reasoning_effort=\"medium\""* ]] ||
       fail "$file:$line launches Codex without explicit medium reasoning effort"
+    [[ "$code" == *"--dangerously-bypass-hook-trust"* ]] ||
+      fail "$file:$line launches Codex without trusting the canonical workspace hooks"
   fi
 done < <(
-  git grep -n -E \
-    'exec[[:space:]]+(claude|codex)|(^|[^[:alnum:]_-])(claude|codex)[[:space:]]+--' \
-    -- 'cells/**/*.kdl' 'cells/**/*.sh' || true
+  rg --no-ignore -n --no-heading \
+    'exec[[:space:]]+(claude|codex)|(^|[^[:alnum:]_-])(claude|codex)[[:space:]]+-' \
+    cells -g '*.kdl' -g '*.sh' -g '!**/_git/**' || true
 )
 
-[ "$launches" -gt 0 ] || fail "no tracked Claude or Codex launch sites were found"
+[ "$launches" -gt 0 ] || fail "no maintained Claude or Codex launch sites were found"
 
 if [ "$failed" -eq 0 ]; then
-  printf 'PASS: %d tracked model launches are explicit and cost-controlled (Claude %d, Codex %d)\n' \
+  printf 'PASS: %d maintained model launches are explicit and cost-controlled (Claude %d, Codex %d)\n' \
     "$launches" "$claude_launches" "$codex_launches"
 fi
 

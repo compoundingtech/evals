@@ -19,8 +19,7 @@ not only on Claude.
 
 Run: `st2 eval ./cells/license-mit-codex/`.
 
-Free preflight: `bin/check-codex-native.sh cells/license-mit-codex` and
-`bin/check-codex-reset.sh cells/license-mit-codex`.
+Free preflight: `bin/check-corpus.sh`.
 
-Current 6/6 pass provenance and expected cost live in
-[`../../CODEX-READINESS.md`](../../CODEX-READINESS.md).
+Current 6/6 pass provenance and expected cost live in the generated
+[`../../CATALOG.md`](../../CATALOG.md).

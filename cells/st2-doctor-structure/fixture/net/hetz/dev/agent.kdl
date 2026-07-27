@@ -3,10 +3,10 @@
 // PTY_ROOT (hermetic), so the eval teardown reaps it — no orphan.
 agent "dev" {
   host "hetz"
-  type "service"
-  pty "agent" {
-    id "hetz.dev"
-    command "sleep 100000"
-    env { ST_AGENT "hetz.dev"; ST_ROOT "$CATALOG/smalltalk"; PTY_ROOT "$CATALOG/pty" }
+  role "worker"
+  env {
+    ST_AGENT "hetz.dev"
   }
+  command "exec sleep 100000"
+  ding
 }

@@ -1,0 +1,58 @@
+agent "hook-probe" {
+  host "evalhost"
+  role "worker"
+  workspace "$CATALOG/workspace"
+  env {
+    ST_AGENT "evalhost.hook-probe"
+  }
+
+  command #"exec sh -c 'while :; do sleep 3600; done'"#
+  ding
+
+  render {
+    copy "_templates/evalhost.hook-probe.persona.md" ".st2/PERSONA.md"
+    copy "_templates/bus.st2.md" ".st2/bus.md"
+    ensure-line ".claude/rules/st2.md" "@../../.st2/PERSONA.md"
+    ensure-line ".claude/rules/st2.md" "@../../.st2/bus.md"
+    json-upsert ".claude/settings.local.json" #"""
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "async": true,
+            "asyncRewake": true,
+            "command": "$ST_HOOKS/claude-session-start.sh"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$ST_HOOKS/claude-pre-compact.sh"
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$ST_HOOKS/claude-stop-failure.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+"""#
+    git-exclude ".st2/" ".claude/rules/st2.md" ".claude/settings.local.json"
+  }
+}

@@ -68,8 +68,10 @@ git -C "$SB/wt/main"    config --worktree user.email "wt-main@eval.local"
 
 echo "== drop the worker persona into wt/feature (git-excluded so it never shows in the agent's status) =="
 cp "$SB/persona/CLAUDE.md" "$SB/persona/PERSONA.md" "$SB/wt/feature/"
+mkdir -p "$SB/wt/feature/.claude"
+cp "$SB/harness/claude-settings.local.json" "$SB/wt/feature/.claude/settings.local.json"
 excl="$(git -C "$SB/wt/feature" rev-parse --git-path info/exclude)"
-printf 'CLAUDE.md\nPERSONA.md\n' >> "$excl"
+printf 'CLAUDE.md\nPERSONA.md\n.claude/\n' >> "$excl"
 
 echo
 echo "MEGAREPO READY under $SB:"

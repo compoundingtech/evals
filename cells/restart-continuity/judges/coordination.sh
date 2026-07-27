@@ -5,7 +5,7 @@
 # PASS (exit 0): both the delegation and the report are present on the bus.
 set -uo pipefail
 ROOT="${CATALOG:-$PWD}"
-SM="${ST_ROOT:-$ROOT/${STBUS:-smalltalk}}"                    # bus root (st2 ding runs under $CATALOG/smalltalk)
+SM="${ST_ROOT:-$ROOT}"                                       # flat native st2 bus root
 SUP_ID="${SUP_ID:-rc.sup}"; WORKER_ID="${WORKER_ID:-rc.dev}"
 
 busdir(){ local id="$1" d; d="$(ls -d "$SM"/*."$id" "$SM/$id" 2>/dev/null | head -1)"; printf '%s\n' "${d:-$SM/$id}"; }

@@ -4,35 +4,31 @@
 // cross-human PRIVACY / information-isolation crux. No product code — the deliverables are design docs. Each
 // agent owns its own dir (sup/, a/, b/, c/); the debate flows over the bus. All judges are held-out.
 
-env {
-  ST_ROOT  "$CATALOG/smalltalk"
-  PTY_ROOT "$CATALOG/pty"
-}
 
 team "fd" {                              // -> fd.sup (synthesizer) + fd.a / fd.b / fd.c (proposers)
   agent "sup" {
     workspace "./sup"                    // coordinate + synthesize; owns only RECOMMENDATION.md in its dir
     env { ST_AGENT "fd.sup" }
-    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
-    exec "fd.sup.ding" { command #"st2 ding fd.sup --identity fd.sup --root $CATALOG/smalltalk"# }
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act on every message, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding
   }
   agent "a" {
     workspace "./a"
     env { ST_AGENT "fd.a" }
-    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
-    exec "fd.a.ding" { command #"st2 ding fd.a --identity fd.a --root $CATALOG/smalltalk"# }
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act on every message, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding
   }
   agent "b" {
     workspace "./b"
     env { ST_AGENT "fd.b" }
-    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
-    exec "fd.b.ding" { command #"st2 ding fd.b --identity fd.b --root $CATALOG/smalltalk"# }
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act on every message, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding
   }
   agent "c" {
     workspace "./c"
     env { ST_AGENT "fd.c" }
-    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
-    exec "fd.c.ding" { command #"st2 ding fd.c --identity fd.c --root $CATALOG/smalltalk"# }
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act on every message, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding
   }
 }
 

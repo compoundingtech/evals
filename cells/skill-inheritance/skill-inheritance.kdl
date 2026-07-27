@@ -9,18 +9,14 @@
 // Both firing = the worker sees BOTH scopes at once (union). Judges held-out; isolation-safe by construction
 // (project skills are cwd-local, --plugin-dir is session-only → the operator's ~/.claude is untouched).
 
-env {
-  ST_ROOT  "$CATALOG/smalltalk"
-  PTY_ROOT "$CATALOG/pty"
-}
 
 team "si" {                              // single worker -> si.agent
   agent "agent" {
     workspace "./repo"                   // cwd = the repo → PROJECT scope (.claude/skills) auto-loads; sentinels land here
     env { ST_AGENT "si.agent" }
     // --plugin-dir splices the PLUGIN scope (session-only) straight into the launch command.
-    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto --plugin-dir $CATALOG/plugin/evalpkg 'You just cold-started. Run your boot ritual (set status available, drain your inbox), then do the task you find there.'"#
-    exec "si.agent.ding" { command #"st2 ding si.agent --identity si.agent --root $CATALOG/smalltalk"# }
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto --plugin-dir $CATALOG/plugin/evalpkg 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act on every message, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding
   }
 }
 

@@ -2,23 +2,19 @@
 // The smallest real team loop: one request in ("license should be MIT"), a coordinated
 // delegate -> execute -> verify -> confirm loop out, isolation held. Judges are all held-out.
 
-env {                                    // cascades: agents + their processes inherit these
-  ST_ROOT  "$CATALOG/smalltalk"
-  PTY_ROOT "$CATALOG/pty"
-}
 
 team "mix" {                             // prefixes the agents it holds -> mix.sup, mix.worker
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no product repo)
     env { ST_AGENT "mix.sup" }
-    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
-    ding                                 // auto-renders: st2 ding --identity mix.sup --root $ST_ROOT
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act on every message, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding                                 // native st2 wake declaration
   }
   agent "worker" {
     workspace "./worker"                 // owns the widget repo (this dir)
     env { ST_AGENT "mix.worker" }
-    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Run your boot ritual (set status available, drain inbox), then stand by for work via ding.'"#
-    ding                                 // auto-renders: st2 ding --identity mix.worker --root $ST_ROOT
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act on every message, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding                                 // native st2 wake declaration
   }
 }
 
@@ -34,8 +30,8 @@ eval {                                   // `st2 eval` = copy the world, boot te
   agent "judge" {                        // a real agent — its command line IS "what runs the judgment", in the open
     workspace "./"                       // sees the whole sandbox + bus, so it can inspect
     env { ST_AGENT "judge" }
-    command #"exec codex --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You are a judge. Read your inbox for what to evaluate, inspect the sandbox, reply in the exact format asked.'"#
-    ding                                 // auto-renders: st2 ding --identity judge --root $ST_ROOT
+    command #"exec codex --dangerously-bypass-hook-trust --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You just cold-started as a hermetic eval judge. Read AGENTS.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no ask, stand by for DING. After any DING, drain the inbox once again, inspect the sandbox as requested, reply on the existing bus thread in the exact format asked, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding                                 // native st2 wake declaration
   }
 
   judges {                               // all must pass; each one visible, nothing magic

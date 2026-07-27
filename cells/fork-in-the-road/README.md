@@ -13,7 +13,7 @@ st2 eval ./cells/fork-in-the-road/
 The whole eval is `fork-in-the-road.kdl`. `st2 eval` copies the fixture (four dirs — `sup/`, `a/`, `b/`, `c/`,
 each an agent's own git workspace with the shared `PROBLEM.md`; `_git`→`.git` on copy) and boots a 4-agent team:
 `fd.sup` (synthesizer, owns only `RECOMMENDATION.md`) + `fd.a` / `fd.b` / `fd.c` (proposers). The kick (a design
-request from `requester`) goes to `fd.sup`; the debate flows over the smalltalk bus. Caps: `claude,st,pty,git`.
+request from `requester`) goes to `fd.sup`; the debate flows over the st2 bus. Caps: `claude,st,pty,git`.
 
 ## Grading (held-out judges in `judges/`)
 

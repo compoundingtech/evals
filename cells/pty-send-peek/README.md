@@ -21,7 +21,7 @@ The session runs a deterministic **ACK-reader** (`printf READY`, then `ACK:<line
 - **Negative control (mutation-valid):** a peek taken **before** the send does **not** contain `ACK:<tok>` —
   so peek reflects real state and the ACK appears only because `pty send` delivered the input. The token is
   random per run, so no fixture can pre-bake the screen.
-- **Isolation:** the session lives in a scratch `PTY_ROOT` (`pty --root`); the grader asserts it is **invisible**
+- **Isolation:** the session lives in the eval's scratch `PTY_ROOT`; the grader asserts it is **invisible**
   in the operator's global pty registry.
 
 ## Run it

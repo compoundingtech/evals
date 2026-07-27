@@ -16,8 +16,7 @@ Fixture `worker/` reuses ghost-bug's labelkit (owner-pinned `gbx.fix`); `worker/
 snapshot rehydrates as `.git` only inside the throwaway catalog. The KDL uses native bare `ding`, with
 no authored bus path or compatibility wake command.
 
-Free preflight: `bin/check-codex-native.sh cells/ghost-bug-codex` and
-`bin/check-codex-reset.sh cells/ghost-bug-codex`.
+Free preflight: `bin/check-corpus.sh`.
 
-Current 5/5 pass provenance, the post-run usage notice, and expected cost live in
-[`../../CODEX-READINESS.md`](../../CODEX-READINESS.md).
+Current 5/5 pass provenance, the post-run usage notice, and expected cost live in the generated
+[`../../CATALOG.md`](../../CATALOG.md).

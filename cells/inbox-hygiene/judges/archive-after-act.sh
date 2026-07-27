@@ -3,7 +3,7 @@
 # An acted-on item left un-archived is the exact anti-pattern (it gets reprocessed on re-drain).
 # PASS (exit 0): inbox empty AND archive >= 1.
 set -uo pipefail
-ROOT="${CATALOG:-$PWD}"; SM="${ST_ROOT:-$ROOT/${STBUS:-smalltalk}}"
+ROOT="${CATALOG:-$PWD}"; SM="${ST_ROOT:-$ROOT}"
 busdir(){ local id="$1" d; d="$(ls -d "$SM"/*."$id" "$SM/$id" 2>/dev/null | head -1)"; printf '%s\n' "${d:-$SM/$id}"; }
 IB="$(busdir ih.agent)"
 inbox="$(ls "$IB/inbox"/*.md 2>/dev/null | wc -l | tr -d ' ')"

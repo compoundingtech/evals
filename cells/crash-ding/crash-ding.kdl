@@ -6,34 +6,34 @@
 // finish is as bad as a missed crash. Harness-agnostic BY CONSTRUCTION: it keys on the pty SESSION dying, so
 // the SAME edge fires for a real CODEX worker (cd.xw) and a real CLAUDE worker (cd.cw). All judges held-out.
 
-env {                                    // cascades: agents + their processes inherit these
-  ST_ROOT  "$CATALOG/smalltalk"
-  PTY_ROOT "$CATALOG/pty"
-}
 
 team "cd" {                              // prefixes the agents it holds; `supervisor` declares the chain st2 walks
   agent "cos" {
     workspace "./cos"                    // ROOT of the chain (no `supervisor` field) — a crash-ding recipient
     env { ST_AGENT "cd.cos" }
-    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started. Set your status available, then stand by and do nothing (fault-injection eval).'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started in a hermetic fault-injection eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act only on fault notices, archive each handled item, and report completion or blockers over the st2 bus. Do no product work.'"#
+    ding
   }
   agent "sup" {
     workspace "./sup"                    // supervisor tier — a crash-ding recipient
     env { ST_AGENT "cd.sup" }
     supervisor "cd.cos"
-    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started. Set your status available, then stand by and do nothing (fault-injection eval).'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started in a hermetic fault-injection eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act only on fault notices, archive each handled item, and report completion or blockers over the st2 bus. Do no product work.'"#
+    ding
   }
   agent "cw" {
     workspace "./cw"                     // REAL claude worker — crashed by the injector (harness-agnostic path)
     env { ST_AGENT "cd.cw" }
     supervisor "cd.sup"
-    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started. Set your status available, then stand by and do nothing (fault-injection eval).'"#
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started in a hermetic fault-injection eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act only on fault notices, archive each handled item, and report completion or blockers over the st2 bus. Do no product work.'"#
+    ding
   }
   agent "xw" {
     workspace "./xw"                     // REAL codex worker — crashed by the injector (proves harness-agnostic)
     env { ST_AGENT "cd.xw" }
     supervisor "cd.sup"
-    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You just cold-started. Set your status available, then stand by and do nothing (fault-injection eval).'"#
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You just cold-started in a hermetic fault-injection eval. Read AGENTS.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act only on fault notices, archive each handled item, and report completion or blockers over the st2 bus. Do no product work.'"#
+    ding
   }
   agent "oom" {
     workspace "./oom"                    // SYNTHETIC worker that exits 137 — deterministic nonzero-exit branch
@@ -66,19 +66,19 @@ eval {                                   // `st2 eval` = copy the world, boot th
 
   judges {                               // all must pass; each one visible, nothing magic (all mechanical here)
     judge "claude worker crash reaches the SUPERVISOR (worker crash: cd.cw → cd.sup)" {
-      exec "grep -rlq 'worker crash: cd.cw' $CATALOG/smalltalk/cd.sup/inbox $CATALOG/smalltalk/cd.sup/archive 2>/dev/null"
+      exec "grep -rlq 'worker crash: cd.cw' $CATALOG/cd.sup/inbox $CATALOG/cd.sup/archive 2>/dev/null"
     }
     judge "claude worker crash reaches the COS too (up the chain — cos + supervisor both notified)" {
-      exec "grep -rlq 'worker crash: cd.cw' $CATALOG/smalltalk/cd.cos/inbox $CATALOG/smalltalk/cd.cos/archive 2>/dev/null"
+      exec "grep -rlq 'worker crash: cd.cw' $CATALOG/cd.cos/inbox $CATALOG/cd.cos/archive 2>/dev/null"
     }
     judge "HARNESS-AGNOSTIC — the codex worker crash ALSO dings sup + cos (same edge, other family)" {
-      exec "grep -rlq 'worker crash: cd.xw' $CATALOG/smalltalk/cd.sup/inbox $CATALOG/smalltalk/cd.sup/archive 2>/dev/null && grep -rlq 'worker crash: cd.xw' $CATALOG/smalltalk/cd.cos/inbox $CATALOG/smalltalk/cd.cos/archive 2>/dev/null"
+      exec "grep -rlq 'worker crash: cd.xw' $CATALOG/cd.sup/inbox $CATALOG/cd.sup/archive 2>/dev/null && grep -rlq 'worker crash: cd.xw' $CATALOG/cd.cos/inbox $CATALOG/cd.cos/archive 2>/dev/null"
     }
     judge "nonzero-exit (137) crash dings sup + cos (the exit-code gate, not just a kill)" {
-      exec "grep -rlq 'worker crash: cd.oom' $CATALOG/smalltalk/cd.sup/inbox $CATALOG/smalltalk/cd.sup/archive 2>/dev/null && grep -rlq 'worker crash: cd.oom' $CATALOG/smalltalk/cd.cos/inbox $CATALOG/smalltalk/cd.cos/archive 2>/dev/null"
+      exec "grep -rlq 'worker crash: cd.oom' $CATALOG/cd.sup/inbox $CATALOG/cd.sup/archive 2>/dev/null && grep -rlq 'worker crash: cd.oom' $CATALOG/cd.cos/inbox $CATALOG/cd.cos/archive 2>/dev/null"
     }
     judge "clean exit (0) is SILENT — NO ding for cd.clean anywhere on the bus" {
-      exec "! grep -rlq 'crash: cd.clean' $CATALOG/smalltalk 2>/dev/null"
+      exec "! grep -rlq 'crash: cd.clean' $CATALOG/cd.sup/inbox $CATALOG/cd.sup/archive $CATALOG/cd.cos/inbox $CATALOG/cd.cos/archive 2>/dev/null"
     }
   }
 }

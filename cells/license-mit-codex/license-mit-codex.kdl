@@ -9,13 +9,13 @@ team "lmc" {                             // prefixes the agents it holds -> lmc.
   agent "sup" {
     workspace "./sup"                    // coordinate-only cwd (owns no product repo)
     env { ST_AGENT "lmc.sup" }
-    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You just cold-started in a hermetic st2 eval. Read AGENTS.md. Presence is best-effort: if st2 status cannot resolve this flat eval seat, continue. Drain the inbox with st2 message using $ST_ROOT and $ST_AGENT. If no request is present, poll that inbox in this turn until it arrives; then coordinate the whole task end-to-end. Never stop solely because presence is unavailable.'"#
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You just cold-started in a hermetic st2 eval. Read AGENTS.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act on every message, archive each handled item, and coordinate the whole task end-to-end. Report completion or blockers over the st2 bus.'"#
     ding
   }
   agent "worker" {
     workspace "./worker"                 // owns the widget repo (this dir)
     env { ST_AGENT "lmc.worker" }
-    command #"exec codex --dangerously-bypass-approvals-and-sandbox --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You just cold-started in a hermetic st2 eval. Read AGENTS.md. Presence is best-effort: if st2 status cannot resolve this flat eval seat, continue. Drain the inbox with st2 message using $ST_ROOT and $ST_AGENT. If no delegation is present, poll that inbox in this turn until it arrives; then execute it end-to-end. Never stop solely because presence is unavailable.'"#
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You just cold-started in a hermetic st2 eval. Read AGENTS.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act on every message, archive each handled item, and execute it end-to-end. Report completion or blockers over the st2 bus.'"#
     ding
   }
 }
@@ -32,7 +32,7 @@ eval {                                   // `st2 eval` = copy the world, boot te
   agent "judge" {                        // a real agent — its command line IS "what runs the judgment", in the open
     workspace "./"                       // sees the whole sandbox + bus, so it can inspect
     env { ST_AGENT "judge" }
-    command #"exec codex --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You are the hermetic eval judge. Read AGENTS.md. Poll your st2 inbox using $ST_ROOT and $ST_AGENT until an ask arrives, inspect the sandbox, and reply on the bus in the exact format requested. Presence is best-effort; never stop solely because status cannot resolve the flat eval seat.'"#
+    command #"exec codex --dangerously-bypass-hook-trust --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You just cold-started as a hermetic eval judge. Read AGENTS.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no ask, stand by for DING. After any DING, drain the inbox once again, inspect the sandbox as requested, reply on the existing bus thread in the exact format asked, archive each handled item, and report completion or blockers over the st2 bus.'"#
     ding
   }
 

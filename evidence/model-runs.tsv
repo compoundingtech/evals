@@ -1,0 +1,6 @@
+cell	date_utc	st2_commit	duration	result	usage_notice	evidence_commit
+license-mit-codex	2026-07-26	9d26245	1m39s	PASS	none	40ec23d3e068e5bd70b6d4b9a92a92d291868dce
+signal-rename-codex	2026-07-26	9d26245	8m07s	PASS	none	67b45d2694ac40762b09f51bf625d092ab68de74
+ghost-bug-codex	2026-07-26	9d26245	1m38s	PASS	3 usage-limit resets available	dc7ad3abd8d13fb2e9e2920d15e69ef0a23d0819
+poisoned-pr-codex	2026-07-26	25d8371	1m52s	PASS	3 usage-limit resets available	514a01d469b5fdcd06a528a3fbc27eddf6fcb0f9
+fork-in-the-road-codex	2026-07-26	25d8371	7m21s	PASS	3 usage-limit resets available	f605f8626d2e672a59187c9c998015d2efb31040

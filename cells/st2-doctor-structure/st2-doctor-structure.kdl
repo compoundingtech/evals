@@ -5,11 +5,6 @@
 //   (b) MUTATION-VALID BROKEN — `st2 doctor` on the same net with NO live host → it FLAGS "✗ supervisor (st2 up) running"
 //       + exits non-zero. Proves the gate is real, not always-pass. All judges held-out.
 
-env {
-  ST_ROOT  "$CATALOG/smalltalk"
-  PTY_ROOT "$CATALOG/pty"
-}
-
 eval {
   copy "./fixture"                       // net/hetz/dev/agent.kdl — a minimal service seat for doctor to check
   max-timeout "60s"
@@ -17,7 +12,7 @@ eval {
   // HEALTHY: background st2 up (holds the lock + boots the seat), poll until doctor first passes, then the
   // FINAL doctor (captured) is the healthy assertion; kill up; the step's exit == doctor's exit.
   run "healthy" {
-    command #"sh -c 'st2 up "$CATALOG/net" --host hetz >/dev/null 2>&1 & UP=$!; for i in $(seq 1 40); do st2 doctor "$CATALOG/net" --host hetz >/dev/null 2>&1 && break; sleep 0.4; done; st2 doctor "$CATALOG/net" --host hetz; RC=$?; kill $UP 2>/dev/null; exit $RC'"#
+    command #"sh -c 'st2 up --catalog "$CATALOG/net" --host hetz >/dev/null 2>&1 & UP=$!; trap "st2 down --catalog \"$CATALOG/net\" --host hetz >/dev/null 2>&1; kill $UP 2>/dev/null || true" EXIT; for i in $(seq 1 40); do st2 doctor --catalog "$CATALOG/net" --host hetz >/dev/null 2>&1 && break; sleep 0.4; done; st2 doctor --catalog "$CATALOG/net" --host hetz'"#
   }
   // BROKEN (mutation-valid): with no live host now, doctor must FLAG the missing supervisor + exit non-zero.
   run "broken" {
@@ -25,7 +20,7 @@ eval {
     // so it opts out — the exit propagates into $RUN_broken_EXIT for the judge to assert, and does NOT
     // hard-fail the run. (Also: NO trailing `; true` — the exit must reach the judge, not be masked.)
     allow-nonzero
-    command #"sh -c 'sleep 1; st2 doctor "$CATALOG/net" --host hetz'"#
+    command #"sh -c 'sleep 1; st2 doctor --catalog "$CATALOG/net" --host hetz'"#
   }
 
   judges {

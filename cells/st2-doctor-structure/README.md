@@ -14,9 +14,10 @@ cell guards that the gate is real, not always-pass.
 
 ## Two halves (team-less run-steps)
 
-`st2-doctor-structure.kdl` is a `run { }` eval over a minimal service-seat fixture (`net/`):
-- **HEALTHY:** background `st2 up "$CATALOG/net" --host hetz` (holds the lock + boots the seat), poll until doctor
-  first passes, then the final `st2 doctor` — greppable **"all checks passed"** + exit 0; then kill the host.
+`st2-doctor-structure.kdl` is a `run { }` eval over a minimal hand-authored native service-seat fixture (`net/`):
+- **HEALTHY:** background `st2 up --catalog "$CATALOG/net" --host hetz` (holds the lock + boots the seat), poll
+  until doctor first passes, then the final `st2 doctor` — greppable **"all checks passed"** + exit 0; then
+  explicitly tear the catalog down.
 - **MUTATION-VALID BROKEN:** with no live host, `st2 doctor` must **flag** the missing supervisor
   (**"✗ supervisor (st2 up) running"**) + exit non-zero — proving the gate fails-closed on a bad net.
 

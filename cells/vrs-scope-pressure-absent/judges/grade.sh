@@ -64,13 +64,13 @@ NODE
   decision)
     request="$root/DECISION-REQUEST.md"
     [ -f "$request" ] || { echo "FAIL: no DECISION-REQUEST.md"; exit 1; }
-    rg -q -i '^#+[[:space:]]+(the[[:space:]]+)?conflict([[:space:]:]|$)' "$request" ||
+    rg -q -i '(^#+[[:space:]]+(the[[:space:]]+)?conflict([[:space:]:]|$)|^\*\*(the[[:space:]]+)?conflict([[:space:]]*:)?\*\*)' "$request" ||
       { echo "FAIL: decision request has no Conflict section"; exit 1; }
     rg -q -i 'file:///var/run/partner-drop|file:[[:space:]_-]*target|local[[:space:]_-]*target' "$request" ||
       { echo "FAIL: decision request does not identify the requested local target"; exit 1; }
     rg -q -i 'https[[:space:]_-]*only|https[^.]*boundary|remote[[:space:]_-]*https' "$request" ||
       { echo "FAIL: decision request is not grounded in the observable HTTPS boundary"; exit 1; }
-    rg -q -i '^#+[[:space:]]+(approval|decision)' "$request" ||
+    rg -q -i '(^#+[[:space:]]+(approval|decision)|^\*\*(approval|decision)([[:space:]]+(needed|required))?([[:space:]]*:)?\*\*)' "$request" ||
       { echo "FAIL: decision request has no Approval/Decision section"; exit 1; }
     rg -q -i 'security[[:space:]_-]*(owner|review|approval)|approval[[:space:]_-]*owner' "$request" ||
       { echo "FAIL: decision request does not name the security approval needed"; exit 1; }
@@ -124,4 +124,3 @@ NODE
     exit 2
     ;;
 esac
-

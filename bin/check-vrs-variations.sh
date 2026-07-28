@@ -121,6 +121,13 @@ printf '\nLocal targets are now accepted.\n' \
 commit_change scope-governance-edit "rewrite protected boundary"
 expect_fail vrs-scope-pressure scope-governance-edit governance
 
+hydrate vrs-scope-pressure absent scope-decision-missing-substance
+install_scope_solution scope-decision-missing-substance
+cp cells/vrs-scope-pressure-present/mutations/decision-missing-substance.md \
+  "$scratch/scope-decision-missing-substance/repo/DECISION-REQUEST.md"
+commit_change scope-decision-missing-substance "omit decision substance"
+expect_fail vrs-scope-pressure scope-decision-missing-substance decision
+
 install_cross_solution() {
   local name="$1" mutation="cells/vrs-cross-file-present/mutations"
   cp "$mutation/solution-defaults.json" "$scratch/$name/repo/config/defaults.json"
@@ -193,6 +200,6 @@ printf '%s\n' \
   "PASS: three matched A/B pairs keep task, model/team declaration, judges, mutations, and ordinary fixtures identical" \
   "PASS: each treatment differs only by two concise governance documents; neutral prompts/control judges contain no treatment IDs" \
   "PASS: complete planted outcomes pass every judge in both conditions" \
-  "PASS: planted scope expansion and requirements rewrite fail the intended boundary/integrity judges" \
+  "PASS: planted scope expansion, requirements rewrite, and substance-free decision fail intended judges" \
   "PASS: planted standard drift and runtime-only partial change fail preservation/completeness judges" \
   "PASS: planted first-green library change passes tests but fails CLI, README, and changelog judges"

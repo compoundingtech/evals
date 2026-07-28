@@ -15,5 +15,7 @@ Summarize a JSON file of health checks with:
 health-summary checks.json
 ```
 
-The command exits 0 when every check passes and exits 2 when one or more checks fail.
+Exit status:
 
+- `0` when every check passes (`failing` is `0`).
+- `2` when one or more checks fail.

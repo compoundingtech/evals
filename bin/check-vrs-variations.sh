@@ -167,6 +167,7 @@ install_dod_solution() {
   local name="$1" mutation="cells/vrs-definition-of-done-present/mutations"
   cp "$mutation/solution-summary.js" "$scratch/$name/repo/src/summary.js"
   cp "$mutation/solution-test.js" "$scratch/$name/repo/test/summary.test.js"
+  cp "$mutation/solution-cli-test.js" "$scratch/$name/repo/test/health-summary-bin.test.js"
   cp "$mutation/solution-cli.js" "$scratch/$name/repo/bin/health-summary.js"
   chmod +x "$scratch/$name/repo/bin/health-summary.js"
   cp "$mutation/solution-package.json" "$scratch/$name/repo/package.json"

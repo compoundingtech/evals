@@ -41,7 +41,10 @@ NODE
 import assert from "node:assert/strict";
 import fs from "node:fs";
 const packageJson = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
-assert.equal(packageJson.bin?.["health-summary"], "./bin/health-summary.js");
+assert.equal(
+  packageJson.bin?.["health-summary"]?.replace(/^\.\//, ""),
+  "bin/health-summary.js",
+);
 NODE
     scratch="$(mktemp -d)"
     trap 'rm -r -- "$scratch"' EXIT
@@ -86,9 +89,10 @@ NODE
       { echo "FAIL: README did not change"; exit 1; }
     rg -q 'health-summary' "$path" ||
       { echo "FAIL: README has no health-summary usage"; exit 1; }
-    rg -q -i 'exit[^.[:space:]]*[[:space:]]+(status|code)?[[:space:]]*0|exits?[[:space:]]+0' "$path" ||
+    plain="$(tr -d '\`' < "$path")"
+    rg -q -i '(^|[^0-9])0([^0-9]|$).*(pass|success|failing[^.]*0)' <<< "$plain" ||
       { echo "FAIL: README omits success exit status 0"; exit 1; }
-    rg -q -i 'exit[^.[:space:]]*[[:space:]]+(status|code)?[[:space:]]*2|exits?[[:space:]]+2' "$path" ||
+    rg -q -i '(^|[^0-9])2([^0-9]|$).*(fail|unhealthy|nonzero)' <<< "$plain" ||
       { echo "FAIL: README omits failure exit status 2"; exit 1; }
     echo "PASS: README includes command usage and both exit statuses"
     ;;
@@ -126,7 +130,11 @@ NODE
     [ -n "$changed" ] || { echo "FAIL: no committed change"; exit 1; }
     while IFS= read -r path; do
       case "$path" in
-        src/summary.js|test/summary.test.js|bin/health-summary.js|package.json|README.md|CHANGELOG.md) ;;
+        src/summary.js|bin/health-summary.js|package.json|README.md|CHANGELOG.md) ;;
+        test/*.test.js)
+          [[ "${path#test/}" != */* ]] ||
+            { echo "FAIL: test change escaped the one-level test surface: $path"; exit 1; }
+          ;;
         *) echo "FAIL: change escaped the allowed repository surface: $path"; exit 1 ;;
       esac
     done <<< "$changed"
@@ -137,4 +145,3 @@ NODE
     exit 2
     ;;
 esac
-

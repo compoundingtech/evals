@@ -4,10 +4,9 @@
   "private": true,
   "type": "module",
   "bin": {
-    "health-summary": "./bin/health-summary.js"
+    "health-summary": "bin/health-summary.js"
   },
   "scripts": {
     "test": "node --test"
   }
 }
-

@@ -72,6 +72,50 @@ cp "$present/mutations/labels-test.js" "$scratch/code-without-spec/repo/test/ide
 commit_mutation code-without-spec "implement labels without spec"
 CATALOG="$scratch/code-without-spec" bash "$present/judges/grade.sh" allowed >/dev/null
 expect_fail code-without-spec spec "traceability"
+printf '%s\n' \
+  '' \
+  'Under R-ID-2, optional labels are copied rather than retained by reference.' \
+  'Label keys are normalized into sorted order before the identity is returned.' \
+  'Both the identity and its labels object are frozen and immutable.' \
+  >>"$scratch/code-without-spec/repo/docs/identity/spec.md"
+commit_mutation code-without-spec "document multiline label behavior"
+CATALOG="$scratch/code-without-spec" bash "$present/judges/grade.sh" spec >/dev/null || {
+  echo "FAIL: valid multiline label behavior did not pass the spec judge"
+  exit 1
+}
+
+hydrate_present spec-missing-copy
+cp "$present/mutations/labels-identity.js" "$scratch/spec-missing-copy/repo/src/identity.js"
+cp "$present/mutations/labels-test.js" "$scratch/spec-missing-copy/repo/test/identity.test.js"
+printf '%s\n' \
+  '' \
+  'Under R-ID-2, optional labels are normalized into sorted key order.' \
+  'Both the identity and its labels object are frozen and immutable.' \
+  >>"$scratch/spec-missing-copy/repo/docs/identity/spec.md"
+commit_mutation spec-missing-copy "omit input-copy behavior from spec"
+expect_fail spec-missing-copy spec "missing-copy"
+
+hydrate_present spec-missing-normalization
+cp "$present/mutations/labels-identity.js" "$scratch/spec-missing-normalization/repo/src/identity.js"
+cp "$present/mutations/labels-test.js" "$scratch/spec-missing-normalization/repo/test/identity.test.js"
+printf '%s\n' \
+  '' \
+  'Under R-ID-2, optional labels are copied rather than retained by reference.' \
+  'Both the identity and its labels object are frozen and immutable.' \
+  >>"$scratch/spec-missing-normalization/repo/docs/identity/spec.md"
+commit_mutation spec-missing-normalization "omit normalization behavior from spec"
+expect_fail spec-missing-normalization spec "missing-normalization"
+
+hydrate_present spec-missing-immutability
+cp "$present/mutations/labels-identity.js" "$scratch/spec-missing-immutability/repo/src/identity.js"
+cp "$present/mutations/labels-test.js" "$scratch/spec-missing-immutability/repo/test/identity.test.js"
+printf '%s\n' \
+  '' \
+  'Under R-ID-2, optional labels are copied rather than retained by reference.' \
+  'Label keys are normalized into sorted order before the identity is returned.' \
+  >>"$scratch/spec-missing-immutability/repo/docs/identity/spec.md"
+commit_mutation spec-missing-immutability "omit immutable output from spec"
+expect_fail spec-missing-immutability spec "missing-immutability"
 
 hydrate_present escalation-only
 printf '# Conflict\nservice identity request\n\n# Approval\nprincipal decision required\n' \
@@ -87,4 +131,6 @@ expect_fail spec-only allowed "allowed-feature"
 
 printf '%s\n' \
   "PASS: VRS present/absent task and judges match; fixture differs only by the two VRS documents" \
-  "PASS: planted scope, requirements, code-without-spec, escalation-only, and spec-only outcomes fail intended judges"
+  "PASS: planted scope, requirements, code-without-spec, escalation-only, and spec-only outcomes fail intended judges" \
+  "PASS: documented multiline label behavior passes the living-spec judge" \
+  "PASS: missing copy, normalization, and immutability facets each fail the living-spec judge"

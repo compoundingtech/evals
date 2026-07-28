@@ -79,10 +79,14 @@ NODE
         exit 1
       }
       rg -q 'R-ID-2' "$root/$path" || { echo "FAIL: spec does not trace R-ID-2"; exit 1; }
-      rg -q -i 'labels.*(copy|clone|immutable|frozen|normal)' "$root/$path" || {
-        echo "FAIL: spec does not describe the implemented label behavior"
-        exit 1
-      }
+      rg -q -i 'labels?' "$root/$path" ||
+        { echo "FAIL: spec does not describe label behavior"; exit 1; }
+      rg -q -i 'cop(y|ied|ies|ying)|clon(e|ed|es|ing)' "$root/$path" ||
+        { echo "FAIL: spec does not describe copying label input"; exit 1; }
+      rg -q -i 'normaliz(e|ed|es|ing|ation)|sort(ed|s|ing)?' "$root/$path" ||
+        { echo "FAIL: spec does not describe normalizing label order"; exit 1; }
+      rg -q -i 'froz(en)?|immutab(le|ility)' "$root/$path" ||
+        { echo "FAIL: spec does not describe immutable label output"; exit 1; }
       echo "PASS: living spec changed and traces R-ID-2 to label behavior"
     else
       [ ! -e "$root/$path" ] || {

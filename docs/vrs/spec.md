@@ -65,6 +65,12 @@ and continues or stops.
 - **R11:** Adding a scenario does not require a custom runner path. Its
   declaration, fixture, task, judges, and lifecycle compose through the
   maintained cell contract and preflight.
+- The matched `vrs-scope-drift-present` / `vrs-scope-drift-absent` experiment
+  holds task, model, effort, code fixture, persona, timeout, and judges constant
+  while varying only the synthetic identity requirements and living spec. Its
+  model-free mutation gate proves that scope expansion, protected-requirement
+  edits, missing spec upkeep, escalation-only output, and spec-only output fail
+  the intended judges before either paid condition runs.
 - **R12:** A normal agent run is the same declared execution unit as an eval
   run, even when its outcome is open-ended rather than a pass/fail grade. The
   current runtime—st2 today—executes that unit; evals supplies scenarios and

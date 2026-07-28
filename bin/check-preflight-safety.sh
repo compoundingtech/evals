@@ -17,6 +17,7 @@ reachable=(
   bin/check-preflight-safety.sh
   bin/check-retired-surfaces.sh
   bin/check-st2-semantic.sh
+  bin/check-vrs-scope-drift.sh
   bin/corpus-inventory.sh
   bin/generate-catalog.sh
   bin/model-seat-inventory.sh
@@ -59,6 +60,7 @@ expected_direct=(
   bin/check-preflight-safety.sh
   bin/check-retired-surfaces.sh
   bin/check-st2-semantic.sh
+  bin/check-vrs-scope-drift.sh
   bin/generate-catalog.sh
   bin/model-seat-inventory.sh
 )

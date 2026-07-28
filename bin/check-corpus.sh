@@ -41,6 +41,7 @@ bin/check-kdl-parse.sh
 bin/check-st2-semantic.sh
 bin/check-fixture-reset.sh
 bin/check-harness-contract.sh
+bin/check-vrs-scope-drift.sh
 bin/check-overnight-policy.sh
 bin/check-no-pii.sh
 bin/generate-catalog.sh --check

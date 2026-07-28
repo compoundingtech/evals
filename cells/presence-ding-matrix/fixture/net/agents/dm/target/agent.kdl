@@ -1,0 +1,5 @@
+agent "target" {
+  host "dm"
+  role "worker"
+  command "exec perl \"$CATALOG/fake-tui.pl\""
+}

@@ -1,0 +1,30 @@
+// Real catalog lifecycle matrix across missing, live, dead, keep, and retirement states.
+eval {
+  copy "./fixture"
+  max-timeout "90s"
+
+  run "matrix" {
+    command "bash ./matrix.sh"
+  }
+
+  judges {
+    judge "MISSING/ADOPT — first pass launches every task and the next pass adopts live pids" {
+      exec "grep -Fqx MISSING-AND-ADOPT-GREEN-52fd $RUNS_DIR/matrix.out"
+    }
+    judge "DEAD NON-KEEP — diagnostics rotate and the task restarts" {
+      exec "grep -Fqx DEAD-NONKEEP-RESTART-GREEN-52fd $RUNS_DIR/matrix.out"
+    }
+    judge "DEAD KEEP — evidence freezes without collection or restart" {
+      exec "grep -Fqx DEAD-KEEP-FROZEN-GREEN-52fd $RUNS_DIR/matrix.out"
+    }
+    judge "RETIRED LIVE — a live task is stopped even when keep is set" {
+      exec "grep -Fqx RETIRED-LIVE-STOPPED-GREEN-52fd $RUNS_DIR/matrix.out"
+    }
+    judge "RETIRED DEAD — final collection removes task state and diagnostics" {
+      exec "grep -Fqx RETIRED-DEAD-COLLECTED-GREEN-52fd $RUNS_DIR/matrix.out"
+    }
+    judge "CLEANUP — the matrix leaves no task, state, log, or PTY residue" {
+      exec "grep -Fqx MATRIX-CLEANUP-GREEN-52fd $RUNS_DIR/matrix.out"
+    }
+  }
+}

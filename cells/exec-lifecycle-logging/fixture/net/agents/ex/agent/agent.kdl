@@ -1,0 +1,10 @@
+agent "agent" {
+  host "ex"
+  role "worker"
+  workspace "$CATALOG/workspace"
+
+  exec "helper" {
+    id "ex.agent.helper"
+    command "exec bash \"$CATALOG/generation.sh\""
+  }
+}

@@ -1,0 +1,6 @@
+agent "gone" {
+  host "hl"
+  role "worker"
+  retired #true
+  command "exec sleep 100000"
+}

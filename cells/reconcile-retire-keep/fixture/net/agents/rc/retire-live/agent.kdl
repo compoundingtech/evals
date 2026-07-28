@@ -1,0 +1,10 @@
+agent "retire-live" {
+  host "rc"
+  role "worker"
+  workspace "$CATALOG/workspace"
+  exec "helper" {
+    id "rc.retire-live.helper"
+    command "exec bash \"$CATALOG/helper.sh\" retire-live"
+    keep #true
+  }
+}

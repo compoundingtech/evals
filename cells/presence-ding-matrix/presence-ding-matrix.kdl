@@ -1,0 +1,30 @@
+// Real DING sidecar against an isolated PTY: presence suppression, aging, FIFO, and retry.
+eval {
+  copy "./fixture"
+  max-timeout "60s"
+
+  run "delivery-matrix" {
+    command "bash ./delivery-matrix.sh"
+  }
+
+  judges {
+    judge "BUSY — busy presence does not suppress a new DING" {
+      exec "grep -Fqx BUSY-DELIVERY-GREEN-b60d $RUNS_DIR/delivery-matrix.out"
+    }
+    judge "AWAY — away presence does not suppress a new DING" {
+      exec "grep -Fqx AWAY-DELIVERY-GREEN-b60d $RUNS_DIR/delivery-matrix.out"
+    }
+    judge "FRESH DND — delivery is suppressed while the hold is fresh" {
+      exec "grep -Fqx FRESH-DND-SUPPRESSED-b60d $RUNS_DIR/delivery-matrix.out"
+    }
+    judge "STALE DND — the hold derives unknown and queued messages resume in FIFO order" {
+      exec "grep -Fqx STALE-DND-FIFO-GREEN-b60d $RUNS_DIR/delivery-matrix.out"
+    }
+    judge "FAILED SEND — the queue head is retained and delivered before its follower" {
+      exec "grep -Fqx FAILED-HEAD-RETRY-GREEN-b60d $RUNS_DIR/delivery-matrix.out"
+    }
+    judge "CLEANUP — the DING process and isolated PTY are gone" {
+      exec "grep -Fqx DING-MATRIX-CLEANUP-GREEN-b60d $RUNS_DIR/delivery-matrix.out"
+    }
+  }
+}

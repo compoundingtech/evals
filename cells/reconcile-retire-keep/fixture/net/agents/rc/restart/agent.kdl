@@ -1,0 +1,9 @@
+agent "restart" {
+  host "rc"
+  role "worker"
+  workspace "$CATALOG/workspace"
+  exec "helper" {
+    id "rc.restart.helper"
+    command "exec bash \"$CATALOG/helper.sh\" restart"
+  }
+}

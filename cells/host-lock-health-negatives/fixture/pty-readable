@@ -1,0 +1,4 @@
+#!/bin/sh
+if test "${1:-}" = list; then
+  printf '[]\n'
+fi

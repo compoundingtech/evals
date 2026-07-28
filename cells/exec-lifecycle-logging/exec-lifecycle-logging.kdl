@@ -1,0 +1,27 @@
+// Real terminal-free exec lifecycle: adopt, isolate, rotate bounded diagnostics, and tear down.
+eval {
+  copy "./fixture"
+  max-timeout "90s"
+
+  run "lifecycle" {
+    command "bash ./lifecycle.sh"
+  }
+
+  judges {
+    judge "EXEC — the task has no controlling terminal and owns a detached process group" {
+      exec "grep -Fqx TERMINAL-FREE-DETACHED-GREEN-c81a $RUNS_DIR/lifecycle.out"
+    }
+    judge "ADOPT — a second reconcile keeps the live pid and does not launch a generation" {
+      exec "grep -Fqx LIVE-ADOPTION-GREEN-c81a $RUNS_DIR/lifecycle.out"
+    }
+    judge "LOGS — stdout/stderr are captured with exactly one prior generation" {
+      exec "grep -Fqx BOUNDED-LOG-ROTATION-GREEN-c81a $RUNS_DIR/lifecycle.out"
+    }
+    judge "SCOPE — the task uses a transient scope when systemd user scopes are available" {
+      exec "grep -Eq '^ISOLATION-(SCOPE|DETACHED)-GREEN-c81a$' $RUNS_DIR/lifecycle.out"
+    }
+    judge "TEARDOWN — the whole process group, pid state, and bounded logs are removed" {
+      exec "grep -Fqx WHOLE-GROUP-TEARDOWN-GREEN-c81a $RUNS_DIR/lifecycle.out"
+    }
+  }
+}

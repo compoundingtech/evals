@@ -1,0 +1,27 @@
+// Doctor health negatives for supervisor locks and a bounded unreadable PTY runtime.
+eval {
+  copy "./fixture"
+  max-timeout "30s"
+
+  run "health-matrix" {
+    command "bash ./health-matrix.sh"
+  }
+
+  judges {
+    judge "REQUIRED — explicit supervisor mode rejects a missing lock" {
+      exec "grep -Fqx REQUIRE-SUPERVISOR-FAILS-CLOSED-a77e $RUNS_DIR/health-matrix.out"
+    }
+    judge "STALE — a dead recorded supervisor is unhealthy" {
+      exec "grep -Fqx STALE-LOCK-FAILS-CLOSED-a77e $RUNS_DIR/health-matrix.out"
+    }
+    judge "FOREIGN LIVE — a live foreign owner is accepted as the supervisor" {
+      exec "grep -Fqx FOREIGN-LIVE-OWNER-GREEN-a77e $RUNS_DIR/health-matrix.out"
+    }
+    judge "BOUNDED RUNTIME — an unreadable PTY registry fails within the two-second contract" {
+      exec "grep -Fqx UNREADABLE-PTY-BOUNDED-a77e $RUNS_DIR/health-matrix.out"
+    }
+    judge "CLEANUP — the live owner and fake runtime leave no residue" {
+      exec "grep -Fqx HOST-LOCK-CLEANUP-GREEN-a77e $RUNS_DIR/health-matrix.out"
+    }
+  }
+}

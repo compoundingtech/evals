@@ -1,0 +1,6 @@
+#!/bin/sh
+if test "${1:-}" = send && test -e "${CATALOG:?CATALOG must be set}/fail-send"; then
+  echo "injected send failure" >&2
+  exit 73
+fi
+exec "${REAL_PTY:?REAL_PTY must be set}" "$@"

@@ -1,0 +1,6 @@
+agent "sender" {
+  host "dm"
+  role "worker"
+  retired #true
+  command "exec sleep 100000"
+}

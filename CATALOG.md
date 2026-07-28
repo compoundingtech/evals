@@ -38,7 +38,7 @@ harness-native loader plus canonical hook file.
 | `signal-rename` | Claude | `claude-sonnet-5` / medium | 4 | high | `1800s` | 5 | — |
 | `signal-rename-codex` | Codex | `gpt-5.6-sol` / medium | 4 | high | `1800s` | 5 | **PASS** 2026-07-26, st2 `9d26245`, 8m07s, [`67b45d2`](https://github.com/compoundingtech/evals/commit/67b45d2694ac40762b09f51bf625d092ab68de74) |
 | `skill-inheritance` | Claude | `claude-sonnet-5` / medium | 1 | low | `420s` | 3 | — |
-| `st2-doctor-structure` | model-free | — | 0 | none | `60s` | 3 | — |
+| `st2-doctor-structure` | model-free | — | 0 | none | `60s` | 4 | — |
 | `st2-network` | model-free | — | 0 | none | `60s` | 2 | — |
 | `test-writing` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 3 | — |
 | `two-networks-coexist` | model-free | — | 0 | none | `120s` | 6 | — |

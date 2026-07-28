@@ -38,4 +38,5 @@ worker (`wg.dev`, workspace `./wt/feature`) boots. Five held-out `judges/` grade
 suite green · fix committed on `feature` by the worktree's pinned author · no cross-worktree/repo leak · a
 seeded regression preserved and mutation-valid against the original bug. Caps: `claude,st,pty,git,node`.
 The original paid 5/6 is preserved; its only failure was the now-removed redundant fourth-test requirement.
-One paid confirmation of this corrected contract is pending.
+The one authorized corrected-contract confirmation passed 6/6 on source `28d7fb6`; both outcomes and exact
+usage are recorded in `evidence/run-history.tsv`.

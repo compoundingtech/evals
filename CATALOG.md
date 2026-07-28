@@ -3,8 +3,9 @@
 
 This is the sole current corpus surface: **36 included cells** (5 model-free,
 31 model-backed) and **4 retired exclusions**. Inventory fields are derived from the active
-KDL and executable judge scripts. Historical model evidence is structured and commit-checked; it proves the
-scenario lineage at the named commit, not an unrecorded rerun of current source.
+KDL and executable judge scripts. Latest accepted PASS evidence remains distinct from the append-only run
+history: a failed last run is visible without being advertised as accepted evidence, and cells with no
+structured run row say so explicitly.
 
 Every model launch is explicitly pinned by `bin/check-model-policy.sh`: Claude uses
 `claude-sonnet-5` at medium effort and Codex uses `gpt-5.6-sol` at medium reasoning effort.
@@ -13,44 +14,51 @@ harness-native loader plus canonical hook file.
 
 ## Included overnight inventory
 
-| Cell | Harness | Model(s) / effort | Model seats | Cost | Timeout | Held-out judges | Last recorded model evidence |
-|---|---|---|---:|---|---|---:|---|
-| `crash-ding` | mixed | `claude-sonnet-5+gpt-5.6-sol` / medium | 4 | high | `180s` | 5 | — |
-| `ding-mode` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 4 | — |
-| `ding-reply` | Claude | `claude-sonnet-5` / medium | 1 | low | `420s` | 2 | — |
-| `docs` | Claude | `claude-sonnet-5` / medium | 3 | high | `1200s` | 5 | — |
-| `feature-fit` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — |
-| `fork-in-the-road` | Claude | `claude-sonnet-5` / medium | 4 | high | `1200s` | 5 | — |
-| `fork-in-the-road-codex` | Codex | `gpt-5.6-sol` / medium | 4 | high | `1200s` | 5 | **PASS** 2026-07-26, st2 `25d8371`, 7m21s, [`f605f86`](https://github.com/compoundingtech/evals/commit/f605f8626d2e672a59187c9c998015d2efb31040); usage notice: 3 usage-limit resets available |
-| `ghost-bug` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — |
-| `ghost-bug-codex` | Codex | `gpt-5.6-sol` / medium | 2 | medium | `1200s` | 5 | **PASS** 2026-07-26, st2 `9d26245`, 1m38s, [`dc7ad3a`](https://github.com/compoundingtech/evals/commit/dc7ad3abd8d13fb2e9e2920d15e69ef0a23d0819); usage notice: 3 usage-limit resets available |
-| `hook-integrity` | model-free | — | 0 | none | `90s` | 4 | — |
-| `inbox-hygiene` | Claude | `claude-sonnet-5` / medium | 1 | low | `900s` | 4 | — |
-| `incident-response` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — |
-| `license-mit` | mixed | `claude-sonnet-5+gpt-5.6-sol` / medium | 3 | high | `1200s` | 6 | — |
-| `license-mit-codex` | Codex | `gpt-5.6-sol` / medium | 3 | high | `1200s` | 6 | **PASS** 2026-07-26, st2 `9d26245`, 1m39s, [`40ec23d`](https://github.com/compoundingtech/evals/commit/40ec23d3e068e5bd70b6d4b9a92a92d291868dce) |
-| `migration` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — |
-| `poisoned-pr` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — |
-| `poisoned-pr-codex` | Codex | `gpt-5.6-sol` / medium | 2 | medium | `1200s` | 5 | **PASS** 2026-07-26, st2 `25d8371`, 1m52s, [`514a01d`](https://github.com/compoundingtech/evals/commit/514a01d469b5fdcd06a528a3fbc27eddf6fcb0f9); usage notice: 3 usage-limit resets available |
-| `pty-send-peek` | model-free | — | 0 | none | `120s` | 5 | — |
-| `restart-continuity` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — |
-| `security-audit` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 4 | — |
-| `signal-rename` | Claude | `claude-sonnet-5` / medium | 4 | high | `1800s` | 5 | — |
-| `signal-rename-codex` | Codex | `gpt-5.6-sol` / medium | 4 | high | `1800s` | 5 | **PASS** 2026-07-26, st2 `9d26245`, 8m07s, [`67b45d2`](https://github.com/compoundingtech/evals/commit/67b45d2694ac40762b09f51bf625d092ab68de74) |
-| `skill-inheritance` | Claude | `claude-sonnet-5` / medium | 1 | low | `420s` | 3 | — |
-| `st2-doctor-structure` | model-free | — | 0 | none | `60s` | 4 | — |
-| `st2-network` | model-free | — | 0 | none | `60s` | 2 | — |
-| `test-writing` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 3 | — |
-| `two-networks-coexist` | model-free | — | 0 | none | `120s` | 6 | — |
-| `vrs-cross-file-absent` | Claude | `claude-sonnet-5` / medium | 1 | low | `600s` | 6 | — |
-| `vrs-cross-file-present` | Claude | `claude-sonnet-5` / medium | 1 | low | `600s` | 6 | — |
-| `vrs-definition-of-done-absent` | Claude | `claude-sonnet-5` / medium | 1 | low | `600s` | 7 | — |
-| `vrs-definition-of-done-present` | Claude | `claude-sonnet-5` / medium | 1 | low | `600s` | 7 | — |
-| `vrs-scope-drift-absent` | Claude | `claude-sonnet-5` / medium | 1 | low | `600s` | 7 | — |
-| `vrs-scope-drift-present` | Claude | `claude-sonnet-5` / medium | 1 | low | `600s` | 7 | — |
-| `vrs-scope-pressure-absent` | Claude | `claude-sonnet-5` / medium | 1 | low | `600s` | 6 | — |
-| `vrs-scope-pressure-present` | Claude | `claude-sonnet-5` / medium | 1 | low | `600s` | 6 | — |
-| `weird-git-setup` | Claude | `claude-sonnet-5` / medium | 1 | low | `600s` | 5 | — |
+| Cell | Harness | Model(s) / effort | Model seats | Cost | Timeout | Held-out judges | Latest accepted PASS | Last recorded run |
+|---|---|---|---:|---|---|---:|---|---|
+| `crash-ding` | mixed | `claude-sonnet-5+gpt-5.6-sol` / medium | 4 | high | `180s` | 5 | — | **NO STRUCTURED RUN** |
+| `ding-mode` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 4 | — | **NO STRUCTURED RUN** |
+| `ding-reply` | Claude | `claude-sonnet-5` / medium | 1 | low | `420s` | 2 | — | **NO STRUCTURED RUN** |
+| `docs` | Claude | `claude-sonnet-5` / medium | 3 | high | `1200s` | 5 | — | **NO STRUCTURED RUN** |
+| `feature-fit` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — | **NO STRUCTURED RUN** |
+| `fork-in-the-road` | Claude | `claude-sonnet-5` / medium | 4 | high | `1200s` | 5 | — | **NO STRUCTURED RUN** |
+| `fork-in-the-road-codex` | Codex | `gpt-5.6-sol` / medium | 4 | high | `1200s` | 5 | **PASS** 2026-07-26, st2 `25d8371`, 7m21s, [`f605f86`](https://github.com/compoundingtech/evals/commit/f605f8626d2e672a59187c9c998015d2efb31040); usage notice: 3 usage-limit resets available | **NO STRUCTURED RUN** |
+| `ghost-bug` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — | **NO STRUCTURED RUN** |
+| `ghost-bug-codex` | Codex | `gpt-5.6-sol` / medium | 2 | medium | `1200s` | 5 | **PASS** 2026-07-26, st2 `9d26245`, 1m38s, [`dc7ad3a`](https://github.com/compoundingtech/evals/commit/dc7ad3abd8d13fb2e9e2920d15e69ef0a23d0819); usage notice: 3 usage-limit resets available | **NO STRUCTURED RUN** |
+| `hook-integrity` | model-free | — | 0 | none | `90s` | 4 | — | **NO STRUCTURED RUN** |
+| `inbox-hygiene` | Claude | `claude-sonnet-5` / medium | 1 | low | `900s` | 4 | — | **NO STRUCTURED RUN** |
+| `incident-response` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — | **NO STRUCTURED RUN** |
+| `license-mit` | mixed | `claude-sonnet-5+gpt-5.6-sol` / medium | 3 | high | `1200s` | 6 | — | **FAIL** 2026-07-28T13:27:18Z, 5/6, source [`b3cd5fb`](https://github.com/compoundingtech/evals/commit/b3cd5fbd98c11179a4555d0f9bbccfe98351a734), [receipt](evidence/stable-main-phase4-runs-20260728.json) |
+| `license-mit-codex` | Codex | `gpt-5.6-sol` / medium | 3 | high | `1200s` | 6 | **PASS** 2026-07-26, st2 `9d26245`, 1m39s, [`40ec23d`](https://github.com/compoundingtech/evals/commit/40ec23d3e068e5bd70b6d4b9a92a92d291868dce) | **NO STRUCTURED RUN** |
+| `migration` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — | **NO STRUCTURED RUN** |
+| `poisoned-pr` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — | **NO STRUCTURED RUN** |
+| `poisoned-pr-codex` | Codex | `gpt-5.6-sol` / medium | 2 | medium | `1200s` | 5 | **PASS** 2026-07-26, st2 `25d8371`, 1m52s, [`514a01d`](https://github.com/compoundingtech/evals/commit/514a01d469b5fdcd06a528a3fbc27eddf6fcb0f9); usage notice: 3 usage-limit resets available | **NO STRUCTURED RUN** |
+| `pty-send-peek` | model-free | — | 0 | none | `120s` | 5 | **PASS** 2026-07-28T19:53:59Z, 13/13, source [`b7da882`](https://github.com/compoundingtech/evals/commit/b7da8826b503e0408e309af8702fb684d28e3a19), [receipt](evidence/stable-main-phase4-runs-20260728.json) | **PASS** 2026-07-28T19:53:59Z, 13/13, source [`b7da882`](https://github.com/compoundingtech/evals/commit/b7da8826b503e0408e309af8702fb684d28e3a19), [receipt](evidence/stable-main-phase4-runs-20260728.json) |
+| `restart-continuity` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — | **NO STRUCTURED RUN** |
+| `security-audit` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 4 | — | **NO STRUCTURED RUN** |
+| `signal-rename` | Claude | `claude-sonnet-5` / medium | 4 | high | `1800s` | 5 | — | **NO STRUCTURED RUN** |
+| `signal-rename-codex` | Codex | `gpt-5.6-sol` / medium | 4 | high | `1800s` | 5 | **PASS** 2026-07-26, st2 `9d26245`, 8m07s, [`67b45d2`](https://github.com/compoundingtech/evals/commit/67b45d2694ac40762b09f51bf625d092ab68de74) | **NO STRUCTURED RUN** |
+| `skill-inheritance` | Claude | `claude-sonnet-5` / medium | 1 | low | `420s` | 3 | — | **NO STRUCTURED RUN** |
+| `st2-doctor-structure` | model-free | — | 0 | none | `60s` | 4 | — | **NO STRUCTURED RUN** |
+| `st2-network` | model-free | — | 0 | none | `60s` | 2 | — | **NO STRUCTURED RUN** |
+| `test-writing` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 3 | — | **NO STRUCTURED RUN** |
+| `two-networks-coexist` | model-free | — | 0 | none | `120s` | 6 | — | **NO STRUCTURED RUN** |
+| `vrs-cross-file-absent` | Claude | `claude-sonnet-5` / medium | 1 | low | `600s` | 6 | — | **NO STRUCTURED RUN** |
+| `vrs-cross-file-present` | Claude | `claude-sonnet-5` / medium | 1 | low | `600s` | 6 | — | **NO STRUCTURED RUN** |
+| `vrs-definition-of-done-absent` | Claude | `claude-sonnet-5` / medium | 1 | low | `600s` | 7 | — | **NO STRUCTURED RUN** |
+| `vrs-definition-of-done-present` | Claude | `claude-sonnet-5` / medium | 1 | low | `600s` | 7 | — | **NO STRUCTURED RUN** |
+| `vrs-scope-drift-absent` | Claude | `claude-sonnet-5` / medium | 1 | low | `600s` | 7 | — | **NO STRUCTURED RUN** |
+| `vrs-scope-drift-present` | Claude | `claude-sonnet-5` / medium | 1 | low | `600s` | 7 | — | **NO STRUCTURED RUN** |
+| `vrs-scope-pressure-absent` | Claude | `claude-sonnet-5` / medium | 1 | low | `600s` | 6 | — | **NO STRUCTURED RUN** |
+| `vrs-scope-pressure-present` | Claude | `claude-sonnet-5` / medium | 1 | low | `600s` | 6 | — | **NO STRUCTURED RUN** |
+| `weird-git-setup` | Claude | `claude-sonnet-5` / medium | 1 | low | `600s` | 5 | **PASS** 2026-07-28T20:10:20Z, 6/6, source [`28d7fb6`](https://github.com/compoundingtech/evals/commit/28d7fb6e1235dc3680081bb3ee4e67109dc10c89), [receipt](evidence/stable-main-phase4-runs-20260728.json) | **PASS** 2026-07-28T20:10:20Z, 6/6, source [`28d7fb6`](https://github.com/compoundingtech/evals/commit/28d7fb6e1235dc3680081bb3ee4e67109dc10c89), [receipt](evidence/stable-main-phase4-runs-20260728.json) |
+
+## Append-only run history
+
+`evidence/run-history.tsv` records PASS and FAIL outcomes with exact source and runner commits,
+model/effort, duration, structured usage/cost, cleanup state, and a tracked receipt. Existing rows are
+immutable; new runs append in completion order. The latest accepted PASS column never promotes a failure,
+while the last-run column makes a recorded failure distinct from a cell with no structured row.
 
 ## Excluded retired cells
 

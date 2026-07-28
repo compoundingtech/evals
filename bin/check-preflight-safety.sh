@@ -18,6 +18,7 @@ reachable=(
   bin/check-no-pii.sh
   bin/check-overnight-policy.sh
   bin/check-preflight-safety.sh
+  bin/check-run-history.sh
   bin/check-retired-surfaces.sh
   bin/check-st2-semantic.sh
   bin/check-vrs-scope-drift.sh
@@ -66,6 +67,7 @@ expected_direct=(
   bin/check-overnight-policy.sh
   bin/check-preflight-safety.sh
   bin/check-retired-surfaces.sh
+  bin/check-run-history.sh
   bin/check-st2-semantic.sh
   bin/check-vrs-scope-drift.sh
   bin/check-vrs-variations.sh

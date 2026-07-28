@@ -1,0 +1,139 @@
+{
+  "scope": "seed receipts for the Phase 4 append-only history: preserved model failures, corrected Weird-Git confirmation, and model-free PTY isolation",
+  "runner_source_commit": "9887b2842222def0838c2cd82e6c24c218f7efa6",
+  "runs": [
+    {
+      "run_id": "20260728T132718Z-license-mit-b3cd5fb",
+      "cell": "license-mit",
+      "completed_at_utc": "2026-07-28T13:27:18Z",
+      "source_commit": "b3cd5fbd98c11179a4555d0f9bbccfe98351a734",
+      "harness": "mixed",
+      "model": "claude-sonnet-5+gpt-5.6-sol",
+      "effort": "medium",
+      "duration_seconds": 145,
+      "result": "FAIL",
+      "score": "5/6",
+      "failure": "LICENSE was changed to MIT but package.json retained LicenseRef-Proprietary.",
+      "raw_receipt": ".eval-runs/overnight/failures/license-mit.20260728T132453Z.env",
+      "raw_log": ".eval-runs/overnight/logs/license-mit.20260728T132453Z.log",
+      "usage": {
+        "declared_seats": 3,
+        "claude": {
+          "deduplicated_calls": 44,
+          "input_tokens": 88,
+          "cache_creation_input_tokens": 126022,
+          "cache_read_input_tokens": 1893167,
+          "output_tokens": 7097,
+          "api_equivalent_usd": 1.1472516
+        },
+        "codex": {
+          "input_tokens": 257711,
+          "cached_input_tokens": 233216,
+          "output_tokens": 1232,
+          "reasoning_output_tokens": 317,
+          "total_tokens": 258943
+        },
+        "api_equivalent_usd": 1.1472516
+      },
+      "cleanup": {
+        "status": "green",
+        "live_process_residue": false,
+        "production_st2_service_started": false
+      }
+    },
+    {
+      "run_id": "20260728T155735Z-weird-git-setup-a49fb0f",
+      "cell": "weird-git-setup",
+      "completed_at_utc": "2026-07-28T15:57:35Z",
+      "source_commit": "a49fb0ffa00c525e361b3178fb7c35b93538501f",
+      "harness": "Claude",
+      "model": "claude-sonnet-5",
+      "effort": "medium",
+      "duration_seconds": 604,
+      "result": "FAIL",
+      "score": "5/6",
+      "failure": "The redundant fourth-test requirement failed; all linked-worktree, fix, suite, isolation, and coordination gates passed.",
+      "raw_receipt": ".eval-runs/overnight/failures/weird-git-setup.20260728T154731Z.env",
+      "raw_log": ".eval-runs/overnight/logs/weird-git-setup.20260728T154731Z.log",
+      "usage": {
+        "declared_seats": 1,
+        "deduplicated_calls": 19,
+        "input_tokens": 70,
+        "cache_creation_input_tokens": 121662,
+        "cache_read_input_tokens": 1508376,
+        "output_tokens": 6040,
+        "api_equivalent_usd": 1.2732948
+      },
+      "cleanup": {
+        "status": "green",
+        "live_process_residue": false,
+        "production_st2_service_started": false
+      }
+    },
+    {
+      "run_id": "20260728T195359Z-pty-send-peek-b7da882",
+      "cell": "pty-send-peek",
+      "completed_at_utc": "2026-07-28T19:53:59Z",
+      "source_commit": "b7da8826b503e0408e309af8702fb684d28e3a19",
+      "harness": "model-free",
+      "model": null,
+      "effort": null,
+      "duration_seconds": 6,
+      "result": "PASS",
+      "score": "13/13",
+      "raw_receipt": ".eval-runs/stable-main-20260728/receipts/pty-send-peek.env",
+      "raw_log": ".eval-runs/stable-main-20260728/logs/pty-send-peek.20260728T195353Z.log",
+      "usage": {
+        "declared_seats": 0,
+        "deduplicated_calls": 0,
+        "input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "output_tokens": 0,
+        "api_equivalent_usd": 0
+      },
+      "cleanup": {
+        "status": "green",
+        "live_process_residue": false,
+        "temporary_catalog_removed": true,
+        "production_st2_service_started": false
+      }
+    },
+    {
+      "run_id": "20260728T201020Z-weird-git-setup-28d7fb6",
+      "cell": "weird-git-setup",
+      "completed_at_utc": "2026-07-28T20:10:20Z",
+      "source_commit": "28d7fb6e1235dc3680081bb3ee4e67109dc10c89",
+      "harness": "Claude",
+      "model": "claude-sonnet-5",
+      "effort": "medium",
+      "duration_seconds": 604,
+      "result": "PASS",
+      "score": "6/6",
+      "raw_receipt": ".eval-runs/stable-main-20260728/receipts/weird-git-setup.env",
+      "raw_log": ".eval-runs/stable-main-20260728/logs/weird-git-setup.20260728T200016Z.log",
+      "usage": {
+        "declared_seats": 1,
+        "deduplicated_calls": 19,
+        "input_tokens": 38,
+        "cache_creation_input_tokens": 60136,
+        "cache_read_input_tokens": 811031,
+        "output_tokens": 3004,
+        "api_equivalent_usd": 0.5139933
+      },
+      "cleanup": {
+        "status": "green",
+        "hard_usage_warning": false,
+        "informational_usage_banner": false,
+        "live_process_residue": false,
+        "temporary_catalog_removed": true,
+        "production_st2_service_started": false
+      },
+      "notes": [
+        "The task completed and reported over the hermetic bus before the timeout.",
+        "The exact one-seat runner still waited to max-timeout because it requires a supervisor-side confirmation a solo worker topology cannot provide.",
+        "Visible usage is deduplicated by provider request id; API-equivalent cost uses the corpus rates and is not an invoice."
+      ]
+    }
+  ]
+}

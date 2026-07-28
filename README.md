@@ -13,8 +13,9 @@ The corpus contains Claude, Codex, mixed-family, and model-free cells.
 
 - [`AGENT-SPEC.md`](AGENT-SPEC.md) is the sole hand-authored st2 agent specification, pinned to the exact
   stabilization commit.
-- [`CATALOG.md`](CATALOG.md) is the generated current cell inventory, cost view, exclusions, and model-evidence
-  surface.
+- [`CATALOG.md`](CATALOG.md) is the generated current cell inventory, cost view, exclusions, latest accepted
+  PASS evidence, and last-run status. [`evidence/run-history.tsv`](evidence/run-history.tsv) is the append-only
+  PASS/FAIL ledger with exact commits, model/effort, duration, usage/cost, cleanup, and receipt.
 - `cells/<cell>/<cell>.kdl` is the canonical executable definition for one cell.
 
 Do not add another agent spec, readiness ledger, or hand-maintained corpus matrix.

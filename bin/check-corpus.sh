@@ -35,6 +35,7 @@ echo "PASS: ${#shell_files[@]} shell files parse"
 bin/check-preflight-safety.sh
 bin/check-model-policy.sh
 bin/check-model-policy-mutations.sh
+bin/check-run-history.sh
 bin/check-retired-surfaces.sh
 bin/model-seat-inventory.sh >/dev/null
 bin/check-event-first.sh

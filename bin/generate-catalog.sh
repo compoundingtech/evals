@@ -27,6 +27,15 @@ declare -A evidence_duration=()
 declare -A evidence_result=()
 declare -A evidence_usage=()
 declare -A evidence_commit=()
+declare -A history_last_completed=()
+declare -A history_last_source=()
+declare -A history_last_result=()
+declare -A history_last_score=()
+declare -A history_last_receipt=()
+declare -A history_pass_completed=()
+declare -A history_pass_source=()
+declare -A history_pass_score=()
+declare -A history_pass_receipt=()
 
 header=""
 while IFS=$'\t' read -r cell date st2_commit duration result usage commit; do
@@ -62,6 +71,30 @@ while IFS=$'\t' read -r cell date st2_commit duration result usage commit; do
   evidence_usage[$cell]="$usage"
   evidence_commit[$cell]="$commit"
 done < evidence/model-runs.tsv
+
+header=""
+while IFS=$'\t' read -r run_id cell completed source_commit st2_commit harness model effort duration result score usage_json cleanup_state receipt; do
+  if [ -z "$header" ]; then
+    header="$run_id	$cell	$completed	$source_commit	$st2_commit	$harness	$model	$effort	$duration	$result	$score	$usage_json	$cleanup_state	$receipt"
+    [ "$header" = $'run_id\tcell\tcompleted_at_utc\tsource_commit\tst2_commit\tharness\tmodel\teffort\tduration_seconds\tresult\tscore\tusage_json\tcleanup\treceipt' ] || {
+      echo "FAIL: evidence/run-history.tsv has an unexpected header" >&2
+      exit 1
+    }
+    continue
+  fi
+  [ -n "$run_id" ] || continue
+  history_last_completed[$cell]="$completed"
+  history_last_source[$cell]="$source_commit"
+  history_last_result[$cell]="$result"
+  history_last_score[$cell]="$score"
+  history_last_receipt[$cell]="$receipt"
+  if [ "$result" = "PASS" ]; then
+    history_pass_completed[$cell]="$completed"
+    history_pass_source[$cell]="$source_commit"
+    history_pass_score[$cell]="$score"
+    history_pass_receipt[$cell]="$receipt"
+  fi
+done < evidence/run-history.tsv
 
 excluded=0
 exclusion_rows=""
@@ -124,8 +157,9 @@ done < "$inventory"
 
 This is the sole current corpus surface: **$total included cells** ($model_free model-free,
 $model_backed model-backed) and **$excluded retired exclusions**. Inventory fields are derived from the active
-KDL and executable judge scripts. Historical model evidence is structured and commit-checked; it proves the
-scenario lineage at the named commit, not an unrecorded rerun of current source.
+KDL and executable judge scripts. Latest accepted PASS evidence remains distinct from the append-only run
+history: a failed last run is visible without being advertised as accepted evidence, and cells with no
+structured run row say so explicitly.
 
 Every model launch is explicitly pinned by \`bin/check-model-policy.sh\`: Claude uses
 \`claude-sonnet-5\` at medium effort and Codex uses \`gpt-5.6-sol\` at medium reasoning effort.
@@ -134,8 +168,8 @@ harness-native loader plus canonical hook file.
 
 ## Included overnight inventory
 
-| Cell | Harness | Model(s) / effort | Model seats | Cost | Timeout | Held-out judges | Last recorded model evidence |
-|---|---|---|---:|---|---|---:|---|
+| Cell | Harness | Model(s) / effort | Model seats | Cost | Timeout | Held-out judges | Latest accepted PASS | Last recorded run |
+|---|---|---|---:|---|---|---:|---|---|
 EOF
 
   while IFS=$'\t' read -r cell harness models effort seats cost timeout judges; do
@@ -144,22 +178,42 @@ EOF
     else
       model_display="\`$models\` / $effort"
     fi
-    if [ -n "${evidence_result[$cell]:-}" ]; then
+    if [ -n "${history_pass_completed[$cell]:-}" ]; then
+      commit="${history_pass_source[$cell]}"
+      short="${commit:0:7}"
+      receipt="${history_pass_receipt[$cell]}"
+      accepted="**PASS** ${history_pass_completed[$cell]}, ${history_pass_score[$cell]}, source [\`$short\`](https://github.com/compoundingtech/evals/commit/$commit), [receipt]($receipt)"
+    elif [ -n "${evidence_result[$cell]:-}" ]; then
       commit="${evidence_commit[$cell]}"
       short="${commit:0:7}"
       usage="${evidence_usage[$cell]}"
-      evidence="**${evidence_result[$cell]}** ${evidence_date[$cell]}, st2 \`${evidence_st2[$cell]}\`, ${evidence_duration[$cell]}, [\`$short\`](https://github.com/compoundingtech/evals/commit/$commit)"
+      accepted="**${evidence_result[$cell]}** ${evidence_date[$cell]}, st2 \`${evidence_st2[$cell]}\`, ${evidence_duration[$cell]}, [\`$short\`](https://github.com/compoundingtech/evals/commit/$commit)"
       if [ "$usage" != "none" ]; then
-        evidence+="; usage notice: $usage"
+        accepted+="; usage notice: $usage"
       fi
     else
-      evidence="—"
+      accepted="—"
     fi
-    printf '| `%s` | %s | %s | %s | %s | `%s` | %s | %s |\n' \
-      "$cell" "$harness" "$model_display" "$seats" "$cost" "$timeout" "$judges" "$evidence"
+    if [ -n "${history_last_completed[$cell]:-}" ]; then
+      commit="${history_last_source[$cell]}"
+      short="${commit:0:7}"
+      receipt="${history_last_receipt[$cell]}"
+      last="**${history_last_result[$cell]}** ${history_last_completed[$cell]}, ${history_last_score[$cell]}, source [\`$short\`](https://github.com/compoundingtech/evals/commit/$commit), [receipt]($receipt)"
+    else
+      last="**NO STRUCTURED RUN**"
+    fi
+    printf '| `%s` | %s | %s | %s | %s | `%s` | %s | %s | %s |\n' \
+      "$cell" "$harness" "$model_display" "$seats" "$cost" "$timeout" "$judges" "$accepted" "$last"
   done < "$inventory"
 
   cat <<EOF
+
+## Append-only run history
+
+\`evidence/run-history.tsv\` records PASS and FAIL outcomes with exact source and runner commits,
+model/effort, duration, structured usage/cost, cleanup state, and a tracked receipt. Existing rows are
+immutable; new runs append in completion order. The latest accepted PASS column never promotes a failure,
+while the last-run column makes a recorded failure distinct from a cell with no structured row.
 
 ## Excluded retired cells
 

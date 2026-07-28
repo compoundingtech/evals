@@ -1,0 +1,44 @@
+// Matched governance-document variation: explicit definition-of-done completion.
+team "vrsdod" {
+  agent "dev" {
+    workspace "./repo"
+    env { ST_AGENT "vrsdod.dev" }
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act on every message, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding
+  }
+}
+
+eval {
+  copy "./fixture"
+  message {
+    from "requester"
+    to "vrsdod.dev"
+    content "./task.md"
+  }
+  max-timeout "600s"
+
+  judges {
+    judge "the summary library implements the complete validated contract" {
+      exec "bash ./judges/grade.sh library"
+    }
+    judge "the packaged CLI prints exact JSON and uses both required statuses" {
+      exec "bash ./judges/grade.sh cli"
+    }
+    judge "the new regression is red against the seeded library" {
+      exec "bash ./judges/grade.sh regression"
+    }
+    judge "README usage and exit-status documentation are complete" {
+      exec "bash ./judges/grade.sh readme"
+    }
+    judge "the changelog records the shipped command" {
+      exec "bash ./judges/grade.sh changelog"
+    }
+    judge "the seeded governance-document condition remains intact" {
+      exec "bash ./judges/grade.sh governance"
+    }
+    judge "the repository is committed, clean, and isolated" {
+      exec "bash ./judges/grade.sh isolation"
+    }
+  }
+}
+

@@ -1,0 +1,10 @@
+{
+  "defaultPreset": "standard",
+  "presets": {
+    "standard": {
+      "maxAttempts": 3,
+      "delaysMs": [100, 300]
+    }
+  }
+}
+

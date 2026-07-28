@@ -1,0 +1,13 @@
+{
+  "name": "health-report-slice",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "health-summary": "./bin/health-summary.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}
+

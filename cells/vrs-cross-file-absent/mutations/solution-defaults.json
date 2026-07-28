@@ -1,0 +1,14 @@
+{
+  "defaultPreset": "standard",
+  "presets": {
+    "standard": {
+      "maxAttempts": 3,
+      "delaysMs": [100, 300]
+    },
+    "resilient": {
+      "maxAttempts": 5,
+      "delaysMs": [100, 300, 900, 1800]
+    }
+  }
+}
+

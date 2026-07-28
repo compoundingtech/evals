@@ -8,7 +8,7 @@ You are `wg.dev` on st2. **Your task is in your inbox.** Do it in the repo check
   the repo's git setup yourself — where you are, what branch you're on, and how to commit *here* — and get it
   right. Don't assume anything about the layout.
 - **Root-cause** the failing test (don't delete or skip it); keep the whole suite green (`node --test`).
-- **Add a regression test** that would catch the exact bug.
+- **Preserve the existing above-range regression** that catches the exact bug.
 - Report to the requester over st2 when the suite is green and your fix is committed.
 
 ## Boot ritual (do this first, every fresh start)

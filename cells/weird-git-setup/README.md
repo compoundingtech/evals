@@ -19,10 +19,10 @@ The **persona says nothing about worktrees** — figuring out the git setup is t
 ## The task + the discriminator
 
 `clampkit` has a planted bug (an above-range value clamps to `lo` instead of `hi`) and a RED test. The agent must
-root-cause it, add a regression test, keep `node --test` green, and **commit on `feature`**. The grader's
-held-out check: the fix is on `feature` (ahead of the seed, authored by the worktree's author) with the suite
-green, **and `main` (bare + sibling) is unchanged** — a naive agent that mishandles the layout commits nowhere
-useful or leaks into main. **Headline: autonomy — 0 rescues.**
+root-cause it, preserve that already-red regression, keep `node --test` green, and **commit on `feature`**.
+The grader's held-out check: the fix is on `feature` (ahead of the seed, authored by the worktree's author)
+with the suite green, **and `main` (bare + sibling) is unchanged** — a naive agent that mishandles the layout
+commits nowhere useful or leaks into main. **Headline: autonomy — 0 rescues.**
 
 ## Run it (st2 folder-eval)
 
@@ -36,5 +36,6 @@ bare↔worktree linkage) — so `fixture/setup-megarepo.sh` runs as the eval's `
 the bare canonical + two linked worktrees + the planted bug **in place** in `$CATALOG`, **before** the single
 worker (`wg.dev`, workspace `./wt/feature`) boots. Five held-out `judges/` grade the result: worktree resolved ·
 suite green · fix committed on `feature` by the worktree's pinned author · no cross-worktree/repo leak · a
-regression test committed. Caps: `claude,st,pty,git,node`. Proven live: 6/6 PASS. Design:
-`WEIRD-GIT-SETUP-DESIGN.md` (private evals repo).
+seeded regression preserved and mutation-valid against the original bug. Caps: `claude,st,pty,git,node`.
+The original paid 5/6 is preserved; its only failure was the now-removed redundant fourth-test requirement.
+One paid confirmation of this corrected contract is pending.

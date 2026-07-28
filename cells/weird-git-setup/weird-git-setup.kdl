@@ -49,7 +49,7 @@ eval {
     judge "NO CROSS-WORKTREE LEAK — canonical 'main' unchanged + sibling wt/main clean at seed" {
       exec "bash ./judges/no-leak.sh"
     }
-    judge "REGRESSION TEST — a new test case was committed (would catch the exact bug)" {
+    judge "REGRESSION PRESERVED — the seeded above-range case remains and is RED against the buggy seed" {
       exec "bash ./judges/regression-test.sh"
     }
   }

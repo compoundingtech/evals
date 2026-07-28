@@ -18,6 +18,7 @@ eval {                                   // team-less = arrange (nothing) → ru
     command #"st2 pty send psp --seq "PSP-9f3a7c2e" --seq key:return"#
   }
   run "peek-post" { command #"sh -c 'sleep 2; st2 pty peek --plain psp'"# }   // the process should have ACK'd the token by now
+  run "cleanup"   { command "st2 pty kill psp" }              // --keep must not preserve a live ad-hoc PTY
 
   judges {                               // all must pass; each one visible, nothing magic
     judge "peek returns REAL live output — the process's READY banner is present in the pre-send peek" {
@@ -28,6 +29,9 @@ eval {                                   // team-less = arrange (nothing) → ru
     }
     judge "ROUND-TRIP — after the send, peek shows ACK:<token> (the PROCESS received + acted on the injected bytes)" {
       exec "grep -q 'ACK:PSP-9f3a7c2e' $RUNS_DIR/peek-post.out"
+    }
+    judge "SELF-CLEANUP — the ad-hoc ACK-reader is no longer running before the catalog is preserved" {
+      exec #"test "$(st2 pty ls --json | jq '[.[] | select(.name == "psp" and .status == "running")] | length')" -eq 0"#
     }
   }
 }

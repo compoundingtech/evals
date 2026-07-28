@@ -23,6 +23,8 @@ The session runs a deterministic **ACK-reader** (`printf READY`, then `ACK:<line
   random per run, so no fixture can pre-bake the screen.
 - **Isolation:** the session lives in the eval's scratch `PTY_ROOT`; the grader asserts it is **invisible**
   in the operator's global pty registry.
+- **Self-cleanup:** after capturing the ACK, the cell kills its ad-hoc reader and a held-out judge proves no
+  running `psp` session remains even when the eval catalog is preserved with `--keep`.
 
 ## Run it
 
@@ -31,5 +33,6 @@ st2 eval ./cells/pty-send-peek/
 ```
 
 `pty-send-peek.kdl` is a team-less run-step eval: its `run { step … }` spawns the ACK-reader pty, sends a random
-token, and captures the screen before + after; the held-out `judges/` assert the round-trip + a negative control +
-isolation from the captured screen. Net-free and self-cleaning (the hermetic catalog is torn down at the end).
+token, captures the screen before + after, and kills the reader; four held-out judges assert the round-trip,
+negative control, live-output evidence, and zero-running-session cleanup. Net-free and self-cleaning even when
+the hermetic catalog is preserved for inspection.

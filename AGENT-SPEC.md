@@ -1,8 +1,8 @@
 # Canonical st2 agent specification
 
 This is the sole agent-authoring specification for this repository. It is pinned to st2
-[`8280069d6b8f17a3aab2305dc1dfcd3365946ef3`](https://github.com/compoundingtech/st2/commit/8280069d6b8f17a3aab2305dc1dfcd3365946ef3)
-(`0.1.0`, source `8280069`). It documents the hand-authored KDL accepted at that commit. Do not infer
+[`9887b2842222def0838c2cd82e6c24c218f7efa6`](https://github.com/compoundingtech/st2/commit/9887b2842222def0838c2cd82e6c24c218f7efa6)
+(`0.1.0`, source `9887b28`). It documents the hand-authored KDL accepted at that commit. Do not infer
 additional fields or commands from older corpus fixtures.
 
 st2 runs long-lived `service` agents made of interactive `pty` tasks and terminal-free `exec` tasks.
@@ -432,8 +432,8 @@ Inspect the declaration, every referenced template, and every workspace destinat
 materialization command. Materialization is byte-idempotent and does not imply hook installation. Starting
 the network is a separate, explicitly authorized action.
 
-For source `8280069`, the accepted Linux executable has SHA256
-`f63a4d74762dc12a1854e118f5d2b0d89d3b5497b1de473fb277bd6046c4509e`; its published archive has SHA256
-`4207fc2b825a482da7fcbb74c2a74727ee19a63c4bf9dc1c2d04a4d820e7cc7a`. `bin/check-corpus.sh` verifies
+For source `9887b28`, the accepted Linux executable has SHA256
+`d49d44fd4f3f6f655455c212353a469fefa956082bedf22163deb767d8a36a0d`; its published archive has SHA256
+`32ee103bd17ccb3e155ac63d816a3906c2470a3c98e3cc04b56e5a67138b9927`. `bin/check-corpus.sh` verifies
 the variable-age version contract, exact installed binary, embedded full source commit, strict semantic
 validation, fixture resets, and the rest of the model-free corpus gate before an eval may run.

@@ -1,0 +1,67 @@
+{
+  "scope": "visible persisted usage for the accepted 30-cell evidence set",
+  "review": "evidence/post-corpus-review-20260728.md",
+  "claude": {
+    "declared_seats": 40,
+    "deduplicated_calls": 1054,
+    "input_tokens": 3364,
+    "cache_creation_input_tokens": 4799252,
+    "cache_read_input_tokens": 83989670,
+    "output_tokens": 509690,
+    "api_equivalent_usd": 61.647855
+  },
+  "codex": {
+    "declared_seats": 17,
+    "input_tokens": 12690369,
+    "cached_input_tokens": 11815168,
+    "output_tokens": 101864,
+    "reasoning_output_tokens": 19419,
+    "total_tokens": 12792233,
+    "latest_machine_readable_weekly_used_percent": 13
+  },
+  "excluded_invalid_pre_release_canary": {
+    "reason": "License-MIT source 8280069 exited 143 before judgment; it is not part of the accepted exact-9887b28 corpus evidence.",
+    "claude": {
+      "declared_seats": 2,
+      "deduplicated_calls": 12,
+      "input_tokens": 32,
+      "cache_creation_input_tokens": 26406,
+      "cache_read_input_tokens": 627053,
+      "output_tokens": 2550,
+      "api_equivalent_usd": 0.3848979
+    },
+    "codex": {
+      "declared_seats": 1,
+      "input_tokens": 93841,
+      "cached_input_tokens": 78592,
+      "output_tokens": 655,
+      "reasoning_output_tokens": 269,
+      "total_tokens": 94496
+    }
+  },
+  "all_visible_including_invalid_pre_release_canary": {
+    "claude": {
+      "declared_seats": 42,
+      "deduplicated_calls": 1066,
+      "input_tokens": 3396,
+      "cache_creation_input_tokens": 4825658,
+      "cache_read_input_tokens": 84616723,
+      "output_tokens": 512240,
+      "api_equivalent_usd": 62.0327529
+    },
+    "codex": {
+      "declared_seats": 18,
+      "input_tokens": 12784210,
+      "cached_input_tokens": 11893760,
+      "output_tokens": 102519,
+      "reasoning_output_tokens": 19688,
+      "total_tokens": 12886729
+    }
+  },
+  "notes": [
+    "Claude API-equivalent dollars use the same persisted-token accounting and rates as the per-batch gates; they are not an invoice.",
+    "Codex exposes token accounting but no dollar estimate.",
+    "Restarted seats can create more persisted session files than declared seats.",
+    "The VRS-Present paid session is included here even though its model-free corrected regrade was omitted from the Batch-1 gate aggregate."
+  ]
+}

@@ -1,4 +1,5 @@
 cell	surface	reason
+bootstrap-network	cell	deterministic zero-init bus probe; no harness seat
 docs	judge:cold-reader	one-shot offline Claude print grader; no bus identity, DING, or hook surface
 hook-integrity	cell	deterministic native hook-installation probe; no live harness seat
 pty-send-peek	cell	deterministic PTY transport probe; no harness seat

@@ -1,0 +1,60 @@
+// bootstrap-network.kdl — the whole eval in one file.  `st2 eval ./` runs it (team-less, deterministic).
+// Zero to a working bus with NO init step: a directory that has never existed is already a usable network.
+// `st2-network` grades the other half — whether `st2 up` HOSTS a declared net — and its README parks the
+// newcomer's zero-to-network path because there is no init/onboarding command. This cell asserts that the
+// missing command is not a gap: first contact CREATES the root, and send/read/reply/archive all work on it
+// with neither identity registered anywhere. All judges held-out.
+
+eval {                                   // team-less = run (act) → judges (assert)
+  max-timeout "60s"
+
+  // Flat run form: each `run "label"` IS one step, run in file order; each captures stdout/err/exit to
+  // $RUNS_DIR/<label>.* — which is also how later steps get the message filename `send` printed.
+  run "unbootstrapped" {                 // the claim would be vacuous if anything had already made the root
+    command #"sh -c 'test ! -e "$CATALOG/newcomer" && echo ABSENT || { echo PRESENT; exit 1; }'"#
+  }
+  run "first-contact" {                  // the whole bootstrap: one send, no init, prints the message filename
+    command #"st2 message send bn-probe --catalog "$CATALOG/newcomer" --as bn-setup -m "BN-FIRST-CONTACT-9c41""#
+  }
+  run "inbox"  { command #"st2 message ls bn-probe --catalog "$CATALOG/newcomer""# }
+  run "read"   {
+    command #"sh -c 'st2 message read bn-probe "$(cat "$RUNS_DIR/first-contact.out")" --catalog "$CATALOG/newcomer"'"#
+  }
+  run "reply"  {                         // the newcomer answers — threading on a root nothing declared
+    command #"sh -c 'st2 message reply "$(cat "$RUNS_DIR/first-contact.out")" --catalog "$CATALOG/newcomer" --as bn-probe -m "BN-ACK-9c41"'"#
+  }
+  run "sender-inbox" { command #"st2 message ls bn-setup --catalog "$CATALOG/newcomer" --json"# }
+  run "archive" {
+    command #"sh -c 'st2 message archive bn-probe "$(cat "$RUNS_DIR/first-contact.out")" --catalog "$CATALOG/newcomer"'"#
+  }
+  run "drained" {
+    command #"sh -c 'printf "inbox=%s archive=%s\n" "$(st2 message ls bn-probe --catalog "$CATALOG/newcomer" --count)" "$(st2 message ls bn-probe --catalog "$CATALOG/newcomer" --archive --count)"'"#
+  }
+  // CONTROL — every step above named the newcomer root explicitly, so the eval's OWN bus must be untouched.
+  // Without this, a build that silently ignored `--catalog` and wrote to the ambient root would still pass
+  // every judge below, because the fallback root is a real working bus too.
+  run "ambient-untouched" {
+    command #"sh -c 'test ! -e "$CATALOG/bn-probe" && echo AMBIENT-CLEAN || { echo AMBIENT-DIRTY; exit 1; }'"#
+  }
+
+  judges {                               // all must pass; each one visible, nothing magic
+    judge "ZERO INIT — the root did not exist before first contact, and the send needed no step before it" {
+      exec "grep -qx ABSENT $RUNS_DIR/unbootstrapped.out && test -s $RUNS_DIR/first-contact.out"
+    }
+    judge "DELIVERED — the message is in the recipient's inbox on the root the send created" {
+      exec "grep -q 'from bn-setup' $RUNS_DIR/inbox.out"
+    }
+    judge "READABLE + ATTRIBUTED — the body reads back and names its sender, with neither identity registered" {
+      exec "grep -q 'BN-FIRST-CONTACT-9c41' $RUNS_DIR/read.out && grep -q 'bn-setup' $RUNS_DIR/read.out"
+    }
+    judge "THREADED REPLY — the answer reaches the sender in-reply-to the original, not as a fresh send" {
+      exec "grep -q '\"from\":\"bn-probe\"' $RUNS_DIR/sender-inbox.out && grep -q \"\\\"inReplyTo\\\":\\\"$(cat $RUNS_DIR/first-contact.out)\\\"\" $RUNS_DIR/sender-inbox.out"
+    }
+    judge "ARCHIVE — the inbox drains to empty and the handled item is in the archive" {
+      exec "grep -qx 'inbox=0 archive=1' $RUNS_DIR/drained.out"
+    }
+    judge "CONTROL — the newcomer root was really the target; the eval's own default bus stayed empty" {
+      exec "grep -qx AMBIENT-CLEAN $RUNS_DIR/ambient-untouched.out"
+    }
+  }
+}

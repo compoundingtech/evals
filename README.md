@@ -34,9 +34,10 @@ The complete free preflight never starts Claude or Codex:
 bin/check-corpus.sh
 ```
 
-It enforces the pinned st2 build, shell and KDL parsing, explicit model/effort selection, absence of retired
-runtime surfaces, reproducible fixture resets, the one-drain/DING lifecycle, harness-native loaders and hooks,
-PII safety, and an up-to-date generated catalog.
+It enforces the pinned st2 build, shell and KDL parsing, explicit model/effort selection for every provider
+command (including commands nested in another launch prompt), absence of retired runtime surfaces,
+reproducible fixture resets, the one-drain/DING lifecycle, harness-native loaders and hooks, PII safety, and
+an up-to-date generated catalog.
 
 Preview the exact overnight order and cost shape:
 

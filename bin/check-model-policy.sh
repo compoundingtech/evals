@@ -4,6 +4,11 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
+scan_root="${1:-cells}"
+[ -d "$scan_root" ] || {
+  echo "FAIL: model-policy scan root is not a directory: $scan_root" >&2
+  exit 1
+}
 
 failed=0
 launches=0
@@ -25,40 +30,45 @@ while IFS=: read -r file line text; do
     code="${code%%//*}"
   fi
 
-  provider=""
-  if [[ "$code" =~ exec[[:space:]]+claude([[:space:]]|$) ]] ||
-    [[ "$code" =~ (^|[^[:alnum:]_-])claude[[:space:]]+- ]]; then
-    provider="claude"
-  elif [[ "$code" =~ exec[[:space:]]+codex([[:space:]]|$) ]] ||
-    [[ "$code" =~ (^|[^[:alnum:]_-])codex[[:space:]]+- ]]; then
-    provider="codex"
-  fi
-  [ -n "$provider" ] || continue
+  remaining="$code"
+  provider_regex='(^|[^[:alnum:]_-])(exec[[:space:]]+)?(claude|codex)[[:space:]]+-'
+  while [[ "$remaining" =~ $provider_regex ]]; do
+    match="${BASH_REMATCH[0]}"
+    provider="${BASH_REMATCH[3]}"
+    after="${remaining#*"$match"}"
+    invocation="$match$after"
+    if [[ "$after" =~ $provider_regex ]]; then
+      next_match="${BASH_REMATCH[0]}"
+      invocation="$match${after%%"$next_match"*}"
+    fi
 
-  ((launches += 1))
-  if [[ "${code,,}" == *opus* ]]; then
-    fail "$file:$line selects Opus; no current eval has an approved Opus exception"
-  fi
+    ((launches += 1))
+    if [[ "${invocation,,}" == *opus* ]]; then
+      fail "$file:$line selects Opus; no current eval has an approved Opus exception"
+    fi
 
-  if [ "$provider" = "claude" ]; then
-    ((claude_launches += 1))
-    [[ "$code" == *"--model claude-sonnet-5"* ]] ||
-      fail "$file:$line launches Claude without --model claude-sonnet-5"
-    [[ "$code" == *"--effort medium"* ]] ||
-      fail "$file:$line launches Claude without --effort medium"
-  else
-    ((codex_launches += 1))
-    [[ "$code" == *"--model gpt-5.6-sol"* ]] ||
-      fail "$file:$line launches Codex without --model gpt-5.6-sol"
-    [[ "$code" == *"model_reasoning_effort=\"medium\""* ]] ||
-      fail "$file:$line launches Codex without explicit medium reasoning effort"
-    [[ "$code" == *"--dangerously-bypass-hook-trust"* ]] ||
-      fail "$file:$line launches Codex without trusting the canonical workspace hooks"
-  fi
+    if [ "$provider" = "claude" ]; then
+      ((claude_launches += 1))
+      [[ "$invocation" == *"--model claude-sonnet-5"* ]] ||
+        fail "$file:$line launches Claude without --model claude-sonnet-5"
+      [[ "$invocation" == *"--effort medium"* ]] ||
+        fail "$file:$line launches Claude without --effort medium"
+    else
+      ((codex_launches += 1))
+      [[ "$invocation" == *"--model gpt-5.6-sol"* ]] ||
+        fail "$file:$line launches Codex without --model gpt-5.6-sol"
+      [[ "$invocation" == *"model_reasoning_effort=\"medium\""* ]] ||
+        fail "$file:$line launches Codex without explicit medium reasoning effort"
+      [[ "$invocation" == *"--dangerously-bypass-hook-trust"* ]] ||
+        fail "$file:$line launches Codex without trusting the canonical workspace hooks"
+    fi
+
+    remaining="$after"
+  done
 done < <(
   rg --no-ignore -n --no-heading \
     'exec[[:space:]]+(claude|codex)|(^|[^[:alnum:]_-])(claude|codex)[[:space:]]+-' \
-    cells -g '*.kdl' -g '*.sh' -g '!**/_git/**' || true
+    "$scan_root" -g '*.kdl' -g '*.sh' -g '!**/_git/**' || true
 )
 
 [ "$launches" -gt 0 ] || fail "no maintained Claude or Codex launch sites were found"

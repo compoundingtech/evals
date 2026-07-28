@@ -12,6 +12,7 @@ reachable=(
   bin/check-fixture-reset-terminal.sh
   bin/check-harness-contract.sh
   bin/check-kdl-parse.sh
+  bin/check-model-policy-mutations.sh
   bin/check-model-policy.sh
   bin/check-no-pii-history.sh
   bin/check-no-pii.sh
@@ -57,6 +58,7 @@ expected_direct=(
   bin/check-fixture-reset-terminal.sh
   bin/check-harness-contract.sh
   bin/check-kdl-parse.sh
+  bin/check-model-policy-mutations.sh
   bin/check-model-policy.sh
   bin/check-no-pii-history.sh
   bin/check-no-pii.sh

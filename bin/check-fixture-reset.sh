@@ -7,7 +7,7 @@ cd "$repo_root"
 
 scratch="$(mktemp -d)"
 cleanup() {
-  rm -r -- "$scratch"
+  rm -rf -- "$scratch"
 }
 trap cleanup EXIT
 

@@ -39,7 +39,7 @@ bin/model-seat-inventory.sh >/dev/null
 bin/check-event-first.sh
 bin/check-kdl-parse.sh
 bin/check-st2-semantic.sh
-bin/check-fixture-reset.sh
+bin/check-fixture-reset-terminal.sh
 bin/check-harness-contract.sh
 bin/check-vrs-scope-drift.sh
 bin/check-overnight-policy.sh

@@ -9,6 +9,7 @@ reachable=(
   bin/check-corpus.sh
   bin/check-event-first.sh
   bin/check-fixture-reset.sh
+  bin/check-fixture-reset-terminal.sh
   bin/check-harness-contract.sh
   bin/check-kdl-parse.sh
   bin/check-model-policy.sh
@@ -51,7 +52,7 @@ mapfile -t direct < <(
 )
 expected_direct=(
   bin/check-event-first.sh
-  bin/check-fixture-reset.sh
+  bin/check-fixture-reset-terminal.sh
   bin/check-harness-contract.sh
   bin/check-kdl-parse.sh
   bin/check-model-policy.sh

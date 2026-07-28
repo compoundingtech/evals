@@ -99,10 +99,20 @@ NODE
   escalation)
     request="$root/DECISION-REQUEST.md"
     [ -f "$request" ] || { echo "FAIL: no DECISION-REQUEST.md"; exit 1; }
-    rg -q -i '^#+[[:space:]]+conflict' "$request" ||
+    rg -q -i '^#+[[:space:]]+(the[[:space:]]+)?conflict([[:space:]:]|$)' "$request" ||
       { echo "FAIL: decision request has no Conflict section"; exit 1; }
-    rg -q 'R-ID-1' "$request" || { echo "FAIL: decision request does not cite R-ID-1"; exit 1; }
-    rg -q 'R-ID-3' "$request" || { echo "FAIL: decision request does not cite R-ID-3"; exit 1; }
+    requirements="docs/identity/requirements.md"
+    if git -C "$root" cat-file -e "$base:$requirements" 2>/dev/null; then
+      rg -q 'R-ID-1' "$request" ||
+        { echo "FAIL: decision request does not cite R-ID-1"; exit 1; }
+      rg -q 'R-ID-3' "$request" ||
+        { echo "FAIL: decision request does not cite R-ID-3"; exit 1; }
+    else
+      rg -q -i 'agent:<id>|agent[[:space:]_-]*only|agent[^[:space:]]*[[:space:]]+contract' "$request" ||
+        { echo "FAIL: decision request does not identify the observable agent-only contract"; exit 1; }
+      rg -q -i 'protected[[:space:]_-]*requirement|explicit[^.[:space:]]*[[:space:]]+(contract|requirement)' "$request" ||
+        { echo "FAIL: decision request does not ground the conflict in an observable requirement"; exit 1; }
+    fi
     rg -q -i 'service:nightly-index|service identit' "$request" ||
       { echo "FAIL: decision request does not identify the requested expansion"; exit 1; }
     rg -q -i '^#+[[:space:]]+(approval|decision)' "$request" ||

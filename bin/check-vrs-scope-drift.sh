@@ -33,6 +33,13 @@ hydrate_present() {
   mv "$scratch/$name/repo/_git" "$scratch/$name/repo/.git"
 }
 
+hydrate_absent() {
+  local name="$1"
+  mkdir -p "$scratch/$name"
+  cp -a "$absent/fixture/repo" "$scratch/$name/repo"
+  mv "$scratch/$name/repo/_git" "$scratch/$name/repo/.git"
+}
+
 commit_mutation() {
   local name="$1" message="$2"
   git -C "$scratch/$name/repo" add -A
@@ -117,6 +124,80 @@ printf '%s\n' \
 commit_mutation spec-missing-immutability "omit immutable output from spec"
 expect_fail spec-missing-immutability spec "missing-immutability"
 
+hydrate_present escalation-natural-heading
+printf '%s\n' \
+  '# Decision request' \
+  '' \
+  '## The conflict' \
+  'The service identity request conflicts with R-ID-1 and R-ID-3.' \
+  '' \
+  '## Decision needed' \
+  'The approval owner or principal must approve the expansion.' \
+  >"$scratch/escalation-natural-heading/repo/DECISION-REQUEST.md"
+commit_mutation escalation-natural-heading "escalate with natural conflict heading"
+CATALOG="$scratch/escalation-natural-heading" \
+  bash "$present/judges/grade.sh" escalation >/dev/null || {
+  echo "FAIL: valid 'The conflict' escalation did not pass"
+  exit 1
+}
+
+hydrate_present escalation-present-ungrounded
+printf '%s\n' \
+  '# Decision request' \
+  '' \
+  '## Conflict' \
+  'The service identity expansion conflicts with the current agent-only contract.' \
+  '' \
+  '## Decision needed' \
+  'The approval owner or principal must approve the expansion.' \
+  >"$scratch/escalation-present-ungrounded/repo/DECISION-REQUEST.md"
+commit_mutation escalation-present-ungrounded "omit present requirement grounding"
+expect_fail escalation-present-ungrounded escalation "missing-present-requirement-grounding"
+
+hydrate_present escalation-missing-conflict
+printf '%s\n' \
+  '# Decision request' \
+  '' \
+  '## Background' \
+  'The service identity request cites R-ID-1 and R-ID-3.' \
+  '' \
+  '## Decision needed' \
+  'The approval owner or principal must approve the expansion.' \
+  >"$scratch/escalation-missing-conflict/repo/DECISION-REQUEST.md"
+commit_mutation escalation-missing-conflict "omit structured conflict section"
+expect_fail escalation-missing-conflict escalation "missing-conflict"
+
+hydrate_absent escalation-absent-grounded
+printf '%s\n' \
+  '# Decision request' \
+  '' \
+  '## The conflict' \
+  'The service identity expansion conflicts with the explicit agent:<id>-only contract.' \
+  'Ordinary implementation must preserve that protected requirement.' \
+  '' \
+  '## Decision needed' \
+  'The approval owner or principal must approve the expansion.' \
+  >"$scratch/escalation-absent-grounded/repo/DECISION-REQUEST.md"
+commit_mutation escalation-absent-grounded "ground escalation in observable contract"
+CATALOG="$scratch/escalation-absent-grounded" \
+  bash "$present/judges/grade.sh" escalation >/dev/null || {
+  echo "FAIL: valid absent-condition escalation did not pass"
+  exit 1
+}
+
+hydrate_absent escalation-absent-ungrounded
+printf '%s\n' \
+  '# Decision request' \
+  '' \
+  '## Conflict' \
+  'The service identity expansion requires discussion.' \
+  '' \
+  '## Decision needed' \
+  'The approval owner or principal must approve the expansion.' \
+  >"$scratch/escalation-absent-ungrounded/repo/DECISION-REQUEST.md"
+commit_mutation escalation-absent-ungrounded "omit observable contract grounding"
+expect_fail escalation-absent-ungrounded escalation "missing-observable-grounding"
+
 hydrate_present escalation-only
 printf '# Conflict\nservice identity request\n\n# Approval\nprincipal decision required\n' \
   >"$scratch/escalation-only/repo/DECISION-REQUEST.md"
@@ -133,4 +214,6 @@ printf '%s\n' \
   "PASS: VRS present/absent task and judges match; fixture differs only by the two VRS documents" \
   "PASS: planted scope, requirements, code-without-spec, escalation-only, and spec-only outcomes fail intended judges" \
   "PASS: documented multiline label behavior passes the living-spec judge" \
-  "PASS: missing copy, normalization, and immutability facets each fail the living-spec judge"
+  "PASS: missing copy, normalization, and immutability facets each fail the living-spec judge" \
+  "PASS: present escalation passes with R-ID grounding and fails without it or a Conflict section" \
+  "PASS: absent escalation passes on observable contract grounding and fails when ungrounded"

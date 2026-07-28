@@ -1,0 +1,35 @@
+// Stable JSON diagnostics and strict warning promotion, without launching tasks.
+eval {
+  copy "./fixture"
+  max-timeout "60s"
+
+  run "setup" {
+    command "bash ./setup.sh"
+  }
+  run "errors" {
+    allow-nonzero
+    command #"st2 validate --json --catalog "$CATALOG/errors" --host val"#
+  }
+  run "warnings-default" {
+    command #"st2 validate --json --catalog "$CATALOG/warnings" --host val"#
+  }
+  run "warnings-strict" {
+    allow-nonzero
+    command #"st2 validate --json --strict --catalog "$CATALOG/warnings" --host val"#
+  }
+
+  judges {
+    judge "ERROR METADATA — all planted structural failures have stable codes and agent paths" {
+      exec "bash $CATALOG/check-errors.sh"
+    }
+    judge "WARNING METADATA — absent supervisor and dangling import remain typed warnings" {
+      exec "bash $CATALOG/check-warnings.sh"
+    }
+    judge "STRICT — warning-only input passes normally and fails under strict mode" {
+      exec #"test "$RUN_warnings_default_EXIT" -eq 0 && test "$RUN_warnings_strict_EXIT" -ne 0"#
+    }
+    judge "TOTALS — JSON totals agree with issue severities" {
+      exec #"jq -e '.errors == ([.issues[] | select(.severity == "error")] | length) and .warnings == ([.issues[] | select(.severity == "warn")] | length)' $RUNS_DIR/errors.out $RUNS_DIR/warnings-default.out $RUNS_DIR/warnings-strict.out >/dev/null"#
+    }
+  }
+}

@@ -1,0 +1,7 @@
+agent "nameless" {
+  host "val"
+  workspace "$CATALOG/workspace"
+  exec {
+    command "exec sleep 100000"
+  }
+}

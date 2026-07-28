@@ -1,0 +1,8 @@
+agent "unsafe" {
+  host "val"
+  workspace "$CATALOG/workspace"
+  command "exec sleep 100000"
+  render {
+    file "../escape" "forbidden"
+  }
+}

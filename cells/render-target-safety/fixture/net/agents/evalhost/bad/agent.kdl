@@ -1,0 +1,11 @@
+agent "bad" {
+  host "evalhost"
+  role "worker"
+  workspace "$CATALOG/bad-workspace"
+  command "exec sleep 100000"
+
+  render {
+    file "README.md" "# forbidden tracked change"
+    file ".st2/should-not-exist" "must not be written"
+  }
+}

@@ -1,0 +1,8 @@
+agent "same" {
+  host "val"
+  workspace "$CATALOG/workspace"
+  exec "helper" {
+    id "val.shared-helper"
+    command "exec sleep 100000"
+  }
+}

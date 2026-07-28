@@ -1,0 +1,30 @@
+// Deterministic continuity proof for context and resource state across controlled task-runtime restarts.
+eval {
+  copy "./fixture"
+  max-timeout "90s"
+
+  run "seed" {
+    command "bash ./seed.sh"
+  }
+  run "restart-cycle" {
+    command "bash ./restart-cycle.sh"
+  }
+  run "read-after" {
+    command "bash ./read-after.sh"
+  }
+
+  judges {
+    judge "CONTEXT — now.md survives two controlled launch/teardown cycles" {
+      exec "grep -Fq CONTEXT-NOW-7b9d $RUNS_DIR/read-after.out"
+    }
+    judge "DECISION — append-only decision reasoning survives the cycles" {
+      exec "grep -Fq DECISION-WHY-7b9d $RUNS_DIR/read-after.out"
+    }
+    judge "RESOURCE — the exact linked artifact and metadata survive the cycles" {
+      exec "grep -Fq https://example.invalid/context-resource-7b9d $RUNS_DIR/read-after.out && grep -Fq CONTINUITY-RESOURCE-7b9d $RUNS_DIR/read-after.out"
+    }
+    judge "CLEANUP — both controlled task launches are explicitly torn down" {
+      exec "grep -Fq CLEANUP-GREEN-7b9d $RUNS_DIR/restart-cycle.out"
+    }
+  }
+}

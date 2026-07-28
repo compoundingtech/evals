@@ -1,0 +1,17 @@
+agent "good" {
+  host "evalhost"
+  role "worker"
+  workspace "$CATALOG/good-workspace"
+  command "exec sleep 100000"
+
+  render {
+    copy "_templates/README.md" "README.md"
+    copy "_templates/copied.txt" ".st2/copied.txt"
+    file ".st2/generated.txt" "AGENT=$ST_AGENT"
+    json-upsert ".st2/settings.json" #"{"base":"kept","nested":{"left":1}}"#
+    json-upsert ".st2/settings.json" #"{"nested":{"right":2}}"#
+    ensure-line ".st2/rules.txt" "LINE-64ce"
+    ensure-line ".st2/rules.txt" "LINE-64ce"
+    git-exclude ".st2/"
+  }
+}

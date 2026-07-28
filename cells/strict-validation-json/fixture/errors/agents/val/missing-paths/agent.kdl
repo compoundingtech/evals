@@ -1,0 +1,8 @@
+agent "missing-paths" {
+  host "val"
+  workspace "$CATALOG/no-workspace"
+  exec "helper" {
+    command "exec sleep 100000"
+    cwd "$CATALOG/no-cwd"
+  }
+}

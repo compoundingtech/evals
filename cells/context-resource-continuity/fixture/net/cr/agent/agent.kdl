@@ -1,0 +1,8 @@
+agent "agent" {
+  host "cr"
+  role "worker"
+  env {
+    ST_AGENT "cr.agent"
+  }
+  command "exec sleep 100000"
+}

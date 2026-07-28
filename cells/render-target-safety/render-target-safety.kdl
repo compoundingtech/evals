@@ -1,0 +1,41 @@
+// Deterministic coverage for every native render directive and its fail-closed target policy.
+eval {
+  copy "./fixture"
+  max-timeout "90s"
+
+  run "setup" {
+    command "bash ./setup.sh"
+  }
+  run "validate-safe-shape" {
+    command #"st2 validate --strict --catalog "$CATALOG/net" --host evalhost"#
+  }
+  run "materialize-mixed" {
+    allow-nonzero
+    command #"st2 up --catalog "$CATALOG/net" --host evalhost --materialize-only"#
+  }
+  run "inspect" {
+    command "bash ./inspect.sh"
+  }
+  run "validate-unsafe" {
+    allow-nonzero
+    command #"st2 validate --json --strict --catalog "$CATALOG/unsafe" --host evalhost"#
+  }
+
+  judges {
+    judge "DIRECTIVES — copy, file, json-upsert, ensure-line, and git-exclude materialize correctly" {
+      exec "grep -Fqx ALL-DIRECTIVES-GREEN-64ce $RUNS_DIR/inspect.out"
+    }
+    judge "TRACKED IDENTICAL — a byte-identical tracked target is accepted" {
+      exec "grep -Fqx IDENTICAL-TRACKED-GREEN-64ce $RUNS_DIR/inspect.out"
+    }
+    judge "TRACKED CHANGE — a real tracked change fails closed and leaves the target unchanged" {
+      exec #"test "$RUN_materialize_mixed_EXIT" -ne 0 && grep -Fqx CHANGED-TRACKED-BLOCKED-64ce $RUNS_DIR/inspect.out"#
+    }
+    judge "AGENT ISOLATION — one rejected render plan does not suppress a valid peer" {
+      exec "grep -Fqx PEER-MATERIALIZED-GREEN-64ce $RUNS_DIR/inspect.out"
+    }
+    judge "UNSAFE TARGET — traversal is a stable validation error" {
+      exec #"test "$RUN_validate_unsafe_EXIT" -ne 0 && jq -e '.issues[] | select(.severity == "error" and (.code | test("render|path"; "i")))' $RUNS_DIR/validate-unsafe.out >/dev/null"#
+    }
+  }
+}

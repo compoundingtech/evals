@@ -1,0 +1,6 @@
+agent "warn" {
+  host "val"
+  workspace "__WORKSPACE__"
+  supervisor "val.absent"
+  command "exec sleep 100000"
+}

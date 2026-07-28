@@ -1,0 +1,11 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+	hooksPath = .githooks
+[user]
+	name = ts.dev
+	email = ts.dev@eval.local
+[commit]
+	gpgsign = false

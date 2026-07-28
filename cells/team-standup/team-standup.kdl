@@ -1,0 +1,47 @@
+// team-standup.kdl — the whole eval in one file.  `st2 eval ./` runs it; `st2 up ./` just boots the team.
+// The emergence cell: ONE seat is declared, and the work needs two. `ts.cos` gets a single seeded request,
+// no human turn after it, and has to decompose it, SEAT A SPECIALIST AT RUNTIME through the documented pty
+// launch path, delegate over the bus, and drive the result to a verified finish. The discriminator is that
+// the specialist is NOT declared here — the runner never boots it, so a passing verdict cannot be explained
+// by the fixture having pre-built the team. `supervise` reaps that runtime seat at teardown (it lives in the
+// hermetic PTY_ROOT); without it the seat the supervisor spawned would outlive the run. All judges held-out.
+//
+// SPENDS: two Claude seats — the declared supervisor plus the one it stands up. The generated catalog counts
+// declared seats only, so its `1 seat / low` row understates this cell; see README.md.
+
+// Harness loaders, personas, and hooks are intentionally baked into fixture workspaces;
+// bin/check-harness-contract.sh verifies every current bus-connected model agent.
+team "ts" {                              // only the supervisor is declared -> ts.cos
+  agent "cos" {
+    workspace "./cos"                    // coordinate-only cwd, and NOT a repo (structural isolation)
+    env { ST_AGENT "ts.cos" }
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act on every message, archive each handled item, and report completion or blockers over the st2 bus. The specialist you need is not declared anywhere: seat it yourself with the launch command your persona spells out verbatim (st2 pty run -d --id ts.dev --cwd ../widget -- env ST_AGENT=ts.dev claude --model claude-sonnet-5 --effort medium ...), and send its delegation before you spawn it, so its cold-start drain finds the work.'"#
+    ding
+  }
+}
+
+eval {                                   // `st2 eval` = copy the world, boot the team, kick off, supervise, then judge
+  copy "./fixture"                       // pre-built starting world, 1:1 (widget/_git -> widget/.git on copy)
+  message {                              // kickoff — the single seeded request, from the synthetic requester
+    from "requester"
+    to "ts.cos"
+    content "./task.md"
+  }
+  max-timeout "1800s"                    // one declared seat: no worker->sup done-signal, so it judges final state at the cap
+  supervise                              // supervises the declared team AND reaps the runtime-spawned seat at teardown
+
+  judges {                               // all must pass; each one visible, nothing magic (all mechanical here)
+    judge "STANDUP — a seat that is not declared here was really stood up and spoke on the bus" {
+      exec "bash ./judges/standup.sh"
+    }
+    judge "task correct (held-out) — wordCount BEHAVES on cases the visible suite never covers" {
+      exec "bash ./judges/task-correct.sh"
+    }
+    judge "isolation — the work is committed in the widget repo and the supervisor owns no repo" {
+      exec "bash ./judges/isolation.sh"
+    }
+    judge "coordination — the delegate->report->confirm loop is visible on the bus" {
+      exec "bash ./judges/coordination.sh"
+    }
+  }
+}

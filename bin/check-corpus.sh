@@ -45,6 +45,7 @@ bin/check-vrs-scope-drift.sh
 bin/check-vrs-variations.sh
 bin/check-overnight-policy.sh
 bin/check-no-pii.sh
+bin/check-no-pii-history.sh
 bin/generate-catalog.sh --check
 git diff --check HEAD
 

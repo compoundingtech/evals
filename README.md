@@ -141,6 +141,8 @@ materialization, network health, catalog/pty isolation, and pty send/peek behavi
 ## Public boundary
 
 This repository contains public synthetic scenarios and structured run provenance, not private network state.
-`bin/check-no-pii.sh` rejects machine-specific paths and configured private tokens before publication.
+`bin/check-no-pii.sh` rejects machine-specific paths and configured private tokens before publication,
+including content reachable only through a fixture's published `_git` history. Its dirty/clean history
+controls run in the complete free preflight.
 
 MIT licensed; see [`LICENSE`](LICENSE).

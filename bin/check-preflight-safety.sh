@@ -13,6 +13,7 @@ reachable=(
   bin/check-harness-contract.sh
   bin/check-kdl-parse.sh
   bin/check-model-policy.sh
+  bin/check-no-pii-history.sh
   bin/check-no-pii.sh
   bin/check-overnight-policy.sh
   bin/check-preflight-safety.sh
@@ -57,6 +58,7 @@ expected_direct=(
   bin/check-harness-contract.sh
   bin/check-kdl-parse.sh
   bin/check-model-policy.sh
+  bin/check-no-pii-history.sh
   bin/check-no-pii.sh
   bin/check-overnight-policy.sh
   bin/check-preflight-safety.sh

@@ -12,7 +12,7 @@ pairs=(
 )
 scratch="$(mktemp -d)"
 cleanup() {
-  rm -r -- "$scratch"
+  rm -rf -- "$scratch"
 }
 trap cleanup EXIT
 
@@ -196,4 +196,3 @@ printf '%s\n' \
   "PASS: planted scope expansion and requirements rewrite fail the intended boundary/integrity judges" \
   "PASS: planted standard drift and runtime-only partial change fail preservation/completeness judges" \
   "PASS: planted first-green library change passes tests but fails CLI, README, and changelog judges"
-

@@ -94,6 +94,14 @@ for file in "${reachable[@]}"; do
   fi
 done
 
+for file in \
+  bin/check-harness-contract.sh \
+  bin/check-vrs-scope-drift.sh \
+  bin/check-vrs-variations.sh; do
+  grep -Fxq '  rm -rf -- "$scratch"' "$file" ||
+    fail "$file does not clean its Git-object scratch tree noninteractively"
+done
+
 for file in "${materializers[@]}"; do
   if rg -n --pcre2 \
     '^[[:space:]]*(?!#).*((^|[;&|][[:space:]]*)st2[[:space:]]+(eval|up|down|pty|shell)|exec[[:space:]]+(claude|codex)[[:space:]]|(^|[;&|][[:space:]]*)(claude|codex)[[:space:]]+-|curl[[:space:]]|wget[[:space:]]|ssh[[:space:]]|gh[[:space:]]|(^|[;&|][[:space:]]*)eval[[:space:]])' \

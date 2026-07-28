@@ -9,7 +9,7 @@ present="cells/vrs-scope-drift-present"
 absent="cells/vrs-scope-drift-absent"
 scratch="$(mktemp -d)"
 cleanup() {
-  rm -r -- "$scratch"
+  rm -rf -- "$scratch"
 }
 trap cleanup EXIT
 

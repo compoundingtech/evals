@@ -21,7 +21,7 @@ inventory="$(mktemp)"
 scratch="$(mktemp -d)"
 cleanup() {
   rm -f -- "$inventory"
-  rm -r -- "$scratch"
+  rm -rf -- "$scratch"
 }
 trap cleanup EXIT
 

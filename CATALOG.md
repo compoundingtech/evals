@@ -32,7 +32,7 @@ harness-native loader plus canonical hook file.
 | `migration` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — |
 | `poisoned-pr` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — |
 | `poisoned-pr-codex` | Codex | `gpt-5.6-sol` / medium | 2 | medium | `1200s` | 5 | **PASS** 2026-07-26, st2 `25d8371`, 1m52s, [`514a01d`](https://github.com/compoundingtech/evals/commit/514a01d469b5fdcd06a528a3fbc27eddf6fcb0f9); usage notice: 3 usage-limit resets available |
-| `pty-send-peek` | model-free | — | 0 | none | `120s` | 3 | — |
+| `pty-send-peek` | model-free | — | 0 | none | `120s` | 4 | — |
 | `restart-continuity` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — |
 | `security-audit` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 4 | — |
 | `signal-rename` | Claude | `claude-sonnet-5` / medium | 4 | high | `1800s` | 5 | — |

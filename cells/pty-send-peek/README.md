@@ -21,8 +21,10 @@ The session runs a deterministic **ACK-reader** (`printf READY`, then `ACK:<line
 - **Negative control (mutation-valid):** a peek taken **before** the send does **not** contain `ACK:<tok>` —
   so peek reflects real state and the ACK appears only because `pty send` delivered the input. The token is
   random per run, so no fixture can pre-bake the screen.
-- **Isolation:** the session lives in the eval's scratch `PTY_ROOT`; the grader asserts it is **invisible**
-  in the operator's global pty registry.
+- **Isolation:** the session lives in the eval's scratch `PTY_ROOT`; the grader runs the **same** `pty list`
+  query twice — once as the eval sees it, once with `PTY_ROOT` unset, which is the root the operator's own
+  tool resolves — and requires the session to be **listed** in the first and **absent** from the second.
+  Both halves gate, so a wrong path or an unreadable registry fails rather than passing on an empty answer.
 
 ## Run it
 
@@ -31,5 +33,5 @@ st2 eval ./cells/pty-send-peek/
 ```
 
 `pty-send-peek.kdl` is a team-less run-step eval: its `run { step … }` spawns the ACK-reader pty, sends a random
-token, and captures the screen before + after; the held-out `judges/` assert the round-trip + a negative control +
-isolation from the captured screen. Net-free and self-cleaning (the hermetic catalog is torn down at the end).
+token, and captures the screen before + after plus both registry listings; the held-out judges assert the
+round-trip, a negative control, and isolation. Net-free (the hermetic catalog is torn down at the end).

@@ -1,0 +1,175 @@
+{
+  "scope": "visible persisted Claude usage for the six creative VRS matched A/B cells",
+  "results": "evidence/vrs-variations-results-20260728.md",
+  "runner_source_commit": "9887b2842222def0838c2cd82e6c24c218f7efa6",
+  "model": "claude-sonnet-5",
+  "effort": "medium",
+  "rates_usd_per_million_tokens": {
+    "input": 3,
+    "cache_creation_input": 3.75,
+    "cache_read_input": 0.3,
+    "output": 15
+  },
+  "cells": [
+    {
+      "order": 1,
+      "cell": "vrs-scope-pressure-present",
+      "condition": "present",
+      "declared_seats": 1,
+      "deduplicated_calls": 34,
+      "input_tokens": 92,
+      "cache_creation_input_tokens": 141631,
+      "cache_read_input_tokens": 1711122,
+      "output_tokens": 11996,
+      "api_equivalent_usd": 1.22466885,
+      "paid_score": "5/6",
+      "accepted_endpoint": "6/6 model-free corrected regrade",
+      "source_commit": "be39e483a0f38379829cab819f2d0e9db5780cb0",
+      "catalog_id": "st2e-3327341",
+      "receipt": ".eval-runs/vrs-variations-20260728/failures/vrs-scope-pressure-present.20260728T182254Z.env"
+    },
+    {
+      "order": 2,
+      "cell": "vrs-scope-pressure-absent",
+      "condition": "absent",
+      "declared_seats": 1,
+      "deduplicated_calls": 43,
+      "input_tokens": 118,
+      "cache_creation_input_tokens": 143505,
+      "cache_read_input_tokens": 2236779,
+      "output_tokens": 14242,
+      "api_equivalent_usd": 1.42316145,
+      "paid_score": "6/6",
+      "accepted_endpoint": "6/6 paid",
+      "source_commit": "7d4f73ba8df06831bf6a7414710f8c2334f38616",
+      "catalog_id": "st2e-3389547",
+      "receipt": ".eval-runs/vrs-variations-20260728/receipts/vrs-scope-pressure-absent.env"
+    },
+    {
+      "order": 3,
+      "cell": "vrs-cross-file-absent",
+      "condition": "absent",
+      "declared_seats": 1,
+      "deduplicated_calls": 46,
+      "input_tokens": 92,
+      "cache_creation_input_tokens": 143655,
+      "cache_read_input_tokens": 2445270,
+      "output_tokens": 10440,
+      "api_equivalent_usd": 1.42916325,
+      "paid_score": "6/6",
+      "accepted_endpoint": "6/6 paid",
+      "source_commit": "7d4f73ba8df06831bf6a7414710f8c2334f38616",
+      "catalog_id": "st2e-3423001",
+      "receipt": ".eval-runs/vrs-variations-20260728/receipts/vrs-cross-file-absent.env"
+    },
+    {
+      "order": 4,
+      "cell": "vrs-cross-file-present",
+      "condition": "present",
+      "declared_seats": 1,
+      "deduplicated_calls": 43,
+      "input_tokens": 86,
+      "cache_creation_input_tokens": 147708,
+      "cache_read_input_tokens": 2193454,
+      "output_tokens": 13822,
+      "api_equivalent_usd": 1.4195292,
+      "paid_score": "6/6",
+      "accepted_endpoint": "6/6 paid",
+      "source_commit": "7d4f73ba8df06831bf6a7414710f8c2334f38616",
+      "catalog_id": "st2e-3455460",
+      "receipt": ".eval-runs/vrs-variations-20260728/receipts/vrs-cross-file-present.env"
+    },
+    {
+      "order": 5,
+      "cell": "vrs-definition-of-done-present",
+      "condition": "present",
+      "declared_seats": 1,
+      "deduplicated_calls": 44,
+      "input_tokens": 88,
+      "cache_creation_input_tokens": 140156,
+      "cache_read_input_tokens": 2272329,
+      "output_tokens": 10435,
+      "api_equivalent_usd": 1.3640727,
+      "paid_score": "4/7",
+      "accepted_endpoint": "7/7 model-free corrected regrade",
+      "source_commit": "7d4f73ba8df06831bf6a7414710f8c2334f38616",
+      "catalog_id": "st2e-3487811",
+      "receipt": ".eval-runs/vrs-variations-20260728/failures/vrs-definition-of-done-present.20260728T191019Z.env"
+    },
+    {
+      "order": 6,
+      "cell": "vrs-definition-of-done-absent",
+      "condition": "absent",
+      "declared_seats": 1,
+      "deduplicated_calls": 43,
+      "input_tokens": 86,
+      "cache_creation_input_tokens": 140886,
+      "cache_read_input_tokens": 2247341,
+      "output_tokens": 11294,
+      "api_equivalent_usd": 1.3721928,
+      "paid_score": "7/7",
+      "accepted_endpoint": "7/7 paid",
+      "source_commit": "dc209cb5b8abf6c2f95f860f27c24cfbbc4d087e",
+      "catalog_id": "st2e-3553904",
+      "receipt": ".eval-runs/vrs-variations-20260728/receipts/vrs-definition-of-done-absent.env"
+    }
+  ],
+  "pair_totals": [
+    {
+      "pair": "scope-pressure",
+      "deduplicated_calls": 77,
+      "input_tokens": 210,
+      "cache_creation_input_tokens": 285136,
+      "cache_read_input_tokens": 3947901,
+      "output_tokens": 26238,
+      "api_equivalent_usd": 2.6478303
+    },
+    {
+      "pair": "cross-file",
+      "deduplicated_calls": 89,
+      "input_tokens": 178,
+      "cache_creation_input_tokens": 291363,
+      "cache_read_input_tokens": 4638724,
+      "output_tokens": 24262,
+      "api_equivalent_usd": 2.84869245
+    },
+    {
+      "pair": "definition-of-done",
+      "deduplicated_calls": 87,
+      "input_tokens": 174,
+      "cache_creation_input_tokens": 281042,
+      "cache_read_input_tokens": 4519670,
+      "output_tokens": 21729,
+      "api_equivalent_usd": 2.7362655
+    }
+  ],
+  "first_four_cells": {
+    "deduplicated_calls": 166,
+    "input_tokens": 388,
+    "cache_creation_input_tokens": 576499,
+    "cache_read_input_tokens": 8586625,
+    "output_tokens": 50500,
+    "api_equivalent_usd": 5.49652275
+  },
+  "total": {
+    "declared_seats": 6,
+    "deduplicated_calls": 253,
+    "input_tokens": 562,
+    "cache_creation_input_tokens": 857541,
+    "cache_read_input_tokens": 13106295,
+    "output_tokens": 72229,
+    "api_equivalent_usd": 8.23278825
+  },
+  "guards": {
+    "hard_usage_warning": false,
+    "informational_usage_banner": false,
+    "temporary_runtime_residue_after_cleanup": false,
+    "production_st2_service_started": false
+  },
+  "notes": [
+    "API-equivalent dollars use persisted-token accounting and corpus rates; they are not an invoice.",
+    "The initial interactive-cleanup preflight stopped before provider execution and incurred no model usage.",
+    "The two original paid failure scores are preserved; their accepted endpoints are model-free regrades after matched mutation-tested semantic-equivalence judge corrections.",
+    "All six one-seat cells reached the runner max-timeout after completing because the exact runner expected a worker-to-supervisor done signal that a solo supervisor could not emit."
+  ]
+}

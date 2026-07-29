@@ -1,0 +1,8 @@
+agent "seat" {
+  identity "seat"
+  host "h"
+  pty "agent" {
+    id "h.seat.agent"
+    command "exec echo b; sleep 3600"
+  }
+}

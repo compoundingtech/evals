@@ -1,4 +1,7 @@
 cell	surface	reason
+agent-spec-lifecycle-catalog-prepare	cell	deterministic content-addressed prepare probe; no harness seat
+agent-spec-lifecycle-catalog-publish-cas	cell	deterministic immutable staging and CAS probe; no harness seat
+agent-spec-lifecycle-catalog-root-atomicity	cell	deterministic multi-seat catalog-root transaction probe; no harness seat
 context-resource-continuity	cell	deterministic native context/resource restart probe; no harness seat
 docs	judge:cold-reader	one-shot offline Claude print grader; no bus identity, DING, or hook surface
 exec-lifecycle-logging	cell	deterministic native exec lifecycle probe; no harness seat

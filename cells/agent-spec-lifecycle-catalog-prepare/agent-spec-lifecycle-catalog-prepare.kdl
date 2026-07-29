@@ -1,0 +1,23 @@
+eval {
+  copy "./fixture"
+  max-timeout "60s"
+
+  run "exercise" {
+    command "bash ./exercise.sh"
+  }
+
+  judges {
+    judge "PRODUCT SURFACE — st2 persists exact prepared Agent Spec bytes" {
+      exec "test \"$(cat $CATALOG/results/prepare.code)\" = 0"
+    }
+    judge "HEAD UNCHANGED — prepare imports an object without publishing the seat" {
+      exec "bash ./judges/head-unchanged.sh"
+    }
+    judge "SOURCE SNAPSHOT — later source mutation cannot change the prepared object" {
+      exec "bash ./judges/source-snapshot.sh"
+    }
+    judge "IDEMPOTENT IMPORT — identical byte preparation returns one object identity" {
+      exec "bash ./judges/idempotent.sh"
+    }
+  }
+}

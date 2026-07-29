@@ -1,0 +1,8 @@
+agent "beta" {
+  identity "beta"
+  host "h"
+  pty "agent" {
+    id "task-beta"
+    command "exec sleep 3600"
+  }
+}

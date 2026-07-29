@@ -1,0 +1,26 @@
+eval {
+  copy "./fixture"
+  max-timeout "90s"
+
+  run "exercise" {
+    command "bash ./exercise.sh"
+  }
+
+  judges {
+    judge "PRODUCT SURFACE — explicit immutable staging is supported" {
+      exec "test \"$(cat $CATALOG/results/setup.code)\" = 0"
+    }
+    judge "LOST ACK — replaying one request returns the original ref commit" {
+      exec "bash ./judges/lost-ack.sh"
+    }
+    judge "MANAGER FENCE — a foreign manager cannot move or adopt the head" {
+      exec "bash ./judges/manager-fence.sh"
+    }
+    judge "ABA FENCE — stale parent ref fails after A -> B -> A" {
+      exec "bash ./judges/aba-fence.sh"
+    }
+    judge "ROOT UNCHANGED — staging never changes catalog visibility" {
+      exec "bash ./judges/root-unchanged.sh"
+    }
+  }
+}

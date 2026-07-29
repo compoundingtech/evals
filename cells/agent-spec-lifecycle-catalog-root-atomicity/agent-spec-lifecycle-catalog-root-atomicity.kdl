@@ -1,0 +1,32 @@
+eval {
+  copy "./fixture"
+  max-timeout "120s"
+
+  run "exercise" {
+    command "bash ./exercise.sh"
+  }
+
+  judges {
+    judge "PRODUCT SURFACE — immutable root commits are supported" {
+      json "results/outcomes.json" field "surface" is #true
+    }
+    judge "ROOT CAS — a separately-valid stale seat patch cannot cross a newer root" {
+      json "results/outcomes.json" field "staleRootRejected" is #true
+    }
+    judge "GRAPH VALIDATION — a cross-seat ref/binding join cannot change the root" {
+      json "results/outcomes.json" field "invalidGraphRejected" is #true
+    }
+    judge "ATOMIC NIX PATCH — two seat changes publish under exactly one new root commit" {
+      json "results/outcomes.json" field "nixPatchOneRoot" is #true
+    }
+    judge "NO MIXED SNAPSHOT — readers observe only the old or new complete root" {
+      json "results/outcomes.json" field "noMixedSnapshot" is #true
+    }
+    judge "MIXED MANAGERS — dynamic admission preserves Nix seats and ref ownership" {
+      json "results/outcomes.json" field "mixedManagersPreserved" is #true
+    }
+    judge "CORRUPTION CLOSED — an admitted object digest mismatch cannot be inspected" {
+      json "results/outcomes.json" field "corruptionRejected" is #true
+    }
+  }
+}

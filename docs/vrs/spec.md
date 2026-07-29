@@ -76,6 +76,39 @@ and continues or stops.
   current runtime—st2 today—executes that unit; evals supplies scenarios and
   evidence about whether the shape works.
 
+### Proposed content-addressed catalog evidence
+
+The proposed `agent-spec-lifecycle-catalog-*` family applies R10–R11 to Agent
+Spec publication without making evals a catalog implementation:
+
+```text
+prepare exact immutable Agent Spec bytes
+  -> stage refs with parent CAS + replay fence
+  -> admit one whole-catalog root
+```
+
+The cells own portable observable outcomes: idempotent import, immutable
+content identity, stale-parent and ABA rejection, whole-catalog validity,
+atomic multi-seat patches, staging-operation replay, per-seat manager fences, and
+mixed-manager preservation across root transactions. A root commit records the
+transaction actor; it does not transfer custody of every admitted seat. st2
+owns the concrete API, storage, transactions, durability, inspection, and
+recovery mechanisms.
+
+Typed resource admission and public crash-boundary injection remain future
+discriminators documented by the experiment. They are not maintained cells
+until st2 exposes real product surfaces that can make them green without a
+reference shim or eval-only runner path.
+
+This is a spec suggestion, not accepted behavior. The cells pass locally
+against st2 prototype commit `16ee7eb953508801a4603edd056ab32f28986601`,
+incubated in
+[`compoundingtech/st2#52`](https://github.com/compoundingtech/st2/issues/52)
+but do not become accepted evidence until the implementation is pinned and the
+held-out judges have mutation evidence. Until then they do not update
+`AGENT-SPEC.md` or its accepted st2 pin. The experiment record is
+[content-addressed catalog eval family](./.experiments/2026-07-29-content-addressed-catalog-eval-family.md).
+
 The owner updates this spec with the corpus. Changing
 [vision.md](./vision.md) or [requirements.md](./requirements.md) requires
 Nathan's explicit approval.

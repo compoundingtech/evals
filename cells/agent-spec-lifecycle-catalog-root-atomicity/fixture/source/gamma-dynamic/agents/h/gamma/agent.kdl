@@ -1,0 +1,8 @@
+agent "gamma" {
+  identity "gamma"
+  host "h"
+  pty "agent" {
+    id "task-dynamic-gamma"
+    command "exec sleep 3600"
+  }
+}

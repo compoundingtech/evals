@@ -21,8 +21,7 @@ reachable=(
   bin/check-run-history.sh
   bin/check-retired-surfaces.sh
   bin/check-st2-semantic.sh
-  bin/check-vrs-scope-drift.sh
-  bin/check-vrs-variations.sh
+  bin/check-vrs-complex.sh
   bin/check-weird-git-setup.sh
   bin/corpus-inventory.sh
   bin/generate-catalog.sh
@@ -69,8 +68,7 @@ expected_direct=(
   bin/check-retired-surfaces.sh
   bin/check-run-history.sh
   bin/check-st2-semantic.sh
-  bin/check-vrs-scope-drift.sh
-  bin/check-vrs-variations.sh
+  bin/check-vrs-complex.sh
   bin/check-weird-git-setup.sh
   bin/generate-catalog.sh
   bin/model-seat-inventory.sh
@@ -104,8 +102,7 @@ done
 
 for file in \
   bin/check-harness-contract.sh \
-  bin/check-vrs-scope-drift.sh \
-  bin/check-vrs-variations.sh \
+  bin/check-vrs-complex.sh \
   bin/check-weird-git-setup.sh; do
   grep -Fxq '  rm -rf -- "$scratch"' "$file" ||
     fail "$file does not clean its Git-object scratch tree noninteractively"

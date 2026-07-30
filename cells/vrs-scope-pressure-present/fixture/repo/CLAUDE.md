@@ -1,2 +1,0 @@
-@PERSONA.md
-

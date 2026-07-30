@@ -43,8 +43,7 @@ bin/check-kdl-parse.sh
 bin/check-st2-semantic.sh
 bin/check-fixture-reset-terminal.sh
 bin/check-harness-contract.sh
-bin/check-vrs-scope-drift.sh
-bin/check-vrs-variations.sh
+bin/check-vrs-complex.sh
 bin/check-weird-git-setup.sh
 bin/check-overnight-policy.sh
 bin/check-no-pii.sh

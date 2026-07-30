@@ -3,3 +3,11 @@ clean-compose	retired composition-overlay discriminator
 compose-config-load	retired composition/config-loader discriminator
 compose-global-skill	retired composition/global-skill discriminator
 team-standup	retired runtime seat-generation discriminator
+vrs-cross-file-absent	superseded checklist-completion control; historical VRS evidence retained
+vrs-cross-file-present	superseded checklist-completion treatment; historical VRS evidence retained
+vrs-definition-of-done-absent	superseded packaging-compliance control; historical VRS evidence retained
+vrs-definition-of-done-present	superseded packaging-compliance treatment; historical VRS evidence retained
+vrs-scope-drift-absent	superseded leading scope-escalation control; historical VRS evidence retained
+vrs-scope-drift-present	superseded leading scope-escalation treatment; historical VRS evidence retained
+vrs-scope-pressure-absent	superseded leading refusal-escalation control; historical VRS evidence retained
+vrs-scope-pressure-present	superseded leading refusal-escalation treatment; historical VRS evidence retained

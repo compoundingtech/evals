@@ -1,0 +1,36 @@
+// Cross-root reconciliation safety for one stable catalog task identity. The synthetic fixture changes the
+// effective PTY root while the original task remains live, in both directions. A safe implementation may
+// adopt the survivor, migrate it explicitly, or fail closed; it must never leave two live tasks with the
+// same identity. The same-root control proves ordinary live adoption still works.
+eval {
+  copy "./fixture"
+  max-timeout "120s"
+
+  run "matrix" {
+    command "bash ./cross-root-transition.sh"
+  }
+
+  judges {
+    judge "SAME ROOT — a second reconcile adopts the live task and retains its pid" {
+      exec "grep -Fqx SAME-ROOT-ADOPTED-GREEN-7d31 $RUNS_DIR/matrix.out"
+    }
+    judge "A TO B — changing the effective PTY root never leaves duplicate live task identities" {
+      exec "grep -Fqx A-TO-B-SINGLE-LIVE-GREEN-7d31 $RUNS_DIR/matrix.out"
+    }
+    judge "B TO A — the cross-root safety property is symmetric" {
+      exec "grep -Fqx B-TO-A-SINGLE-LIVE-GREEN-7d31 $RUNS_DIR/matrix.out"
+    }
+    judge "SURVIVAL — each transition leaves exactly one healthy task or preserves the healthy survivor on refusal" {
+      exec "grep -Fqx TRANSITION-SURVIVAL-GREEN-7d31 $RUNS_DIR/matrix.out"
+    }
+    judge "RECOVERY — after the old exact task exits, reconciliation advances to the declared root" {
+      exec "grep -Fqx A-TO-B-ADVANCE-GREEN-7d31 $RUNS_DIR/matrix.out && grep -Fqx B-TO-A-ADVANCE-GREEN-7d31 $RUNS_DIR/matrix.out"
+    }
+    judge "EXACT MATCH — a live sibling-prefix PTY does not block safe root advancement" {
+      exec "grep -Fqx SIBLING-PREFIX-NONBLOCKING-GREEN-7d31 $RUNS_DIR/matrix.out"
+    }
+    judge "CLEANUP — every synthetic PTY root is empty after characterization" {
+      exec "grep -Fqx CROSS-ROOT-CLEANUP-GREEN-7d31 $RUNS_DIR/matrix.out"
+    }
+  }
+}

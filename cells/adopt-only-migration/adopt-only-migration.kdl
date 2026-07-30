@@ -1,0 +1,30 @@
+// Adoption-only migration boundary over synthetic tasks in an eval-owned PTY root.
+eval {
+  copy "./fixture"
+  max-timeout "90s"
+
+  run "matrix" {
+    command "bash ./matrix.sh"
+  }
+
+  judges {
+    judge "LIVE ADOPTION - an existing task keeps its original process generation" {
+      exec "grep -Fqx LIVE-ADOPTED-UNCHANGED-GREEN-a091 $RUNS_DIR/matrix.out"
+    }
+    judge "ABSENT HOLD - an absent adopt-only task is never cold-launched" {
+      exec "grep -Fqx ABSENT-ADOPT-ONLY-HELD-GREEN-a091 $RUNS_DIR/matrix.out"
+    }
+    judge "EXIT HOLD - an adopted task that exits is retained without replacement" {
+      exec "grep -Fqx EXITED-ADOPTED-GENERATION-HELD-GREEN-a091 $RUNS_DIR/matrix.out"
+    }
+    judge "EXPLICIT REPLACEMENT - ordinary lifecycle transition permits a new generation" {
+      exec "grep -Fqx EXPLICIT-ORDINARY-REPLACEMENT-GREEN-a091 $RUNS_DIR/matrix.out"
+    }
+    judge "ORDINARY CONTROL - an absent ordinary service task cold-launches" {
+      exec "grep -Fqx ORDINARY-MISSING-LAUNCH-CONTROL-GREEN-a091 $RUNS_DIR/matrix.out"
+    }
+    judge "CLEANUP - no synthetic task remains live in the eval root" {
+      exec "grep -Fqx SYNTHETIC-MIGRATION-ROOT-CLEAN-GREEN-a091 $RUNS_DIR/matrix.out"
+    }
+  }
+}

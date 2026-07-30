@@ -36,6 +36,10 @@ tracked cell
 - An LLM judge is not a defect. Its provider, model, prompt, inputs, and failure
   behavior must be explicit, and mutation checks must demonstrate useful
   discrimination.
+- The model-free `adopt-only-migration` cell separates process-generation
+  adoption from replacement authority: live generations are adopted, dead or
+  absent migration tasks are held without mutation, and only an explicit
+  lifecycle transition permits ordinary replacement.
 
 ## Current execution
 

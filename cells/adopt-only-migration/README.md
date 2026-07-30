@@ -1,0 +1,47 @@
+# adopt-only-migration
+
+**Type:** st2 / live-migration lifecycle · **Ship:** blocked on
+[compoundingtech/st2#98](https://github.com/compoundingtech/st2/issues/98)
+and tracked by
+[compoundingtech/evals#52](https://github.com/compoundingtech/evals/issues/52).
+
+**Capabilities required:** `st2,pty,jq`. No model and no bus. Every declaration,
+process, PTY record, state file, log, and receipt is synthetic and rooted below
+the eval-owned catalog.
+
+**Discriminates:** can an operator publish a declaration that adopts one
+already-live process generation without granting authority to create, collect,
+or replace it? An absent task and a later-dead adopted task must both remain
+held until the declaration explicitly transitions to ordinary service
+lifecycle.
+
+## What it proves
+
+- **Live adoption:** a pre-existing PTY is adopted with the same daemon and
+  child process generation.
+- **Absent hold:** an absent adopt-only task never executes its declared launch
+  command.
+- **Exited hold:** once the adopted generation exits, reconciliation retains
+  its backend record and does not cold-launch a successor.
+- **Explicit replacement:** removing the adopt-only lifecycle changes the
+  desired contract; ordinary reconciliation may then collect and replace the
+  exited generation.
+- **Mutation-valid control:** an ordinary absent service task launches on the
+  first pass, proving the launch substrate is real.
+- **Isolation and cleanup:** the cell uses only its temporary catalog and PTY
+  root and leaves no live synthetic processes.
+
+## Run it
+
+```sh
+st2 eval ./cells/adopt-only-migration/
+```
+
+This cell is intentionally RED against st2 `main` before #98. It becomes GREEN
+only with an implementation that treats adopt-only as a machine-readable
+lifecycle policy rather than inert metadata or a backend `keep` tag.
+
+Immutable pre-reap generation receipts remain the distinct design and
+acceptance surface in
+[compoundingtech/st2#40](https://github.com/compoundingtech/st2/issues/40).
+This cell does not freeze a receipt path or schema ahead of that design.

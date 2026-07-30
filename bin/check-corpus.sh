@@ -32,6 +32,7 @@ bin/check-model-policy.sh
 bin/check-model-policy-mutations.sh
 bin/check-canonical-seat-template-mutations.sh
 bin/check-run-history.sh
+bin/check-agent-new-interview-attempts.sh
 bin/check-retired-surfaces.sh
 bin/model-seat-inventory.sh >/dev/null
 bin/check-event-first.sh

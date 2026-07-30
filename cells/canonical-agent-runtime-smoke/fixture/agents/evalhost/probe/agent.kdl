@@ -1,9 +1,14 @@
 agent "probe" {
   identity "probe"
   host "evalhost"
-  workspace "$CATALOG"
+  workspace "$CATALOG/interviewer"
   env {
     ST_AGENT "evalhost.probe"
   }
   argv "bash" "$CATALOG/probe.sh"
+  render {
+    copy "_templates/generalist.md" ".st2/PERSONA.md"
+    copy "_templates/bus.st2.md" ".st2/bus.md"
+    git-exclude ".st2/"
+  }
 }

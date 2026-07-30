@@ -46,3 +46,14 @@ kickoff through its canonical inbox, and requires a fresh interviewer reply
 before the singleton eval can complete. The paid judgment run remains held
 until the host's Claude workspace-trust projection has independent evidence;
 the model-free bundle cell does not prove provider readiness.
+
+The fixture setup creates the copied interviewer directory as a deterministic,
+clean Git worktree before canonical admission. This is required because the
+canonical overlay retains `git-exclude ".st2/"`, and materialization warnings
+remain fatal.
+
+The first authorized attempt is recorded in
+[`evidence/agent-new-interview-attempts.tsv`](../../evidence/agent-new-interview-attempts.tsv).
+It stopped at materialization before Axe, account selection, provider
+readiness, or judges because the earlier fixture lacked that Git-worktree
+setup. Cleanup removed the temporary catalog and process.

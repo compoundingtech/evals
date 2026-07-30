@@ -112,12 +112,14 @@ one-sentence human request
   checks recognize this typed launch as a paid model seat and reject durable
   account pins.
 - The paid cell uses st2's explicit `canonical-agents` seam. A deterministic
-  pre-admission run reads the active runtime profile and publishes one
-  canonical interviewer declaration with its exact immutable Axe adapter,
-  absolute profile path, and canonical persona source. st2 then carries that
-  declaration unchanged through strict validation, materialization, launch,
-  kickoff routing, singleton completion, and teardown. No compact eval seat,
-  compatibility wrapper, account pin, or ambient provider launch participates.
+  pre-admission run first creates the copied interviewer workspace as a clean,
+  deterministic Git worktree. A second run reads the active runtime profile
+  and publishes one canonical interviewer declaration with its exact immutable
+  Axe adapter, absolute profile path, and canonical persona source. st2 then
+  carries that declaration unchanged through strict validation,
+  warning-free materialization, launch, kickoff routing, singleton completion,
+  and teardown. No compact eval seat, compatibility wrapper, account pin, or
+  ambient provider launch participates.
 - The paid cell is environment-bound to that explicit runtime-profile
   artifact; the artifact identity belongs in run evidence and results are not
   represented as hermetic across different profiles.
@@ -131,9 +133,15 @@ one-sentence human request
   workspace-trust projection is independently proven; model-free evidence
   does not establish provider readiness.
 - The model-free `canonical-agent-runtime-smoke` cell independently proves the
-  runtime seam with one deterministic shell Agent Spec: strict admission,
-  boot, canonical kickoff, fresh reply, and normal teardown, with no Axe,
-  account, model, or provider harness.
+  runtime seam with one deterministic shell Agent Spec: the same disposable
+  Git-worktree shape, strict persona/bus overlay materialization with zero
+  warnings, boot, canonical kickoff, fresh reply, and normal teardown, with no
+  Axe, account, model, or provider harness.
+- The first authorized paid attempt is evidence only for a pre-Axe fixture
+  defect: required `git-exclude` materialization failed because the copied
+  workspace was not a Git worktree. It reached no account selection, provider
+  readiness, trust behavior, judge, or verdict and left no catalog or process
+  residue. It cannot be represented as provider evidence.
 - Passing model-free evidence proves the bundle boundary and its negative
   controls only. The autonomous-selection claim remains unaccepted until the
   paid judgment cell has a structured PASS receipt.

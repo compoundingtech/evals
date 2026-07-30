@@ -8,6 +8,7 @@ cd "$repo_root"
 reachable=(
   bin/check-corpus.sh
   bin/check-agent-new-renderer-security.sh
+  bin/check-agent-new-interview-attempts.sh
   bin/check-canonical-seat-template-mutations.sh
   bin/check-canonical-seat-template.sh
   bin/check-event-first.sh
@@ -34,8 +35,10 @@ reachable=(
   bin/st2-pin.sh
 )
 materializers=(
+  cells/agent-new-interview/fixture/prepare-interviewer-worktree.sh
   cells/agent-new-bundle-contract/fixture/render-intent.sh
   cells/agent-new-interview/fixture/interviewer/render-intent.sh
+  cells/canonical-agent-runtime-smoke/fixture/prepare-interviewer-worktree.sh
   cells/signal-rename/fixture/materialize.sh
   cells/signal-rename-codex/fixture/materialize.sh
   cells/weird-git-setup/fixture/setup-megarepo.sh
@@ -63,6 +66,7 @@ mapfile -t direct < <(
     LC_ALL=C sort -u
 )
 expected_direct=(
+  bin/check-agent-new-interview-attempts.sh
   bin/check-agent-new-renderer-security.sh
   bin/check-canonical-seat-template-mutations.sh
   bin/check-event-first.sh

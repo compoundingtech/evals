@@ -5,6 +5,9 @@ host "evalhost"
 
 eval {
   copy "./fixture"
+  run "prepare-interviewer-worktree" {
+    command "bash ./prepare-interviewer-worktree.sh"
+  }
   run "publish-canonical-interviewer" {
     command "bash ./publish-interviewer.sh"
   }

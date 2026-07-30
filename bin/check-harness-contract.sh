@@ -56,6 +56,9 @@ prepare_cell() {
   }
   cp -a "$fixture"/. "$root"/
   case "$cell" in
+    agent-new-interview)
+      script="$root/prepare-interviewer-worktree.sh"
+      ;;
     signal-rename|signal-rename-codex)
       script="$root/materialize.sh"
       ;;
@@ -78,7 +81,11 @@ prepare_cell() {
     echo "FAIL: $cell materializer contains a provider/reconcile/network command" >&2
     return 1
   fi
-  CATALOG="$root" bash "$script" >/dev/null
+  if [ "$cell" = "agent-new-interview" ]; then
+    CATALOG="$root" bash "$script" "$root/interviewer" >/dev/null
+  else
+    CATALOG="$root" bash "$script" >/dev/null
+  fi
 }
 
 declare -A roots=()
@@ -123,6 +130,8 @@ while IFS=$'\t' read -r cell agent harness workspace st_agent source_kind source
     }
     [ -s "$(dirname "$source_path")/_templates/bus.st2.md" ] ||
       { echo "FAIL: $cell/$agent canonical bus overlay source is missing" >&2; failed=1; }
+    git -C "$target" rev-parse --is-inside-work-tree | grep -Fxq true ||
+      { echo "FAIL: $cell/$agent canonical workspace is not a Git worktree" >&2; failed=1; }
     axe_launch=1
   elif grep -Fq 'exec axe agent launch ' <<< "$command_text"; then
     axe_launch=1

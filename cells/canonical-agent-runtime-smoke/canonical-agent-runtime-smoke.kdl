@@ -2,6 +2,9 @@ host "evalhost"
 
 eval {
   copy "./fixture"
+  run "prepare-interviewer-worktree" {
+    command "bash ./prepare-interviewer-worktree.sh"
+  }
   canonical-agents
   message {
     from "requester"
@@ -16,6 +19,12 @@ eval {
     }
     judge "CANONICAL KICKOFF — the request arrives in the admitted Agent Spec inbox before reply" {
       exec "test -f $CATALOG/probe/kickoff-seen"
+    }
+    judge "STRICT MATERIALIZATION — canonical persona and bus overlays materialize into a clean Git worktree" {
+      exec #"test -s "$CATALOG/interviewer/.st2/PERSONA.md" && test -s "$CATALOG/interviewer/.st2/bus.md" && grep -Fxq ".st2/" "$CATALOG/interviewer/.git/info/exclude" && test -z "$(git -C "$CATALOG/interviewer" status --porcelain=v1)""#
+    }
+    judge "MODEL FREE — the admitted Agent Spec contains no provider, account, or Axe launch" {
+      exec #"! grep -Eq 'axe|claude|codex|opencode|pi|--account' "$CATALOG/agents/evalhost/probe/agent.kdl""#
     }
   }
 }

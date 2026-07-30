@@ -1,0 +1,11 @@
+case_id	adapter_precondition	concurrent_change	expected_ding_bytes	expected_candidate_result	authority_dependency
+quiet-no-viewer	fresh-idle-empty-composer	none	exactly-one	accept	pending-generic-conditional-send
+attached-viewer-no-io	fresh-idle-empty-composer	none	exactly-one	accept	pending-generic-conditional-send
+partial-command	fresh-idle-nonempty-composer	none	zero	reject-before-candidate	pending-adapter-composer-evidence
+recent-key	fresh-idle-empty-composer	key-input	zero	reject	pending-generic-conditional-send
+newline-race	fresh-idle-empty-composer	newline-input	zero	reject	pending-generic-conditional-send
+paste-race	fresh-idle-empty-composer	paste-input	zero	reject	pending-generic-conditional-send
+escape-race	fresh-idle-empty-composer	escape-input	zero	reject	pending-generic-conditional-send
+output-race	fresh-idle-empty-composer	pty-output	zero	reject	pending-generic-conditional-send
+restart-race	fresh-idle-empty-composer	generation-change	zero	reject	pending-generic-conditional-send
+supervisor-input-race	fresh-idle-empty-composer	supervisor-input	zero	reject-ding-candidate	pending-generic-input-origin

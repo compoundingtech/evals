@@ -1,0 +1,33 @@
+// Seam-independent fixture and provenance contract for the optional DING activity lease.
+eval {
+  copy "./fixture"
+  max-timeout "30s"
+
+  run "fixture-contract" {
+    command "bash ./check-fixtures.sh"
+  }
+
+  judges {
+    judge "DIAGNOSTICS — nine shared ASCII screens are exact, hashed, and non-authoritative" {
+      exec "grep -Fqx DIAGNOSTIC-FIXTURES-GREEN-57d1 $RUNS_DIR/fixture-contract.out"
+    }
+    judge "PARITY SLOTS — every declared provider reserves the same activity and post-turn hook cases" {
+      exec "grep -Fqx PROVIDER-SLOTS-GREEN-57d1 $RUNS_DIR/fixture-contract.out"
+    }
+    judge "A/B CONTRACT — matched workloads preserve durability while B eliminates active-turn PTY input" {
+      exec "grep -Fqx AB-INVENTORY-GREEN-57d1 $RUNS_DIR/fixture-contract.out"
+    }
+    judge "CONDITIONAL SEND — generic I/O races reject the DING candidate without terminal heuristics" {
+      exec "grep -Fqx CONDITIONAL-SEND-INVENTORY-GREEN-57d1 $RUNS_DIR/fixture-contract.out"
+    }
+    judge "PROVENANCE — every ready asset has reviewed metadata and every provider asset is explicitly blocked" {
+      exec "grep -Fqx PROVENANCE-INVENTORY-GREEN-57d1 $RUNS_DIR/fixture-contract.out"
+    }
+    judge "BLOCKERS — unfinished PTY, st2, Codex, and Claude evidence is named without invented interfaces" {
+      exec "grep -Fqx PRODUCT-BLOCKERS-GREEN-57d1 $RUNS_DIR/fixture-contract.out"
+    }
+    judge "MODEL FREE — the scaffold contains no provider payload, launch, network, or product-dependent assertion" {
+      exec "grep -Fqx HERMETIC-SKELETON-GREEN-57d1 $RUNS_DIR/fixture-contract.out"
+    }
+  }
+}

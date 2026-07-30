@@ -1,0 +1,3 @@
+TERMINAL DIAGNOSTIC: restored terminal
+primary buffer and canonical input are requested
+restoration is not idle authority

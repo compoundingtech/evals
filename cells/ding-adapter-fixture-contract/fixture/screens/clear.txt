@@ -1,0 +1,3 @@
+ACTIVITY DIAGNOSTIC: clear
+the visible screen has been reset
+an empty screen is not idle authority

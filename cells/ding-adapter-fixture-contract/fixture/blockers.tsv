@@ -1,0 +1,8 @@
+blocker_id	owner	dependency	required_evidence	status
+pty-activity	pty-owner	https://github.com/compoundingtech/pty/pull/131	draft head 46c71d31c0d6daee43adf568061b2b84a65ae8c0 supplies connectActivityPublisher and live activity STATUS with focused 91/91 plus docs 13/13; still requires merge and reproducible artifact hash	pending
+pty-conditional-send	pty-owner	https://github.com/compoundingtech/pty/issues/132	exact dependent draft head, generation and ioRevision STATUS plus compareAndSend API receipt, focused race and zero-write tests, merge, and reproducible artifact hash	pending
+pty-modes	pty-owner	https://github.com/compoundingtech/pty/issues/130	exact source commit, alternate-screen fixture receipt, and supported input-mode boundary	blocked
+st2-adapter	st2-owner	https://github.com/compoundingtech/st2/issues/111	exact external-command selection syntax, generic payload, composer-empty evidence, conditional-send integration, timeout and error policy, DND precedence, hook output contract, reason schema, source commit, and artifact hash	pending
+provider-a-fixtures	provider-adapter-owner	immutable first-provider adapter fixtures	verbatim activity and post-turn hook schema provenance, redaction review, content hashes, and owner approval	pending
+provider-b-fixtures	provider-adapter-owner	immutable second-provider adapter fixtures	verbatim activity and post-turn hook schema provenance, redaction review, content hashes, and owner approval	pending
+real-pane-acceptance	evals-owner	https://github.com/compoundingtech/st2/issues/111	exact merged seams, immutable adapters, independent readiness review, and separate live-execution authorization	blocked

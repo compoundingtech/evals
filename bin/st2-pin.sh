@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+ST2_SOURCE_SHORT="c6846f6"
+ST2_SOURCE_FULL="c6846f6239329f0803142afc06c15a07b93937c1"
+ST2_BINARY_SHA256="2bba8d58be24250bc262f75f835ce2d780369add275774f3f2135c623d23d29c"
+ST2_VERSION_REGEX='^st2 0\.1\.0 — running from local source \(c6846f6, .+ ago\)$'

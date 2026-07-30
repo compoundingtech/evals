@@ -20,6 +20,7 @@ reachable=(
   bin/check-preflight-safety.sh
   bin/check-run-history.sh
   bin/check-retired-surfaces.sh
+  bin/check-st2-pin-consistency.sh
   bin/check-st2-semantic.sh
   bin/check-vrs-scope-drift.sh
   bin/check-vrs-variations.sh
@@ -27,6 +28,7 @@ reachable=(
   bin/corpus-inventory.sh
   bin/generate-catalog.sh
   bin/model-seat-inventory.sh
+  bin/st2-pin.sh
 )
 materializers=(
   cells/signal-rename/fixture/materialize.sh
@@ -68,6 +70,7 @@ expected_direct=(
   bin/check-preflight-safety.sh
   bin/check-retired-surfaces.sh
   bin/check-run-history.sh
+  bin/check-st2-pin-consistency.sh
   bin/check-st2-semantic.sh
   bin/check-vrs-scope-drift.sh
   bin/check-vrs-variations.sh

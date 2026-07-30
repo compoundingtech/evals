@@ -11,6 +11,10 @@ shape required by the paid interviewer. Strict materialization copies the
 canonical persona and bus overlays and applies `git-exclude` with zero
 warnings. It uses no Axe, account, model, or provider harness.
 
+Its six gating results are the successful preparation run step, canonical team
+completion, and four declared judges. The run-step result is emitted and graded
+by st2 in addition to the judges declared in KDL.
+
 ```sh
 st2 eval ./cells/canonical-agent-runtime-smoke/
 ```

@@ -32,7 +32,21 @@ bin/check-model-policy.sh
 bin/check-model-policy-mutations.sh
 bin/check-canonical-seat-template-mutations.sh
 bin/check-run-history.sh
-bin/check-agent-new-interview-attempts.sh
+attempt_baseline="${EVALS_EVIDENCE_BASELINE_REF:-}"
+if [ -z "$attempt_baseline" ] && git rev-parse --verify origin/main^{commit} >/dev/null 2>&1; then
+  candidate_baseline="$(git merge-base HEAD origin/main)"
+  current_commit="$(git rev-parse HEAD)"
+  if [ "$candidate_baseline" != "$current_commit" ] &&
+    git cat-file -e "$candidate_baseline:evidence/agent-new-interview-attempts.tsv" 2>/dev/null; then
+    attempt_baseline="$candidate_baseline"
+  fi
+fi
+if [ -n "$attempt_baseline" ]; then
+  bin/check-agent-new-interview-attempts.sh --baseline "$attempt_baseline"
+else
+  bin/check-agent-new-interview-attempts.sh
+fi
+bin/check-agent-new-interview-attempts-mutations.sh
 bin/check-retired-surfaces.sh
 bin/model-seat-inventory.sh >/dev/null
 bin/check-event-first.sh

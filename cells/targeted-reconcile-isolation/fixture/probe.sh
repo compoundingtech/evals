@@ -51,8 +51,9 @@ run_st2() {
     st2 up --catalog "$case_root/catalog" --host repro "$@"
 }
 
-st2 up --help | grep -Fq -- '--task <TASK>'
-echo "TASK-SELECTOR-SURFACE-GREEN-4f2d"
+if st2 up --help | grep -Fq -- '--task <TASK>'; then
+  echo "TASK-SELECTOR-SURFACE-GREEN-4f2d"
+fi
 
 refusal="$root/refusal"
 write_catalog "$refusal"
@@ -60,41 +61,72 @@ set +e
 run_st2 "$refusal" --once --agent one >"$refusal/stdout" 2>"$refusal/stderr"
 refusal_rc=$?
 set -e
-test "$refusal_rc" -ne 0
-grep -Fq -- '--agent requires --materialize-only' "$refusal/stderr"
-test ! -e "$refusal/pty-calls"
-echo "LEGACY-ONCE-AGENT-REFUSAL-GREEN-4f2d"
-test ! -e "$refusal/workspaces/one/MATERIALIZED"
-test ! -e "$refusal/workspaces/two/MATERIALIZED"
-echo "LEGACY-REFUSAL-NO-MUTATION-GREEN-4f2d"
+if
+  test "$refusal_rc" -ne 0 &&
+    grep -Fq -- '--agent requires --materialize-only' "$refusal/stderr" &&
+    test ! -e "$refusal/pty-calls"
+then
+  echo "LEGACY-ONCE-AGENT-REFUSAL-GREEN-4f2d"
+fi
+if
+  test ! -e "$refusal/workspaces/one/MATERIALIZED" &&
+    test ! -e "$refusal/workspaces/two/MATERIALIZED"
+then
+  echo "LEGACY-REFUSAL-NO-MUTATION-GREEN-4f2d"
+fi
 
 materialize="$root/materialize"
 write_catalog "$materialize"
+set +e
 run_st2 "$materialize" --materialize-only --agent one \
   >"$materialize/stdout" 2>"$materialize/stderr"
-test "$(cat "$materialize/workspaces/one/MATERIALIZED")" = "one"
-test ! -e "$materialize/workspaces/two/MATERIALIZED"
-test ! -e "$materialize/pty-calls"
-echo "AGENT-MATERIALIZE-ONLY-GREEN-4f2d"
+materialize_rc=$?
+set -e
+if
+  test "$materialize_rc" -eq 0 &&
+    test "$(cat "$materialize/workspaces/one/MATERIALIZED" 2>/dev/null)" = "one" &&
+    test ! -e "$materialize/workspaces/two/MATERIALIZED" &&
+    test ! -e "$materialize/pty-calls"
+then
+  echo "AGENT-MATERIALIZE-ONLY-GREEN-4f2d"
+fi
 
 targeted="$root/targeted"
 write_catalog "$targeted"
+set +e
 run_st2 "$targeted" --once --task repro.one.work \
   >"$targeted/stdout" 2>"$targeted/stderr"
-grep -Fq 'launched (1): repro.one.work' "$targeted/stdout"
-test "$(cat "$targeted/workspaces/one/MATERIALIZED")" = "one"
-test "$(cat "$targeted/pty-calls")" = "list --json"
-echo "TARGETED-OWNER-ONLY-GREEN-4f2d"
-test ! -e "$targeted/workspaces/two/MATERIALIZED"
-! grep -Fq 'repro.two.work' "$targeted/stdout"
-echo "TARGETED-SIBLING-ISOLATION-GREEN-4f2d"
+targeted_rc=$?
+set -e
+if
+  test "$targeted_rc" -eq 0 &&
+    grep -Fq 'launched (1): repro.one.work' "$targeted/stdout" &&
+    test "$(cat "$targeted/workspaces/one/MATERIALIZED" 2>/dev/null)" = "one" &&
+    test "$(cat "$targeted/pty-calls" 2>/dev/null)" = "list --json"
+then
+  echo "TARGETED-OWNER-ONLY-GREEN-4f2d"
+fi
+if
+  test "$targeted_rc" -eq 0 &&
+    test ! -e "$targeted/workspaces/two/MATERIALIZED" &&
+    ! grep -Fq 'repro.two.work' "$targeted/stdout"
+then
+  echo "TARGETED-SIBLING-ISOLATION-GREEN-4f2d"
+fi
 
 control="$root/control"
 write_catalog "$control"
+set +e
 run_st2 "$control" --once >"$control/stdout" 2>"$control/stderr"
-grep -Fq 'repro.one.work' "$control/stdout"
-grep -Fq 'repro.two.work' "$control/stdout"
-test "$(cat "$control/workspaces/one/MATERIALIZED")" = "one"
-test "$(cat "$control/workspaces/two/MATERIALIZED")" = "two"
-test "$(cat "$control/pty-calls")" = "list --json"
-echo "WHOLE-CATALOG-CONTROL-GREEN-4f2d"
+control_rc=$?
+set -e
+if
+  test "$control_rc" -eq 0 &&
+    grep -Fq 'repro.one.work' "$control/stdout" &&
+    grep -Fq 'repro.two.work' "$control/stdout" &&
+    test "$(cat "$control/workspaces/one/MATERIALIZED" 2>/dev/null)" = "one" &&
+    test "$(cat "$control/workspaces/two/MATERIALIZED" 2>/dev/null)" = "two" &&
+    test "$(cat "$control/pty-calls" 2>/dev/null)" = "list --json"
+then
+  echo "WHOLE-CATALOG-CONTROL-GREEN-4f2d"
+fi

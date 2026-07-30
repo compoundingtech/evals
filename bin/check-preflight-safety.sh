@@ -26,6 +26,8 @@ reachable=(
   bin/check-preflight-safety.sh
   bin/check-run-history.sh
   bin/check-retired-surfaces.sh
+  bin/check-st2-package-provenance-mutations.sh
+  bin/check-st2-package-provenance.sh
   bin/check-st2-pin-consistency.sh
   bin/check-st2-semantic.sh
   bin/check-vrs-scope-drift.sh
@@ -84,6 +86,8 @@ expected_direct=(
   bin/check-preflight-safety.sh
   bin/check-retired-surfaces.sh
   bin/check-run-history.sh
+  bin/check-st2-package-provenance-mutations.sh
+  bin/check-st2-package-provenance.sh
   bin/check-st2-pin-consistency.sh
   bin/check-st2-semantic.sh
   bin/check-vrs-scope-drift.sh
@@ -102,7 +106,6 @@ for file in "${reachable[@]}"; do
   while IFS= read -r hit; do
     line="${hit#*:}"
     case "$line" in
-      *'st2 --version'*) ;;
       *'st2 ls '*) ;;
       *'st2 validate '*) ;;
       *'st2 up '*'--materialize-only'*) ;;

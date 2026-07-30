@@ -145,6 +145,17 @@ one-sentence human request
 - Passing model-free evidence proves the bundle boundary and its negative
   controls only. The autonomous-selection claim remains unaccepted until the
   paid judgment cell has a structured PASS receipt.
+- **Future R04 lifecycle cell:** the eventual model-free recovery discriminator
+  must operate on a real canonical temporary interviewer declaration and its
+  durable transaction records. Its crash mutation removes only the temporary
+  agent's main PTY generation. The DING sidecar may be live, stale, or already
+  absent at that observation boundary, so its state is explicitly
+  indeterminate and cannot be a gating proxy for interviewer liveness. The
+  durable retired tombstone remains the authority that prevents resurrection;
+  recovery must adopt or complete the exact transaction without a second final
+  agent or inbox publication. This cell is deferred to a pinned st2 successor
+  that exposes the required lifecycle boundary. A fake shell stand-in would
+  not prove the contract and is not part of this PR.
 
 The owner updates this spec with the corpus. Changing
 [vision.md](./vision.md) or [requirements.md](./requirements.md) requires

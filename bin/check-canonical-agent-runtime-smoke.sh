@@ -5,17 +5,8 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 source bin/st2-pin.sh
 
-st2_bin="$(command -v st2)"
-version="$(st2 --version)"
-sha256="$(sha256sum "$st2_bin" | awk '{ print $1 }')"
-[[ "$version" =~ $ST2_VERSION_REGEX ]] || {
-  echo "FAIL: expected st2 source $ST2_SOURCE_SHORT, found $version" >&2
-  exit 1
-}
-[ "$sha256" = "$ST2_BINARY_SHA256" ] || {
-  echo "FAIL: expected st2 binary $ST2_BINARY_SHA256, found $sha256 at $st2_bin" >&2
-  exit 1
-}
+bin/check-st2-package-provenance.sh
+export PATH="$ST2_OUTPUT_PATH/bin:$PATH"
 
 bin/corpus-inventory.sh --no-header |
   awk -F '\t' '$1 == "canonical-agent-runtime-smoke" && $2 == "model-free" && $5 == 0 { found = 1 } END { exit !found }' || {

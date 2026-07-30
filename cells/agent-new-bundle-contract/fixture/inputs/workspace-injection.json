@@ -14,5 +14,6 @@
     "persona": "generalist",
     "mode": "managed-unattended",
     "boot": "managed-v1"
-  }
+  },
+  "supervisor": "evalhost.root"
 }

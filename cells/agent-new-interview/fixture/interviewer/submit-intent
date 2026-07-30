@@ -4,5 +4,5 @@ set -euo pipefail
 tmp="$(mktemp)"
 trap 'rm -f -- "$tmp"' EXIT
 cat >"$tmp"
-bash ./render-intent.sh "$tmp" ./result
+bash ./render-intent.sh "$tmp" ./result "$PWD" ./hard-constraints.json
 printf 'committed %s\n' "$(jq -r .identity ./result/intent.json)"

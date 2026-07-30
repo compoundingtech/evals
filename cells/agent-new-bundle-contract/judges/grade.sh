@@ -16,6 +16,13 @@ grade_bundle() {
     "$intent" >/dev/null
   grep -Fqx "  identity \"$expected_identity\"" "$kdl"
   grep -Fqx '  host "evalhost"' "$kdl"
+  if [ "$name" = implementation ]; then
+    grep -Fqx '  workspace "/workspace/dotfiles"' "$kdl"
+    grep -Fqx '  supervisor "evalhost.root"' "$kdl"
+  else
+    grep -Fqx '  workspace "/workspace/livestore"' "$kdl"
+    ! grep -Eq '^[[:space:]]*supervisor ' "$kdl"
+  fi
   grep -Fqx '    AGENT_LAUNCH_HOSTED "1"' "$kdl"
   grep -Fqx "    AGENT_PERSONA \"$expected_persona\"" "$kdl"
   grep -Fqx "    ST_AGENT \"evalhost.$expected_identity\"" "$kdl"

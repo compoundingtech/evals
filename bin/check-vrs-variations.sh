@@ -2,6 +2,9 @@
 # Model-free matching, treatment-isolation, and mutation-validity gate for three VRS A/B variations.
 set -euo pipefail
 
+export GIT_CONFIG_GLOBAL=/dev/null
+export GIT_CONFIG_NOSYSTEM=1
+
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 

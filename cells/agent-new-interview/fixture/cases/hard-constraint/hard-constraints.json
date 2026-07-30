@@ -1,0 +1,7 @@
+{
+  "harness": "claude",
+  "model": "claude-sonnet-5",
+  "effort": "medium",
+  "persona": "pr-reviewer",
+  "supervisor": "evalhost.root"
+}

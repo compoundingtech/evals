@@ -1,0 +1,45 @@
+// Successor-gated real Axe lifecycle matrix. No provider model is launched.
+eval {
+  copy "./fixture"
+  max-timeout "180s"
+
+  run "success" {
+    command "bash ./run-case.sh success ./out/success"
+  }
+  run "crash-pre-retire" {
+    command "bash ./run-case.sh crash-pre-retire ./out/crash-pre-retire"
+  }
+  run "crash-post-retire" {
+    command "bash ./run-case.sh crash-post-retire ./out/crash-post-retire"
+  }
+  run "crash-post-publish" {
+    command "bash ./run-case.sh crash-post-publish ./out/crash-post-publish"
+  }
+  run "cancel" {
+    command "bash ./run-case.sh cancel ./out/cancel"
+  }
+  run "process-crash-before-intent" {
+    command "bash ./run-case.sh process-crash-before-intent ./out/process-crash-before-intent"
+  }
+  run "concurrent-resume" {
+    command "bash ./run-case.sh concurrent-resume ./out/concurrent-resume"
+  }
+
+  judges {
+    judge "SUCCESS — retirement precedes one final publication and exact final attachment" {
+      exec "bash ./judges/grade.sh success"
+    }
+    judge "RECOVERY — every crash boundary resumes without duplicate final context" {
+      exec "bash ./judges/grade.sh recovery"
+    }
+    judge "CANCEL VS CRASH — human cancellation retires; process failure remains active and recoverable" {
+      exec "bash ./judges/grade.sh cancel-crash"
+    }
+    judge "SINGLE FLIGHT — concurrent resumer is busy and takeover resumes after owner death" {
+      exec "bash ./judges/grade.sh concurrency"
+    }
+    judge "NEGATIVE CONTROLS — missing tombstone, Ding proxy, duplicate publication, and wrong attach fail" {
+      exec "bash ./judges/mutation-check.sh"
+    }
+  }
+}

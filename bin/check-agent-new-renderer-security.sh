@@ -10,14 +10,16 @@ cleanup() {
 trap cleanup EXIT
 
 renderers=(
-  "$repo_root/cells/agent-new-bundle-contract/fixture/render-intent.sh"
-  "$repo_root/cells/agent-new-interview/fixture/interviewer/render-intent.sh"
+  "$repo_root/cells/agent-new-bundle-contract/fixture/render-intent.sh|$repo_root/cells/agent-new-bundle-contract/fixture/inputs/implementation-constraints.json"
+  "$repo_root/cells/agent-new-interview/fixture/interviewer/render-intent.sh|$repo_root/cells/agent-new-interview/fixture/cases/implementation/hard-constraints.json"
 )
 
-for renderer in "${renderers[@]}"; do
+for entry in "${renderers[@]}"; do
+  renderer="${entry%%|*}"
+  constraints="${entry#*|}"
   name="$(basename "$(dirname "$renderer")")"
   out="$scratch/$name"
-  if bash "$renderer" "$input" "$out" >/dev/null 2>&1; then
+  if bash "$renderer" "$input" "$out" /workspace/dotfiles "$constraints" >/dev/null 2>&1; then
     echo "FAIL: $renderer accepted a workspace KDL injection" >&2
     exit 1
   fi

@@ -5,10 +5,10 @@ eval {
   max-timeout "60s"
 
   run "implementation" {
-    command "bash ./render-intent.sh ./inputs/implementation.json ./out/implementation"
+    command "bash ./render-intent.sh ./inputs/implementation.json ./out/implementation /workspace/dotfiles ./inputs/implementation-constraints.json"
   }
   run "review" {
-    command "bash ./render-intent.sh ./inputs/review.json ./out/review"
+    command "bash ./render-intent.sh ./inputs/review.json ./out/review /workspace/livestore"
   }
   run "forbidden-account" {
     allow-nonzero
@@ -20,7 +20,15 @@ eval {
   }
   run "workspace-injection" {
     allow-nonzero
-    command "bash ./render-intent.sh ./inputs/workspace-injection.json ./out/workspace-injection"
+    command "bash ./render-intent.sh ./inputs/workspace-injection.json ./out/workspace-injection /workspace/dotfiles"
+  }
+  run "invalid-supervisor" {
+    allow-nonzero
+    command "bash ./render-intent.sh ./inputs/invalid-supervisor.json ./out/invalid-supervisor /workspace/dotfiles"
+  }
+  run "constraint-mismatch" {
+    allow-nonzero
+    command "bash ./render-intent.sh ./inputs/constraint-mismatch.json ./out/constraint-mismatch /workspace/dotfiles ./inputs/implementation-constraints.json"
   }
 
   judges {
@@ -33,8 +41,11 @@ eval {
     judge "INITIAL CONTEXT — goal and references become an inbox Resource, not KDL fields" {
       exec "bash ./judges/grade.sh inbox"
     }
-    judge "CLOSED INPUT — account pins, unstable trajectory values, and KDL workspace injection fail closed" {
-      exec #"test "$RUN_forbidden_account_EXIT" -ne 0 && test "$RUN_trajectory_drift_EXIT" -ne 0 && test "$RUN_workspace_injection_EXIT" -ne 0 && test ! -e "$CATALOG/out/workspace-injection/agents""#
+    judge "CLOSED INPUT — account pins, model-owned workspace, invalid supervisors, and unsupported trajectory values fail closed" {
+      exec #"test "$RUN_forbidden_account_EXIT" -ne 0 && test "$RUN_trajectory_drift_EXIT" -ne 0 && test "$RUN_workspace_injection_EXIT" -ne 0 && test "$RUN_invalid_supervisor_EXIT" -ne 0 && test ! -e "$CATALOG/out/workspace-injection/agents""#
+    }
+    judge "HARD CONSTRAINTS — an accepted intent cannot override explicit human trajectory constraints" {
+      exec #"test "$RUN_constraint_mismatch_EXIT" -ne 0 && test ! -e "$CATALOG/out/constraint-mismatch/agents""#
     }
     judge "NEGATIVE CONTROLS — raw provider argv, trajectory drift, and missing context are rejected" {
       exec "bash ./judges/mutation-check.sh"

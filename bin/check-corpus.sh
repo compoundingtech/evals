@@ -18,6 +18,7 @@ bash -n "${shell_files[@]}"
 echo "PASS: ${#shell_files[@]} shell files parse"
 
 bin/check-preflight-safety.sh
+bin/check-agent-new-behavior-cases.sh
 bin/check-agent-new-renderer-security.sh
 bin/check-model-policy.sh
 bin/check-model-policy-mutations.sh

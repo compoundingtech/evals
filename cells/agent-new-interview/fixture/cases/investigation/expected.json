@@ -1,0 +1,13 @@
+{
+  "identity": "st2.main.issue-106.investigation",
+  "goalTerms": ["investigate", "evidence", "read-only"],
+  "references": ["https://github.com/compoundingtech/st2/issues/106"],
+  "trajectory": {
+    "harness": "claude",
+    "model": "claude-sonnet-5",
+    "effort": "medium",
+    "persona": "explorer",
+    "mode": "managed-unattended",
+    "boot": "managed-v1"
+  }
+}

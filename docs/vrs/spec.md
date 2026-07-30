@@ -78,49 +78,57 @@ and continues or stops.
 
 ## Human session-creation handoff
 
-The `agent-new-interview` and `agent-new-bundle-contract` cells split the
-human-facing creation workflow at one typed seam:
+The four `agent-new-interview*` cells, `agent-new-bundle-contract`,
+`agent-new-confirmation-contract`, and `agent-new-creation-lifecycle` split the
+human-facing creation workflow at typed judgment, projection, confirmation, and
+lifecycle seams:
 
 ```text
 one-sentence human request
   -> short-lived interviewer
   -> axe.agent-creation-intent.v1
+  -> deterministic summary + explicit human confirmation (pre-DQ1 fallback)
   -> deterministic Agent Spec + initial inbox Resource
+  -> staged retirement, publication, and exact final attachment
 ```
 
-- **R01-R05:** The paid cell evaluates interviewer judgment from a frozen
-  one-sentence request and local GitHub-reference snapshot. The model-free cell
-  evaluates the renderer contract across multiple intents and closed-input
-  failures. Held-out mutation controls reject raw provider argv, drift between
-  intent and KDL, and missing initial context.
-- **R06-R09:** The judgment cell uses one explicitly pinned Claude Sonnet agent
-  at medium effort and a five-minute cell timeout. The deterministic cell has
-  no model agent and a one-minute timeout. Normal st2 eval cleanup and receipt
-  policy applies to both.
-- The interviewer output is semantic intent, not KDL. Stable launch axes are
-  explicit in that intent; the deterministic boundary owns canonical KDL,
-  keeps account selection out of durable state, and places the goal and
-  references in an initial inbox Resource.
-- The renderer accepts workspace values only from a closed absolute-path
-  alphabet and rejects invalid input before creating an Agent Spec. A
-  model-free malicious-workspace control gates both renderers against KDL
-  injection.
-- The temporary interviewer itself launches through typed
+- **R01-R05:** Four isolated, paid, presently unrun cells evaluate the exact
+  runtime-profile `session-creator` prompt against one-sentence large
+  implementation, small-fix, read-only investigation, and explicit
+  hard-constraint inputs. Expected outputs live only in held-out judges. The
+  model-free bundle cell evaluates the renderer across multiple intents and
+  closed-input failures. Held-out controls reject raw provider argv, drift
+  between intent and KDL, missing initial context, model-owned workspace,
+  invalid supervisors, and hard-constraint override.
+- **R06-R09:** Each judgment cell uses one explicitly pinned Claude Sonnet
+  agent at medium effort and a five-minute timeout. They must run sequentially
+  under the normal paid-run authorization and receipt policy. The deterministic
+  cells have no model agent.
+- The interviewer output is semantic intent, not KDL. Axe, not model judgment,
+  owns the transaction workspace. Stable launch axes and an optional supervisor
+  are explicit in the intent; references may be empty. The deterministic
+  boundary owns canonical KDL, keeps account selection out of durable state,
+  and places the goal and references in an initial inbox Resource.
+- The renderer accepts workspace only as a transaction-owned absolute-path
+  argument and rejects a model payload containing `workspace` before creating
+  an Agent Spec. A model-free malicious-workspace control gates both renderers
+  against KDL injection.
+- The temporary session creator itself launches through typed
   `axe agent launch` with explicit harness, model, effort, persona, mode, and
   boot axes. The cell does not pin `--account`: Axe selects an eligible
   account per run. Corpus inventory, model policy, lifecycle, and harness
   checks recognize this typed launch as a paid model agent and reject durable
   account pins.
-- The paid cell uses st2's explicit `canonical-agents` seam. A deterministic
+- Each paid cell uses st2's explicit `canonical-agents` seam. A deterministic
   pre-admission run first creates the copied interviewer workspace as a clean,
   deterministic Git worktree. A second run reads the active runtime profile
-  and publishes one canonical interviewer declaration with its exact immutable
+  and publishes one canonical session-creator declaration with its exact immutable
   Axe adapter, absolute profile path, and canonical persona source. st2 then
   carries that declaration unchanged through strict validation,
   warning-free materialization, launch, kickoff routing, singleton completion,
   and teardown. No compact eval agent, compatibility wrapper, account pin, or
   ambient provider launch participates.
-- The paid cell is environment-bound to that explicit runtime-profile
+- Each paid cell is environment-bound to that explicit runtime-profile
   artifact; the artifact identity belongs in run evidence and results are not
   represented as hermetic across different profiles.
 - One structured model-agent inventory is authoritative for both compact eval agents
@@ -142,20 +150,26 @@ one-sentence human request
   workspace was not a Git worktree. It reached no account selection, provider
   readiness, trust behavior, judge, or verdict and left no catalog or process
   residue. It cannot be represented as provider evidence.
-- Passing model-free evidence proves the bundle boundary and its negative
-  controls only. The autonomous-selection claim remains unaccepted until the
-  paid judgment cell has a structured PASS receipt.
-- **Future R04 lifecycle cell:** the eventual model-free recovery discriminator
-  must operate on a real canonical temporary interviewer declaration and its
-  durable transaction records. Its crash mutation removes only the temporary
-  agent's main PTY generation. The DING sidecar may be live, stale, or already
-  absent at that observation boundary, so its state is explicitly
-  indeterminate and cannot be a gating proxy for interviewer liveness. The
-  durable retired tombstone remains the authority that prevents resurrection;
-  recovery must adopt or complete the exact transaction without a second final
-  agent or inbox publication. This cell is deferred to a pinned st2 successor
-  that exposes the required lifecycle boundary. A fake shell stand-in would
-  not prove the contract and is not part of this PR.
+- The model-free confirmation cell freezes the safe pre-threshold fallback:
+  a valid intent and rendered summary are insufficient; explicit human
+  confirmation alone authorizes final publication. Reject, EOF, or Ctrl-C
+  retires the temporary declaration, retains its tombstone, and publishes no
+  final declaration.
+- Passing model-free evidence proves only its named structural boundary. The
+  autonomous-selection claim remains unaccepted until DQ1 selects a measured
+  threshold and every required paid and model-free cell has a structured
+  accepted receipt.
+- The successor-gated lifecycle cell is present but intentionally unrun. It
+  requires exact immutable Axe and model-free-driver inputs and must operate on
+  a real canonical temporary declaration and durable transaction records. Its
+  cases cover success, crash before retirement, crash after retirement, crash
+  after final publication, cancellation versus process failure, single-flight
+  recovery, exact final attachment, and exactly-once final context. Main-PTY
+  absence is the publication gate; Ding state remains explicitly indeterminate.
+  Held-out mutations reject tombstone loss, a Ding proxy, duplicate final
+  publication, and attachment to the wrong identity. A shell stand-in is not
+  admissible, so the cell must fail before claiming a result until the successor
+  artifact and driver are pinned.
 
 The owner updates this spec with the corpus. Changing
 [vision.md](./vision.md) or [requirements.md](./requirements.md) requires

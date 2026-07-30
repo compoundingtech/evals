@@ -5,6 +5,10 @@
 # they must be built IN PLACE at run time; a static `copy "./fixture"` (with _git→.git) cannot preserve the
 # bare↔worktree linkage. Deterministic, offline, public-safe (no real repo/operator tokens).
 set -euo pipefail
+# Keep synthetic fixture Git operations independent of the invoking agent's
+# identity, hooks, and system/user configuration.
+export GIT_CONFIG_GLOBAL=/dev/null
+export GIT_CONFIG_NOSYSTEM=1
 SB="${CATALOG:?CATALOG must be set — st2 eval provides it to run steps}"
 cd "$SB"
 SEED="$SB/.seed"

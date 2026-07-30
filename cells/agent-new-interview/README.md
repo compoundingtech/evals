@@ -1,11 +1,12 @@
 # agent-new-interview
 
-This is the paid judgment half of the B2 `axe agent new` proposal. A
-short-lived Claude Sonnet interviewer receives exactly one sentence from the
-human. It is launched through the typed `axe agent launch` boundary with no
-durable account pin, so Axe selects from the configured account pool for that
-run. It may inspect the frozen local snapshot of the referenced issue, then
-submits one typed semantic intent record.
+This is one of four paid, unrun judgment cases for `axe agent new`. A
+short-lived Claude Sonnet session creator receives exactly one sentence from
+the human. It uses the exact runtime-profile `session-creator` prompt and is
+launched through typed `axe agent launch` with no durable account pin. It may
+inspect a frozen local reference snapshot, then submits one typed semantic
+intent record. Expected answers live only in held-out judges, never in the
+model prompt.
 
 The interviewer cannot write the final Agent Spec. `submit-intent` validates a
 closed input schema and deterministically renders:
@@ -17,10 +18,11 @@ semantic intent
   `-- agents/evalhost/<identity>/resources/inbox/0001-session-goal.md
 ```
 
-The scenario is intentionally answerable without a clarification round. It
-tests whether the interviewer derives a useful hierarchical identity, the
-implementation trajectory, an externalized goal, and the reference from a
-normal terse request.
+The four isolated cells cover a large implementation with a GitHub reference,
+a small fix with empty references, a read-only investigation, and an explicit
+human trajectory/supervisor constraint. They are intentionally answerable
+without a clarification round. No paid result or autonomy acceptance is
+claimed until all are run with durable receipts and DQ1 accepts a threshold.
 
 Run it only with explicit paid-run authorization:
 
@@ -31,10 +33,11 @@ st2 eval ./cells/agent-new-interview/
 ## Canonical eval seam
 
 The cell copies its fixture, deterministically publishes one canonical
-`agents/evalhost/interviewer/agent.kdl` from the active runtime profile, and
+`agents/evalhost/global.coding-agents.session-creation.interview-eval/agent.kdl`
+from the active runtime profile, and
 then opts into st2's `canonical-agents` admission. The profile supplies the
 exact immutable Axe adapter, absolute runtime-profile path, and canonical
-generalist prompt. The declaration itself owns the typed launch trajectory and
+session-creator prompt. The declaration itself owns the typed launch trajectory and
 contains no account pin.
 
 This makes the paid cell environment-bound by design: the selected runtime

@@ -1,5 +1,5 @@
-// One short human request is classified by a constrained temporary interviewer.
-// The interviewer emits semantic intent only; the fixture's deterministic submit
+// One short human request is classified by a constrained temporary session creator.
+// The session creator emits semantic intent only; the fixture's deterministic submit
 // boundary validates that intent and renders the final B2 bundle.
 host "evalhost"
 
@@ -9,19 +9,22 @@ eval {
     command "bash ./prepare-interviewer-worktree.sh"
   }
   run "publish-canonical-interviewer" {
-    command "bash ./publish-interviewer.sh"
+    command "bash ./publish-interviewer.sh implementation"
   }
   canonical-agents
   message {
     from "requester"
-    to "evalhost.interviewer"
-    content "./task.md"
+    to "evalhost.global.coding-agents.session-creation.interview-eval"
+    content "./cases/implementation/task.md"
   }
   max-timeout "300s"
 
   judges {
-    judge "SEMANTIC INTENT — the one-sentence request becomes the expected typed decision" {
-      exec "bash ./judges/grade.sh intent"
+    judge "STRUCTURE — output is closed, account-neutral, and preserves every hard constraint" {
+      exec "bash ./judges/grade-case.sh implementation structural"
+    }
+    judge "SEMANTICS — the one-sentence request becomes the held-out typed decision" {
+      exec "bash ./judges/grade-case.sh implementation semantic"
     }
     judge "CANONICAL BUNDLE — deterministic lowering owns every stable launch axis" {
       exec "bash ./judges/grade.sh bundle"
@@ -29,7 +32,7 @@ eval {
     judge "INITIAL CONTEXT — goal and GitHub reference are preserved in the inbox Resource" {
       exec "bash ./judges/grade.sh inbox"
     }
-    judge "BOUNDARY — the interviewer neither authors KDL nor selects an account" {
+    judge "BOUNDARY — the session creator neither authors KDL nor selects an account" {
       exec "bash ./judges/grade.sh boundary"
     }
   }

@@ -151,6 +151,22 @@ while IFS= read -r template; do
     >> "$inventory"
 done < <(find cells -type f -name 'agent.kdl.template' | LC_ALL=C sort)
 
+shared_interview_template="cells/agent-new-interview/fixture/agent.kdl.template"
+for cell in \
+  agent-new-interview-hard-constraint \
+  agent-new-interview-investigation \
+  agent-new-interview-small-fix; do
+  printf '%s\t%s\t%s\t%s\t%s\tcanonical-template\t%s\t%s\n' \
+    "$cell" \
+    "global.coding-agents.session-creation.interview-eval" \
+    "Claude" \
+    '$CATALOG/interviewer' \
+    "evalhost.global.coding-agents.session-creation.interview-eval" \
+    "$shared_interview_template" \
+    "$(rg -n '^[[:space:]]*argv[[:space:]].*"agent"[[:space:]]+"launch"' "$shared_interview_template" | cut -d: -f1)" \
+    >> "$inventory"
+done
+
 launches="$(
   {
     rg -n --no-heading '^[[:space:]]*command[[:space:]]+.*exec ((claude|codex)[[:space:]]|axe agent launch[[:space:]])' \
@@ -159,6 +175,7 @@ launches="$(
       cells -g 'agent.kdl.template' || true
   } | wc -l | tr -d ' '
 )"
+launches=$((launches + 3))
 rows="$(wc -l < "$inventory" | tr -d ' ')"
 if [ "$rows" -ne "$launches" ]; then
   echo "FAIL: model-agent inventory found $rows structured agents but $launches root-KDL launch lines" >&2

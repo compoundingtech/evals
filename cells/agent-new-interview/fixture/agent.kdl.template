@@ -1,5 +1,5 @@
-agent "interviewer" {
-  identity "interviewer"
+agent "global.coding-agents.session-creation.interview-eval" {
+  identity "global.coding-agents.session-creation.interview-eval"
   host "evalhost"
   workspace "$CATALOG/interviewer"
 
@@ -12,16 +12,16 @@ agent "interviewer" {
 
   env {
     AGENT_LAUNCH_HOSTED "1"
-    AGENT_PERSONA "generalist"
+    AGENT_PERSONA "session-creator"
     AGENT_RUNTIME_PROFILE "@PROFILE@"
-    ST_AGENT "evalhost.interviewer"
+    ST_AGENT "evalhost.global.coding-agents.session-creation.interview-eval"
   }
 
-  argv "@ADAPTER@" "agent" "launch" "--harness" "claude" "--model" "claude-sonnet-5" "--effort" "medium" "--persona" "generalist" "--mode" "managed-unattended" "--boot" "managed-v1"
+  argv "@ADAPTER@" "agent" "launch" "--harness" "claude" "--model" "claude-sonnet-5" "--effort" "medium" "--persona" "session-creator" "--mode" "managed-unattended" "--boot" "managed-v1"
   ding
 
   render {
-    copy "_templates/generalist.md" ".st2/PERSONA.md"
+    copy "_templates/session-creator.md" ".st2/PERSONA.md"
     copy "_templates/bus.st2.md" ".st2/bus.md"
     git-exclude ".st2/"
   }

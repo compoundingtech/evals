@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Eval fixtures are hermetic data. Ambient user/system Git policy, identities,
+# hooks, and aliases must not participate in their synthetic commits.
+export GIT_CONFIG_GLOBAL=/dev/null
+export GIT_CONFIG_NOSYSTEM=1
+
 workspace="${1:-./interviewer}"
 [ -d "$workspace" ] || {
   echo "interviewer workspace does not exist: $workspace" >&2

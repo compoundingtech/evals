@@ -8,6 +8,7 @@ cd "$repo_root"
 reachable=(
   bin/check-corpus.sh
   bin/check-append-only-file.sh
+  bin/check-agent-new-behavior-cases.sh
   bin/check-agent-new-interview-attempts-mutations.sh
   bin/check-agent-new-renderer-security.sh
   bin/check-agent-new-interview-attempts.sh
@@ -70,6 +71,7 @@ mapfile -t direct < <(
     LC_ALL=C sort -u
 )
 expected_direct=(
+  bin/check-agent-new-behavior-cases.sh
   bin/check-agent-new-interview-attempts-mutations.sh
   bin/check-agent-new-interview-attempts.sh
   bin/check-agent-new-renderer-security.sh

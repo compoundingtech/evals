@@ -3,19 +3,33 @@ set -euo pipefail
 
 input="${1:?intent path required}"
 out="${2:?output root required}"
+workspace="${3:?transaction-owned workspace required}"
+constraints="${4:-}"
+
+case "$workspace" in
+  /*) ;;
+  *) echo "workspace must be an absolute transaction input" >&2; exit 1 ;;
+esac
+if [[ "$workspace" == *$'\n'* || "$workspace" == *'"'* ]]; then
+  echo "workspace cannot be represented in canonical KDL" >&2
+  exit 1
+fi
 
 jq -e '
   type == "object" and
-  (keys | sort) == ([
-    "decision", "goal", "identity", "references", "schema", "trajectory", "workspace"
-  ] | sort) and
+  ((keys | sort) == ([
+    "decision", "goal", "identity", "references", "schema", "trajectory"
+  ] | sort) or (keys | sort) == ([
+    "decision", "goal", "identity", "references", "schema", "supervisor", "trajectory"
+  ] | sort)) and
   .schema == "axe.agent-creation-intent.v1" and
   .decision == "commit" and
   (.identity | test("^[a-z0-9][a-z0-9.-]*[a-z0-9]$")) and
-  (.workspace | test("^/[-A-Za-z0-9._/+:]+$")) and
   (.goal | type == "string" and length > 0 and test("[\"\\n\\r]") | not) and
-  (.references | type == "array" and length > 0 and
+  (.references | type == "array" and
     all(.[]; type == "string" and test("^https://github\\.com/"))) and
+  ((has("supervisor") | not) or
+    (.supervisor | type == "string" and test("^[a-z0-9][a-z0-9.-]*[a-z0-9]$"))) and
   (.trajectory | type == "object") and
   (.trajectory | keys | sort) == ([
     "boot", "effort", "harness", "mode", "model", "persona"
@@ -34,7 +48,6 @@ jq -e '
 ' "$input" >/dev/null
 
 identity="$(jq -r .identity "$input")"
-workspace="$(jq -r .workspace "$input")"
 harness="$(jq -r .trajectory.harness "$input")"
 model="$(jq -r .trajectory.model "$input")"
 effort="$(jq -r .trajectory.effort "$input")"
@@ -42,7 +55,20 @@ persona="$(jq -r .trajectory.persona "$input")"
 mode="$(jq -r .trajectory.mode "$input")"
 boot="$(jq -r .trajectory.boot "$input")"
 goal="$(jq -r .goal "$input")"
+supervisor="$(jq -r '.supervisor // empty' "$input")"
 target="$out/agents/evalhost/$identity"
+
+if [ -n "$constraints" ]; then
+  jq -e --slurpfile intent "$input" '
+    type == "object" and
+    (keys - ["supervisor"] | sort) == (["effort", "harness", "model", "persona"] | sort) and
+    .harness == $intent[0].trajectory.harness and
+    .model == $intent[0].trajectory.model and
+    .effort == $intent[0].trajectory.effort and
+    .persona == $intent[0].trajectory.persona and
+    ((has("supervisor") | not) or .supervisor == $intent[0].supervisor)
+  ' "$constraints" >/dev/null
+fi
 
 mkdir -p "$target/resources/inbox"
 cp "$input" "$out/intent.json"
@@ -52,6 +78,9 @@ cp "$input" "$out/intent.json"
   printf '  identity "%s"\n' "$identity"
   printf '  host "evalhost"\n'
   printf '  workspace "%s"\n\n' "$workspace"
+  if [ -n "$supervisor" ]; then
+    printf '  supervisor "%s"\n\n' "$supervisor"
+  fi
   printf '  restart {\n'
   printf '    attempts 3\n'
   printf '    interval "60s"\n'

@@ -14,10 +14,10 @@ require_once() {
 }
 
 require_once '    AGENT_LAUNCH_HOSTED "1"' "hosted launch marker"
-require_once '    AGENT_PERSONA "generalist"' "canonical persona"
+require_once '    AGENT_PERSONA "session-creator"' "canonical persona"
 require_once '    AGENT_RUNTIME_PROFILE "@PROFILE@"' "runtime-profile projection"
-require_once '  argv "@ADAPTER@" "agent" "launch" "--harness" "claude" "--model" "claude-sonnet-5" "--effort" "medium" "--persona" "generalist" "--mode" "managed-unattended" "--boot" "managed-v1"' "typed managed-v1 launch"
-require_once '    copy "_templates/generalist.md" ".st2/PERSONA.md"' "canonical persona overlay"
+require_once '  argv "@ADAPTER@" "agent" "launch" "--harness" "claude" "--model" "claude-sonnet-5" "--effort" "medium" "--persona" "session-creator" "--mode" "managed-unattended" "--boot" "managed-v1"' "typed managed-v1 launch"
+require_once '    copy "_templates/session-creator.md" ".st2/PERSONA.md"' "canonical persona overlay"
 require_once '    copy "_templates/bus.st2.md" ".st2/bus.md"' "canonical bus overlay"
 require_once '    git-exclude ".st2/"' "overlay exclusion"
 require_once '  ding' "native DING declaration"
@@ -32,10 +32,10 @@ for projection in \
   'case "$profile" in' \
   '/*) ;;' \
   '.agentSpec.adapterBin' \
-  '.personas.prompts.generalist' \
+  '.personas.prompts["session-creator"]' \
   's|@PROFILE@|$profile|' \
   's|@ADAPTER@|$adapter|' \
-  'cp "$persona_source" ./_templates/generalist.md'; do
+  'cp "$persona_source" ./_templates/session-creator.md'; do
   grep -Fq "$projection" "$publisher" || {
     echo "FAIL: $publisher omits canonical projection $projection" >&2
     exit 1

@@ -1,5 +1,7 @@
 cell	surface	reason
 agent-new-bundle-contract	cell	deterministic semantic-intent lowering and mutation probe; no harness agent
+agent-new-confirmation-contract	cell	deterministic pre-threshold human-confirmation boundary; no harness agent
+agent-new-creation-lifecycle	cell	successor-gated real Axe lifecycle matrix with no provider model
 canonical-agent-runtime-smoke	cell	deterministic canonical Agent Spec boot, kickoff, reply, and teardown probe; no harness agent
 context-resource-continuity	cell	deterministic native context/resource restart probe; no harness agent
 docs	judge:cold-reader	one-shot offline Claude print grader; no bus identity, DING, or hook surface

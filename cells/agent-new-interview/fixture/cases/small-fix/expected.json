@@ -1,0 +1,13 @@
+{
+  "identity": "dotfiles.cos-misc.readme-typo.fix",
+  "goalTerms": ["typo", "readme", "test"],
+  "references": [],
+  "trajectory": {
+    "harness": "codex",
+    "model": "gpt-5.6-sol",
+    "effort": "medium",
+    "persona": "generalist",
+    "mode": "managed-unattended",
+    "boot": "managed-v1"
+  }
+}

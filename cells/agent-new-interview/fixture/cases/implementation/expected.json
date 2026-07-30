@@ -1,0 +1,13 @@
+{
+  "identity": "dotfiles.cos-misc.axe-40.implementation",
+  "goalTerms": ["implement", "test", "live"],
+  "references": ["https://github.com/compoundingtech/axe/issues/40"],
+  "trajectory": {
+    "harness": "codex",
+    "model": "gpt-5.6-sol",
+    "effort": "high",
+    "persona": "generalist",
+    "mode": "managed-unattended",
+    "boot": "managed-v1"
+  }
+}

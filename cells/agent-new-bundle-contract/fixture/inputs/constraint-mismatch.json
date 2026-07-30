@@ -1,0 +1,18 @@
+{
+  "schema": "axe.agent-creation-intent.v1",
+  "decision": "commit",
+  "identity": "dotfiles.axe.issue-40.implementation",
+  "goal": "Implement Axe issue 40.",
+  "references": [
+    "https://github.com/compoundingtech/axe/issues/40"
+  ],
+  "trajectory": {
+    "harness": "claude",
+    "model": "claude-sonnet-5",
+    "effort": "medium",
+    "persona": "generalist",
+    "mode": "managed-unattended",
+    "boot": "managed-v1"
+  },
+  "supervisor": "evalhost.root"
+}

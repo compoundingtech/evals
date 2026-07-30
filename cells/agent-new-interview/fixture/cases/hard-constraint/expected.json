@@ -1,0 +1,14 @@
+{
+  "identity": "livestore.main.pr-1520.review",
+  "goalTerms": ["review", "evidence", "blocker"],
+  "references": ["https://github.com/livestorejs/livestore/pull/1520"],
+  "supervisor": "evalhost.root",
+  "trajectory": {
+    "harness": "claude",
+    "model": "claude-sonnet-5",
+    "effort": "medium",
+    "persona": "pr-reviewer",
+    "mode": "managed-unattended",
+    "boot": "managed-v1"
+  }
+}

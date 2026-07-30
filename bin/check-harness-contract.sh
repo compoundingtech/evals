@@ -50,13 +50,18 @@ hydrate_gitdirs() {
 
 prepare_cell() {
   local cell="$1" root="$2" fixture="cells/$cell/fixture" script
+  case "$cell" in
+    agent-new-interview-hard-constraint|agent-new-interview-investigation|agent-new-interview-small-fix)
+      fixture="cells/agent-new-interview/fixture"
+      ;;
+  esac
   [ -d "$fixture" ] || {
     echo "FAIL: model-backed cell $cell has no fixture" >&2
     return 1
   }
   cp -a "$fixture"/. "$root"/
   case "$cell" in
-    agent-new-interview)
+    agent-new-interview|agent-new-interview-hard-constraint|agent-new-interview-investigation|agent-new-interview-small-fix)
       script="$root/prepare-interviewer-worktree.sh"
       ;;
     signal-rename|signal-rename-codex)
@@ -81,7 +86,7 @@ prepare_cell() {
     echo "FAIL: $cell materializer contains a provider/reconcile/network command" >&2
     return 1
   fi
-  if [ "$cell" = "agent-new-interview" ]; then
+  if [[ "$cell" == agent-new-interview* ]]; then
     CATALOG="$root" bash "$script" "$root/interviewer" >/dev/null
   else
     CATALOG="$root" bash "$script" >/dev/null

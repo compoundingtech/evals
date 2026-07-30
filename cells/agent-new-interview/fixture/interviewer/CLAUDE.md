@@ -1,1 +1,2 @@
 @PERSONA.md
+@PROTOCOL.md

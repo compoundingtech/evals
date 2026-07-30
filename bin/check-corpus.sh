@@ -6,8 +6,8 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
 expected_source="0fed14b"
-expected_binary_sha256="96b394f270f0a3eb25dd29574a96f30d527a56bee63c2499d6db7e4a58707648"
-expected_version_regex='^st2 0\.1\.0\+0fed14b — committed .+ ago$'
+expected_binary_sha256="d61d12b2b1189a391c196ca28f8f4ba69072d14fcbad2571fc29db1f250f4eed"
+expected_version_regex='^st2 0\.1\.0 — running from local source \(0fed14b, .+ ago\)$'
 st2_path="$(command -v st2)"
 actual_version="$(st2 --version)"
 [[ "$actual_version" =~ $expected_version_regex ]] || {
@@ -19,7 +19,7 @@ actual_binary_sha256="$(sha256sum "$st2_path" | awk '{ print $1 }')"
   echo "FAIL: expected st2 binary sha256 $expected_binary_sha256, found $actual_binary_sha256 at $st2_path" >&2
   exit 1
 }
-echo "PASS: pinned pre-merge Nix candidate $expected_source ($actual_version; sha256 $actual_binary_sha256)"
+echo "PASS: pinned published runner source $expected_source ($actual_version; sha256 $actual_binary_sha256)"
 
 mapfile -d '' shell_files < <(
   find bin cells -type f -name '*.sh' -not -path '*/_git/*' -print0 | sort -z

@@ -6,7 +6,7 @@ implementation can target the same contract and proofs.
 
 The current corpus proof is pinned to st2
 [`0fed14bb5653b67e1d64f1199e240c4c5c612bf7`](https://github.com/compoundingtech/st2/commit/0fed14bb5653b67e1d64f1199e240c4c5c612bf7)
-(`0.1.0+0fed14b`, source `0fed14b`). The pin identifies the implementation and version the corpus currently proves; it
+(`0.1.0`, source `0fed14b`). The pin identifies the implementation and version the corpus currently proves; it
 does not transfer ownership of the specification to st2. A proposed behavior change must update this contract
 and its maintained proof cells before an implementation claims conformance. Do not infer additional fields or
 commands from older corpus fixtures.
@@ -476,11 +476,13 @@ Inspect the declaration, every referenced template, and every workspace destinat
 materialization command. Materialization is byte-idempotent and does not imply hook installation. Starting
 the network is a separate, explicitly authorized action.
 
-For source `0fed14b`, the accepted pre-merge Nix-built Linux executable has SHA256
-`96b394f270f0a3eb25dd29574a96f30d527a56bee63c2499d6db7e4a58707648`. There is no published portable
-archive for this unmerged commit. After `compoundingtech/st2#86` merges, this pin must move to its accepted
-release and record the fresh-download archive hash before the corpus is ready. `bin/check-corpus.sh` verifies
-the variable-age Nix version contract, exact installed candidate binary, strict semantic validation, fixture
-resets, and the rest of the model-free corpus gate before an eval may run. The pre-merge Nix stamp embeds only
-the short revision, so the full source link above is review/build provenance rather than a claim extracted
-from the binary; the post-merge portable release must restore fresh-download full-source proof.
+For source `0fed14b`, the accepted published Linux executable has SHA256
+`d61d12b2b1189a391c196ca28f8f4ba69072d14fcbad2571fc29db1f250f4eed`; its published archive has SHA256
+`d14404ae678bbe3f2a5ad8580cde1e4b8f6009067c46555f392c6e0957b8a2da`, and the downloaded `SHA256SUMS`
+asset has SHA256 `50cfd8722e58d1c74fdc543f3e3bb3bac768decd04575fde2360ea838ec5e9d3`. The immutable
+[`v0.2.0+0fed14b`](https://github.com/compoundingtech/st2/releases/tag/v0.2.0%2B0fed14b) release targets the
+full source commit above; the terminal-green
+[`release-portable` run](https://github.com/compoundingtech/st2/actions/runs/30550227417) verifies a fresh
+download, checksum, extraction, and execution.
+`bin/check-corpus.sh` verifies the variable-age version contract, exact installed binary, strict semantic
+validation, fixture resets, and the rest of the model-free corpus gate before an eval may run.

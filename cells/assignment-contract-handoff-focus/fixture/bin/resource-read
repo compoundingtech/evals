@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+if [ "$#" -ne 1 ]; then
+  echo "usage: resource-read <URI>" >&2
+  exit 64
+fi
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SPEC="$ROOT/agent-spec.kdl"
+URI="$1"
+AGENT="${ST_AGENT:-unknown}"
+NAME="${AGENT##*.}"
+LOG="$ROOT/.oracle/resource-reads.jsonl"
+mkdir -p "$ROOT/.oracle"
+: >>"$LOG"
+
+agent_block() {
+  awk -v name="$NAME" '
+    $0 == "agent \"" name "\" {" { inside=1 }
+    inside { print }
+    inside && $0 == "}" { exit }
+  ' "$SPEC"
+}
+
+block="$(agent_block)"
+declared=false
+if printf '%s\n' "$block" | grep -Fq "uri=\"$URI\""; then
+  declared=true
+fi
+work_bound=false
+if printf '%s\n' "$block" | grep -Fq "resource \"work\"" &&
+   printf '%s\n' "$block" | grep -Fq "uri=\"$URI\"" &&
+   printf '%s\n' "$block" | grep -Fq 'focus "work"'; then
+  work_bound=true
+fi
+
+case "$URI" in
+  github-issue://eval/widget-normalization)
+    file="$ROOT/resources/work.md"
+    permitted="$work_bound"
+    ;;
+  worktree://eval/widget)
+    file="$ROOT/resources/source.md"
+    permitted="$declared"
+    ;;
+  axe-worklog://eval/widget-normalization)
+    file="$ROOT/resources/worklog.md"
+    permitted="$declared"
+    ;;
+  ding://eval/arh.a)
+    file="$ROOT/resources/delivery-a.md"
+    permitted="$declared"
+    ;;
+  ding://eval/arh.b)
+    file="$ROOT/resources/delivery-b.md"
+    permitted="$declared"
+    ;;
+  *)
+    file=""
+    permitted=false
+    ;;
+esac
+
+sequence=$(( $(wc -l <"$LOG") + 1 ))
+head="$(git -C "$ROOT/repo" rev-parse HEAD 2>/dev/null || true)"
+printf '{"sequence":%d,"agent":"%s","uri":"%s","declared":%s,"work_bound":%s,"permitted":%s,"head":"%s"}\n' \
+  "$sequence" "$AGENT" "$URI" "$declared" "$work_bound" "$permitted" "$head" >>"$LOG"
+
+if [ "$permitted" != true ]; then
+  echo "resource is not declared for current holder: $URI" >&2
+  exit 66
+fi
+
+exec sed -n '1,$p' "$file"

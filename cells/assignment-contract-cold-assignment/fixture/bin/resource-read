@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+if [ "$#" -ne 1 ]; then
+  echo "usage: resource-read <URI>" >&2
+  exit 64
+fi
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+URI="$1"
+LOG="$ROOT/.oracle/resource-reads.jsonl"
+mkdir -p "$ROOT/.oracle"
+: >>"$LOG"
+
+license_blob=$(git -C "$ROOT/worker" hash-object LICENSE 2>/dev/null || true)
+package_blob=$(git -C "$ROOT/worker" hash-object package.json 2>/dev/null || true)
+source_blob=$(git -C "$ROOT/worker" hash-object src/widget.js 2>/dev/null || true)
+sequence=$(( $(wc -l <"$LOG") + 1 ))
+
+case "$URI" in
+  github-issue://eval/widget-license-mit)
+    file="$ROOT/resources/issue.md"
+    success=true
+    ;;
+  worktree://eval/widget)
+    file="$ROOT/resources/source.md"
+    success=true
+    ;;
+  axe-worklog://eval/widget-license)
+    file="$ROOT/resources/worklog.md"
+    success=true
+    ;;
+  ding://eval/arc.worker)
+    file="$ROOT/resources/delivery.md"
+    success=true
+    ;;
+  github-pr://eval/widget-separator)
+    file="$ROOT/resources/review-context.md"
+    success=true
+    ;;
+  *)
+    file=""
+    success=false
+    ;;
+esac
+
+escaped_uri=$(printf '%s' "$URI" | sed 's/\\/\\\\/g; s/"/\\"/g')
+printf '{"sequence":%d,"uri":"%s","success":%s,"license_blob":"%s","package_blob":"%s","source_blob":"%s"}\n' \
+  "$sequence" "$escaped_uri" "$success" "$license_blob" "$package_blob" "$source_blob" >>"$LOG"
+
+if [ "$success" != true ]; then
+  echo "undeclared resource URI: $URI" >&2
+  exit 66
+fi
+
+exec sed -n '1,$p' "$file"

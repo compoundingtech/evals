@@ -1,0 +1,14 @@
+schema "agent-spec.experimental/v1"
+
+agent "a" {
+  resource "source" _tag="worktree" uri="worktree://eval/widget"
+  resource "worklog" _tag="axe-worklog" uri="axe-worklog://eval/widget-normalization"
+  resource "delivery" _tag="ding" uri="ding://eval/arh.a"
+}
+
+agent "b" {
+  resource "work" _tag="github-issue" uri="github-issue://eval/widget-normalization"
+  resource "source" _tag="worktree" uri="worktree://eval/widget"
+  resource "worklog" _tag="axe-worklog" uri="axe-worklog://eval/widget-normalization"
+  resource "delivery" _tag="ding" uri="ding://eval/arh.b"
+}

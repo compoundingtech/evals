@@ -1,0 +1,48 @@
+// Resource-only hot-retarget candidate. Task facts exist only behind the current named work resource.
+team "ahr" {
+  agent "sup" {
+    workspace "./sup"
+    env { ST_AGENT "ahr.sup" }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You cold-started in a hermetic st2 eval. Read AGENTS.md. Drain the inbox once using st2 message, then set status available; presence failure is non-blocking. If empty, stand by for DING. After any DING, drain again, act on every message, archive each handled item, coordinate the declared durable work, and report completion or blockers over the st2 bus. Report final evidence only as required by AGENTS.md.'"#
+    ding
+  }
+  agent "worker" {
+    workspace "./worker"
+    env { ST_AGENT "ahr.worker" }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You cold-started in a hermetic st2 eval. Read AGENTS.md. Drain the inbox once using st2 message, then set status available; presence failure is non-blocking. If empty, stand by for DING. After any DING, drain again, act on every message, archive each handled item, reread durable context, execute the current durable work resource, and report completion or blockers over the st2 bus. Remain in this same session and repeat after each DING until durable context declares idle.'"#
+    ding
+  }
+}
+
+eval {
+  copy "./fixture"
+  run "materialize" {
+    command #"bash ./materialize.sh"#
+  }
+  message {
+    from "requester"
+    to "ahr.controller"
+    content "./task.md"
+  }
+  max-timeout "1200s"
+  agent "ahr.controller" {
+    workspace "."
+    env { ST_AGENT "ahr.controller" }
+    command #"exec bash ./controller.sh"#
+  }
+
+  judges {
+    judge "resource-only contract retargets without task leakage" {
+      exec "bash ./judges/contract.sh"
+    }
+    judge "same worker session crosses both resource bindings and idle" {
+      exec "bash ./judges/lifecycle.sh"
+    }
+    judge "phase A then phase B are correct, distinct commits with no third mutation" {
+      exec "bash ./judges/outcome.sh"
+    }
+    judge "bus ordering closes only after exact idle and leaves active inboxes clean" {
+      exec "bash ./judges/coordination.sh"
+    }
+  }
+}

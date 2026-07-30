@@ -123,6 +123,31 @@ current bus-connected model agent.
 Team-less cells use deterministic `run` steps and judges without a model. Current examples cover native hook
 materialization, network health, catalog/pty isolation, and pty send/peek behavior.
 
+## Resource-binding tournament
+
+The nine `assignment-contract-*` cells form one matched tournament over three lifecycle scenarios and three
+Agent Spec treatments. The kickoff and product task are treatment-neutral; only the experimental durable
+declaration and its resolver rules differ.
+
+| Scenario | Direct named resources | Resources plus `focus` | Resources plus `assignment` |
+| --- | --- | --- | --- |
+| Cold discovery | One `work` binding selects the issue | `focus` selects an `intent` binding | An Assignment groups four bindings |
+| Hot retarget | Rebind `work`, then remove it | Rebind focused `intent`, then remove `focus` | Replace the active Assignment, then make it idle |
+| Handoff/restart | Remove A's `work`, then add B's | Remove A's focus, then focus B | Make A idle, then activate B |
+
+The selected contract is the direct-resource treatment: the resource URI is identity, `_tag` discriminates
+the resource type, and the KDL name is the binding's semantic role. An agent has zero or one direct `work`
+binding; zero means idle. A handoff publishes `A -> no holder -> B`. The Focus and Assignment treatments remain
+as controls, not proposed product layers. Required/optional and access semantics are intentionally outside
+this tournament.
+
+Exploratory Codex E2E runs on 2026-07-30 completed the intended behavior in all nine cells. Three original
+graders produced false negatives: abbreviated commit evidence in cold Focus, message cardinality in hot Focus,
+and terminal ordering in resource-only handoff. The checked-in graders accept the preserved correct behavior
+and include model-free regression tests for those oracle boundaries. These pre-publication runs are design
+evidence, not accepted corpus receipts; `CATALOG.md` remains authoritative and will show no accepted PASS until
+a committed cell is rerun.
+
 ## Add or change a cell
 
 1. Create exactly one `cells/<name>/<name>.kdl`.

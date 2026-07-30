@@ -7,6 +7,10 @@ cd "$repo_root"
 
 mode="dry-run"
 state_dir=".eval-runs/overnight"
+test_watchdog_extra="180"
+if [ "${OVN_TEST_FAKE:-0}" = "1" ]; then
+  test_watchdog_extra="${OVN_TEST_WATCHDOG_EXTRA:-0}"
+fi
 claude_auth_receipt=""
 acknowledge_usage=0
 allow_informational_reset_banner=0
@@ -338,7 +342,7 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
 
   stamp="$(date -u +%Y%m%dT%H%M%SZ)"
   log="$state_dir/logs/$cell.$stamp.log"
-  watchdog_seconds=$(($(duration_seconds "$declared_timeout") + 180))
+  watchdog_seconds=$(($(duration_seconds "$declared_timeout") + test_watchdog_extra))
   printf '\n== %s: %s, %s, %s seat(s), %s cost, timeout %s (+180s watchdog) ==\n' \
     "$cell" "$harness" "$models" "$seats" "$cost" "$declared_timeout"
 

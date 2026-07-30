@@ -165,6 +165,12 @@ grep -Fq -- '--allow-informational-reset-banner)' bin/overnight.sh
 grep -Fq '[ "$hard_usage_seen" -eq 1 ]; then' bin/overnight.sh
 grep -Fq '[ "$informational_usage_seen" -eq 1 ] &&' bin/overnight.sh
 grep -Fq '[ "$allow_informational_reset_banner" -eq 0 ]; then' bin/overnight.sh
+grep -Fq 'failure_class=product' bin/overnight.sh
+grep -Fq 'paired control remains eligible' bin/overnight.sh
+grep -Fq 'failure_class=infrastructure' bin/overnight.sh
+grep -Fq 'failure_class=auth' bin/overnight.sh
+grep -Fq 'lacks enforced per-cell spend ceiling and structured usage receipt; no provider started' bin/overnight.sh
+grep -Fq 'OVERNIGHT COMPLETE WITH PRODUCT FAILURES' bin/overnight.sh
 
 printf 'PASS: dry-run exposes %s-cell inventory, exact six-cell order, and explicit model-free selection; invalid selectors cannot reach providers; conservative usage stops remain enforced\n' \
   "$expected_cells"

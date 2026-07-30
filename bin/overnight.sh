@@ -231,6 +231,19 @@ if [ "$requires_codex" -eq 1 ]; then
   }
 fi
 
+# Provider cells are fail-closed until the harness exposes both a hard
+# per-cell budget and a structured usage/cost receipt.  Never spend a paid
+# seat when the selected KDL cannot prove that contract.
+while IFS=$'\t' read -r cell _harness models _effort _seats _cost _timeout _judges; do
+  if [[ "$models" == *claude-sonnet-5* || "$models" == *gpt-5.6-sol* ]]; then
+    command_text="$(sed -n '/command #"'"'"'exec /p' "cells/$cell/$cell.kdl" 2>/dev/null || true)"
+    if [[ "$command_text" != *"--max-budget-usd 0.05"* || "$command_text" != *"--output-format json"* ]]; then
+      echo "FAIL: provider cell $cell lacks enforced per-cell spend ceiling and structured usage receipt; no provider started" >&2
+      exit 1
+    fi
+  fi
+done < "$inventory"
+
 mkdir -p "$state_dir/logs" "$state_dir/receipts" "$state_dir/failures" "$state_dir/history"
 stop_guard="$state_dir/STOPPED"
 if [ -f "$stop_guard" ]; then
@@ -250,6 +263,7 @@ fi
 
 source_commit="$(git rev-parse HEAD)"
 st2_version="$(st2 --version)"
+run_failed=0
 hard_usage_pattern='usage[ -]?limit[[:space:]].*(reached|exceeded|exhausted)|rate[ -]?limit|too many requests|quota[[:space:]].*(exceeded|exhausted)|capacity[ -]?limit|(^|[^0-9])429([^0-9]|$)'
 informational_usage_pattern='[0-9]+ usage limit resets available'
 
@@ -383,10 +397,21 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
   sed -n '1,240p' "$log"
   completed="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   if [ "$rc" -ne 0 ] || ! grep -Fxq 'VERDICT: PASS' "$log"; then
+    failure_class=product
+    if [ "$timed_out" -eq 1 ] || [ ! -s "$log" ]; then
+      failure_class=infrastructure
+    elif rg -q -i '(^|[^[:alpha:]])(401|403|oauth|expired|authentication failed|not logged in|invalid token|api key)([^[:alpha:]]|$)' "$log" 2>/dev/null; then
+      failure_class=auth
+    elif [ "$(cell_hash "$cell")" != "$hash" ]; then
+      failure_class=integrity
+    elif rg -q -i 'corpus integrity|hash mismatch|source commit mismatch|catalog integrity|infrastructure error|daemon.*(crash|exit)|failed to launch st2' "$log" 2>/dev/null; then
+      failure_class=infrastructure
+    fi
     failure="$state_dir/failures/$cell.$stamp.env"
     write_record "$failure" \
       "cell=$cell" \
       "result=FAIL" \
+      "failure_class=$failure_class" \
       "exit_code=$rc" \
       "timed_out=$timed_out" \
       "hard_usage_warning=$hard_usage_seen" \
@@ -419,8 +444,19 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
       echo "STOPPED: informational reset-available banner under conservative default; guard written to $stop_guard" >&2
       exit 75
     fi
-    echo "STOPPED: $cell failed; durable record: $failure" >&2
-    exit 1
+    if [ "$failure_class" != product ]; then
+      write_record "$stop_guard" \
+        "reason=$failure_class" \
+        "cell=$cell" \
+        "log=$log" \
+        "record=$failure" \
+        "stopped_at=$completed"
+      echo "STOPPED: $cell $failure_class failure; guard written to $stop_guard" >&2
+      exit 1
+    fi
+    run_failed=1
+    echo "CONTINUE: $cell product result recorded; paired control remains eligible: $failure" >&2
+    continue
   fi
 
   write_record "$receipt" \
@@ -467,4 +503,8 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
 done < "$inventory"
 
 echo
+if [ "$run_failed" -eq 1 ]; then
+  echo "OVERNIGHT COMPLETE WITH PRODUCT FAILURES: all eligible cells ran; failures are preserved." >&2
+  exit 1
+fi
 echo "OVERNIGHT COMPLETE: every included cell has a matching PASS receipt."

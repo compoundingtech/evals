@@ -1,0 +1,11 @@
+metric	type	unit	role	preferred_direction	model_free_value	live_source
+correctness	boolean	pass/fail	gating	pass	reference-pass	arm-neutral held-out judge
+cold_restart_recovery	boolean	pass/fail	gating	pass	pass	evaluator recovery receipt
+partition_recovery	boolean	pass/fail	gating	pass	pass	evaluator recovery receipt
+human_steering	boolean	pass/fail	gating	pass	pass	evaluator steering receipt
+coordination_messages	integer	count	reporting	lower	unmeasured	st2 message receipt
+coordination_bytes	integer	bytes	reporting	lower	unmeasured	st2 message and sync receipt
+model_input_tokens	integer	tokens	reporting	lower	0	harness usage receipt
+model_output_tokens	integer	tokens	reporting	lower	0	harness usage receipt
+cost_usd	decimal	USD	reporting	lower	0	harness usage receipt
+wall_duration	decimal	seconds	reporting	lower	unmeasured	evaluator run receipt

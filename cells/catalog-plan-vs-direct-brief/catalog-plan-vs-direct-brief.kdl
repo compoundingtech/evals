@@ -1,0 +1,39 @@
+// Neutral, model-free fixture contract for a catalog-plan versus direct-brief A/B.
+eval {
+  copy "./fixture"
+  max-timeout "60s"
+
+  run "fixture-contract" {
+    command "bash ./check-fixtures.sh"
+  }
+
+  judges {
+    judge "TASK — frozen repository starts red and its arm-neutral reference implementation passes" {
+      exec "grep -Fqx TASK-CONTRACT-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "PARITY — task intent, tools, budgets, judges, and done condition match across arms" {
+      exec "grep -Fqx ARM-PARITY-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "RESTART — both durable inputs recover the exact accepted revision after cold state loss" {
+      exec "grep -Fqx COLD-RESTART-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "PARTITION — recovery uses each arm's local durable source with its remote source unavailable" {
+      exec "grep -Fqx LOCAL-PARTITION-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "STEERING — a complete new intent version and a direct follow-up carry identical revised intent" {
+      exec "grep -Fqx HUMAN-STEERING-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "MEASUREMENT — correctness gates are separate from neutral traffic and cost observations" {
+      exec "grep -Fqx MEASUREMENT-CONTRACT-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "PROVENANCE — every authoritative input has a verified content hash" {
+      exec "grep -Fqx PROVENANCE-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "BOUNDARY — unsupported plan runtime and paid execution remain explicit blockers" {
+      exec "grep -Fqx PRODUCT-BLOCKERS-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "HERMETIC — the scaffold launches no model, provider, network client, or product runtime" {
+      exec "grep -Fqx HERMETIC-SCAFFOLD-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+  }
+}

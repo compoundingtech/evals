@@ -1,0 +1,15 @@
+field	value
+experiment_id	catalog-plan-vs-direct-brief-v1
+source_gist	https://gist.github.com/myobie/d5ecfac24cd3965e095a5031cd2e00cb
+task_id	receipt-report-latest-pass
+seed_repository	task-repo
+allowed_change	src/report.mjs
+allowed_tools	node,bash,git
+network_policy	disabled
+wall_budget_seconds	1200
+model_token_budget	40000
+judge_profile	arm-neutral-public-plus-held-out
+done_condition	public and held-out tests pass; only src/report.mjs differs from the seed; no dependency or network change
+initial_revision	0000
+steering_revision	0001
+live_run_status	blocked-pending-exact-st2-plan-artifact-and-separate-paid-authorization

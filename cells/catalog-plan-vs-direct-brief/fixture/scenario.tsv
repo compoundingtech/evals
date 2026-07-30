@@ -1,0 +1,7 @@
+ordinal	event	arm_a_input	arm_b_input	invariant
+1	initial_delivery	versions/0000.md	brief-0000.md	byte-identical intent and one durable acceptance receipt
+2	cold_restart	local version 0000	local brief 0000	no volatile conversation or process state
+3	simulated_partition	local catalog only	local durable inbox only	remote input source unavailable during recovery
+4	human_steering	versions/0001.md	brief-0001.md	byte-identical complete revised intent
+5	restart_after_steering	local versions 0000 and 0001	local briefs 0000 and 0001	revision 0001 selected and revision 0000 retained
+6	future_completion	same arm-neutral judge	same arm-neutral judge	report correctness recovery traffic and cost without preferred-arm thresholds

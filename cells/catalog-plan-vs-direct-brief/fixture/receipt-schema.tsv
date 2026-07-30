@@ -1,0 +1,18 @@
+field	type	required	description
+receipt_id	string	yes	evaluator-generated unique run receipt id
+arm	enum:A|B	yes	experiment arm
+phase	enum:accepted|recovered|steered|completed	yes	observed evaluator phase
+intent_revision	string	yes	exact accepted intent revision
+intent_sha256	sha256	yes	exact intent body hash
+seed_repo_sha256	sha256	yes	frozen repository tree hash
+correctness	enum:pass|fail|not-run	yes	arm-neutral judge outcome
+cold_restart_recovery	enum:pass|fail|not-run	yes	exact local intent recovery outcome
+partition_recovery	enum:pass|fail|not-run	yes	recovery while remote input is unavailable
+human_steering	enum:pass|fail|not-run	yes	revised intent acceptance outcome
+coordination_messages	nonnegative-integer	yes	observed external message count
+coordination_bytes	nonnegative-integer	yes	observed message and sync payload bytes
+model_input_tokens	nonnegative-integer	yes	harness-reported input tokens
+model_output_tokens	nonnegative-integer	yes	harness-reported output tokens
+cost_usd	nonnegative-decimal	yes	harness-reported cost
+wall_duration_seconds	nonnegative-decimal	yes	evaluator elapsed wall time
+evidence	string	yes	path or immutable URL for supporting output

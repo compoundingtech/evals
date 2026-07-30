@@ -120,7 +120,7 @@ assert_rejected_before_provider \
   --run --cell hook-integrity --claude-auth-receipt .eval-runs/unused.env
 
 dry_exit="$(rg -n -F 'if [ "$mode" = "dry-run" ]' bin/overnight.sh | cut -d: -f1)"
-launch_line="$(rg -n 'setsid .*st2 eval' bin/overnight.sh | cut -d: -f1)"
+launch_line="$(rg -n 'setsid .*eval_bin.* eval' bin/overnight.sh | cut -d: -f1)"
 [ -n "$dry_exit" ] && [ -n "$launch_line" ] && [ "$dry_exit" -lt "$launch_line" ] || {
   echo "FAIL: overnight source does not gate the eval launch behind the dry-run exit" >&2
   exit 1

@@ -58,7 +58,16 @@ GI
 echo "== git init seed + bare origin =="
 git -C "$SEED" init -q -b main
 git -C "$SEED" add -A
-git -C "$SEED" commit -q -m "seed: synthetic signal workspace (base + relay + hub + config)"
+# Seed history is fixture data; plumbing keeps agent commit hooks out of immutable setup.
+seed_tree="$(git -C "$SEED" write-tree)"
+seed_commit="$(
+  printf '%s\n' "seed: synthetic signal workspace (base + relay + hub + config)" |
+    GIT_AUTHOR_NAME="eval-seed" GIT_AUTHOR_EMAIL="seed@local" \
+    GIT_COMMITTER_NAME="eval-seed" GIT_COMMITTER_EMAIL="seed@local" \
+    GIT_AUTHOR_DATE="2026-07-30T00:00:00Z" GIT_COMMITTER_DATE="2026-07-30T00:00:00Z" \
+    git -C "$SEED" commit-tree "$seed_tree"
+)"
+git -C "$SEED" update-ref refs/heads/main "$seed_commit"
 git clone -q --bare "$SEED" "$SB/origin.git"
 
 echo "== clone one full workspace per agent (distinct authors) + drop its persona =="

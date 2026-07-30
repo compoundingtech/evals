@@ -2,16 +2,18 @@
 set -euo pipefail
 
 net="${CATALOG:?CATALOG must be set}/net"
-author_name="$(git config --get user.name)"
-author_email="$(git config --get user.email)"
-[ -n "$author_name" ] && [ -n "$author_email" ] || {
-  echo "FAIL: the invoking Git identity must be configured before materializing the eval" >&2
-  exit 1
-}
 for workspace in "$net/good-workspace" "$net/bad-workspace"; do
   git -C "$workspace" init -q -b main
   git -C "$workspace" add README.md
-  git -C "$workspace" -c user.name="$author_name" -c user.email="$author_email" \
-    commit -q -m "seed render target"
+  # Seed history is fixture data; plumbing keeps agent commit hooks out of immutable setup.
+  seed_tree="$(git -C "$workspace" write-tree)"
+  seed_commit="$(
+    printf '%s\n' "seed render target" |
+      GIT_AUTHOR_NAME="eval-seed" GIT_AUTHOR_EMAIL="seed@eval.local" \
+      GIT_COMMITTER_NAME="eval-seed" GIT_COMMITTER_EMAIL="seed@eval.local" \
+      GIT_AUTHOR_DATE="2026-07-30T00:00:00Z" GIT_COMMITTER_DATE="2026-07-30T00:00:00Z" \
+      git -C "$workspace" commit-tree "$seed_tree"
+  )"
+  git -C "$workspace" update-ref refs/heads/main "$seed_commit"
   test -z "$(git -C "$workspace" status --porcelain)"
 done

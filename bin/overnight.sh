@@ -324,6 +324,8 @@ cleanup_timed_out_catalog() {
 }
 
 while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _judges; do
+  provider_selected=0
+  [[ "$models" == *claude-sonnet-5* || "$models" == *gpt-5.6-sol* ]] && provider_selected=1
   hash="$(cell_hash "$cell")"
   receipt="$state_dir/receipts/$cell.env"
   if [ -f "$receipt" ] &&
@@ -346,6 +348,7 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
   started=$SECONDS
   hard_usage_seen=0
   informational_usage_seen=0
+  usage_receipt_seen=0
   timed_out=0
 
   while kill -0 "$eval_pid" 2>/dev/null; do
@@ -393,12 +396,17 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
     rg -q -i "$informational_usage_pattern" "$log" 2>/dev/null; then
     informational_usage_seen=1
   fi
+  if [ "$provider_selected" -eq 1 ] && rg -q '^USAGE_JSON=' "$log" 2>/dev/null; then
+    usage_receipt_seen=1
+  fi
 
   sed -n '1,240p' "$log"
   completed="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   if [ "$rc" -ne 0 ] || ! grep -Fxq 'VERDICT: PASS' "$log"; then
     failure_class=product
     if [ "$timed_out" -eq 1 ] || [ ! -s "$log" ]; then
+      failure_class=infrastructure
+    elif [ "$provider_selected" -eq 1 ] && [ "$usage_receipt_seen" -eq 0 ]; then
       failure_class=infrastructure
     elif rg -q -i '(^|[^[:alpha:]])(401|403|oauth|expired|authentication failed|not logged in|invalid token|api key)([^[:alpha:]]|$)' "$log" 2>/dev/null; then
       failure_class=auth
@@ -416,6 +424,7 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
       "timed_out=$timed_out" \
       "hard_usage_warning=$hard_usage_seen" \
       "informational_usage_banner=$informational_usage_seen" \
+      "structured_usage_receipt=$usage_receipt_seen" \
       "allow_informational_reset_banner=$allow_informational_reset_banner" \
       "source_commit=$source_commit" \
       "cell_hash=$hash" \
@@ -473,6 +482,7 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
     "declared_timeout=$declared_timeout" \
     "hard_usage_warning=$hard_usage_seen" \
     "informational_usage_banner=$informational_usage_seen" \
+    "structured_usage_receipt=$usage_receipt_seen" \
     "allow_informational_reset_banner=$allow_informational_reset_banner" \
     "catalog=$catalog" \
     "log=$log" \

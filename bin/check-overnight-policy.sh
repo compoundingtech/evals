@@ -171,6 +171,10 @@ grep -Fq 'failure_class=infrastructure' bin/overnight.sh
 grep -Fq 'failure_class=auth' bin/overnight.sh
 grep -Fq 'lacks enforced per-cell spend ceiling and structured usage receipt; no provider started' bin/overnight.sh
 grep -Fq 'OVERNIGHT COMPLETE WITH PRODUCT FAILURES' bin/overnight.sh
+grep -Fq 'structured_usage_receipt=$usage_receipt_seen' bin/overnight.sh
+grep -Fq 'usage_receipt_seen=0' bin/overnight.sh
+grep -Fq 'provider_selected=1' bin/overnight.sh
+grep -Fq 'provider cell $cell lacks enforced per-cell spend ceiling and structured usage receipt' bin/overnight.sh
 
 printf 'PASS: dry-run exposes %s-cell inventory, exact six-cell order, and explicit model-free selection; invalid selectors cannot reach providers; conservative usage stops remain enforced\n' \
   "$expected_cells"

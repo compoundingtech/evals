@@ -211,6 +211,11 @@ echo
 echo "== free preflight (no model seats) =="
 bin/check-corpus.sh
 
+eval_bin=st2
+if [ "${OVN_TEST_FAKE:-0}" = "1" ] && [ -n "${OVN_TEST_FAKE_COMMAND:-}" ]; then
+  eval_bin="$OVN_TEST_FAKE_COMMAND"
+fi
+
 if [ "$requires_claude" -eq 1 ]; then
   command -v claude >/dev/null || {
     echo "FAIL: selected cells require Claude, but claude is not on PATH" >&2
@@ -346,7 +351,7 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
   printf '\n== %s: %s, %s, %s seat(s), %s cost, timeout %s (+180s watchdog) ==\n' \
     "$cell" "$harness" "$models" "$seats" "$cost" "$declared_timeout"
 
-  setsid stdbuf -oL -eL st2 eval "./cells/$cell/" --keep > "$log" 2>&1 &
+  setsid stdbuf -oL -eL "$eval_bin" eval "./cells/$cell/" --keep > "$log" 2>&1 &
   eval_pid=$!
   catalog="/tmp/st2e-$eval_pid"
   started=$SECONDS

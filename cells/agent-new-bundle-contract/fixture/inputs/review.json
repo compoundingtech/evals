@@ -1,0 +1,18 @@
+{
+  "schema": "axe.agent-creation-intent.v1",
+  "decision": "commit",
+  "identity": "livestore.pr-1520.review",
+  "workspace": "/workspace/livestore",
+  "goal": "Review LiveStore pull request 1520 and report only evidence-backed blockers.",
+  "references": [
+    "https://github.com/livestorejs/livestore/pull/1520"
+  ],
+  "trajectory": {
+    "harness": "claude",
+    "model": "claude-sonnet-5",
+    "effort": "medium",
+    "persona": "reviewer",
+    "mode": "managed-unattended",
+    "boot": "managed-v1"
+  }
+}

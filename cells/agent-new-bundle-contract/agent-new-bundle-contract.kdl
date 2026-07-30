@@ -1,0 +1,39 @@
+// Deterministic B2 lowering: typed creation intent becomes one canonical Agent Spec
+// plus the initial inbox Resource, while invalid or over-specified intent fails closed.
+eval {
+  copy "./fixture"
+  max-timeout "60s"
+
+  run "implementation" {
+    command "bash ./render-intent.sh ./inputs/implementation.json ./out/implementation"
+  }
+  run "review" {
+    command "bash ./render-intent.sh ./inputs/review.json ./out/review"
+  }
+  run "forbidden-account" {
+    allow-nonzero
+    command "bash ./render-intent.sh ./inputs/forbidden-account.json ./out/forbidden-account"
+  }
+  run "trajectory-drift" {
+    allow-nonzero
+    command "bash ./render-intent.sh ./inputs/trajectory-drift.json ./out/trajectory-drift"
+  }
+
+  judges {
+    judge "IMPLEMENTATION — typed intent lowers to the exact canonical managed trajectory" {
+      exec "bash ./judges/grade.sh implementation"
+    }
+    judge "REVIEW — a second semantic intent lowers without renderer special cases" {
+      exec "bash ./judges/grade.sh review"
+    }
+    judge "INITIAL CONTEXT — goal and references become an inbox Resource, not KDL fields" {
+      exec "bash ./judges/grade.sh inbox"
+    }
+    judge "CLOSED INPUT — account pins, unknown fields, and unstable trajectory values fail closed" {
+      exec #"test "$RUN_forbidden_account_EXIT" -ne 0 && test "$RUN_trajectory_drift_EXIT" -ne 0"#
+    }
+    judge "NEGATIVE CONTROLS — raw provider argv, trajectory drift, and missing context are rejected" {
+      exec "bash ./judges/mutation-check.sh"
+    }
+  }
+}

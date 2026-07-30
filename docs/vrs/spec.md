@@ -76,6 +76,35 @@ and continues or stops.
   current runtime—st2 today—executes that unit; evals supplies scenarios and
   evidence about whether the shape works.
 
+## Human session-creation handoff
+
+The `agent-new-interview` and `agent-new-bundle-contract` cells split the
+human-facing creation workflow at one typed seam:
+
+```text
+one-sentence human request
+  -> short-lived interviewer
+  -> axe.agent-creation-intent.v1
+  -> deterministic Agent Spec + initial inbox Resource
+```
+
+- **R01-R05:** The paid cell evaluates interviewer judgment from a frozen
+  one-sentence request and local GitHub-reference snapshot. The model-free cell
+  evaluates the renderer contract across multiple intents and closed-input
+  failures. Held-out mutation controls reject raw provider argv, drift between
+  intent and KDL, and missing initial context.
+- **R06-R09:** The judgment cell uses one explicitly pinned Claude Sonnet seat
+  at medium effort and a five-minute cell timeout. The deterministic cell has
+  no model seat and a one-minute timeout. Normal st2 eval cleanup and receipt
+  policy applies to both.
+- The interviewer output is semantic intent, not KDL. Stable launch axes are
+  explicit in that intent; the deterministic boundary owns canonical KDL,
+  keeps account selection out of durable state, and places the goal and
+  references in an initial inbox Resource.
+- Passing model-free evidence proves the bundle boundary and its negative
+  controls only. The autonomous-selection claim remains unaccepted until the
+  paid judgment cell has a structured PASS receipt.
+
 The owner updates this spec with the corpus. Changing
 [vision.md](./vision.md) or [requirements.md](./requirements.md) requires
 Nathan's explicit approval.

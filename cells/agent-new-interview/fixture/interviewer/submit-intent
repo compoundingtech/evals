@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+tmp="$(mktemp)"
+trap 'rm -f -- "$tmp"' EXIT
+cat >"$tmp"
+bash ./render-intent.sh "$tmp" ./result
+printf 'committed %s\n' "$(jq -r .identity ./result/intent.json)"

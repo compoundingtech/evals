@@ -1,0 +1,36 @@
+// One short human request is classified by a constrained temporary interviewer.
+// The interviewer emits semantic intent only; the fixture's deterministic submit
+// boundary validates that intent and renders the final B2 bundle.
+team "new" {
+  agent "interviewer" {
+    workspace "./interviewer"
+    env { ST_AGENT "new.interviewer" }
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act on every message, archive each handled item, and report completion or blockers over the st2 bus. Pipe every message body through stdin with a quoted heredoc delimiter.'"#
+    ding
+  }
+}
+
+eval {
+  copy "./fixture"
+  message {
+    from "requester"
+    to "new.interviewer"
+    content "./task.md"
+  }
+  max-timeout "300s"
+
+  judges {
+    judge "SEMANTIC INTENT — the one-sentence request becomes the expected typed decision" {
+      exec "bash ./judges/grade.sh intent"
+    }
+    judge "CANONICAL BUNDLE — deterministic lowering owns every stable launch axis" {
+      exec "bash ./judges/grade.sh bundle"
+    }
+    judge "INITIAL CONTEXT — goal and GitHub reference are preserved in the inbox Resource" {
+      exec "bash ./judges/grade.sh inbox"
+    }
+    judge "BOUNDARY — the interviewer neither authors KDL nor selects an account" {
+      exec "bash ./judges/grade.sh boundary"
+    }
+  }
+}

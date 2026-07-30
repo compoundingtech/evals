@@ -21,6 +21,18 @@ fail() {
   exit 1
 }
 
+materialize_empty_fixture_dirs() {
+  local pair="$1" root="$2"
+  case "$pair" in
+    vrs-scope-pressure)
+      mkdir -p "$root/docs"
+      ;;
+    vrs-definition-of-done)
+      mkdir -p "$root/docs" "$root/bin"
+      ;;
+  esac
+}
+
 for pair in "${pairs[@]}"; do
   present="cells/$pair-present"
   absent="cells/$pair-absent"
@@ -36,11 +48,15 @@ for pair in "${pairs[@]}"; do
     fail "$pair mutation fixtures differ"
 
   stripped="$scratch/$pair-stripped"
+  control="$scratch/$pair-control"
   cp -a "$present/fixture/repo" "$stripped"
+  cp -a "$absent/fixture/repo" "$control"
+  materialize_empty_fixture_dirs "$pair" "$stripped"
+  materialize_empty_fixture_dirs "$pair" "$control"
   rm -r -- "$stripped/docs/governance"
-  diff -ru --exclude=_git "$stripped" "$absent/fixture/repo" >/dev/null || {
+  diff -ru --exclude=_git "$stripped" "$control" >/dev/null || {
     echo "FAIL: $pair fixture conditions differ beyond docs/governance requirements+spec" >&2
-    diff -ru --exclude=_git "$stripped" "$absent/fixture/repo" >&2 || true
+    diff -ru --exclude=_git "$stripped" "$control" >&2 || true
     exit 1
   }
 
@@ -61,6 +77,7 @@ hydrate() {
   local pair="$1" condition="$2" name="$3"
   mkdir -p "$scratch/$name"
   cp -a "cells/$pair-$condition/fixture/repo" "$scratch/$name/repo"
+  materialize_empty_fixture_dirs "$pair" "$scratch/$name/repo"
   mv "$scratch/$name/repo/_git" "$scratch/$name/repo/.git"
 }
 

@@ -1,0 +1,42 @@
+// A shared workspace target has one coherent desired state across its active owners.
+eval {
+  copy "./fixture"
+  max-timeout "60s"
+
+  run "validate-conflict" {
+    allow-nonzero
+    command #"st2 validate --json --strict --catalog "$CATALOG/conflict" --host evalhost"#
+  }
+  run "materialize-conflict" {
+    allow-nonzero
+    command #"st2 up --catalog "$CATALOG/conflict" --host evalhost --materialize-only"#
+  }
+  run "materialize-targeted-conflict" {
+    allow-nonzero
+    command #"st2 up --catalog "$CATALOG/conflict" --host evalhost --materialize-only --task evalhost.worker.agent"#
+  }
+  run "materialize-equivalent" {
+    command #"st2 up --catalog "$CATALOG/equivalent" --host evalhost --materialize-only"#
+  }
+  run "inspect" {
+    command "bash ./inspect.sh"
+  }
+
+  judges {
+    judge "VALIDATION — incompatible shared target ownership is a stable error" {
+      exec #"test "$RUN_validate_conflict_EXIT" -ne 0 && jq -e '.issues[] | select(.severity == "error" and .code == "render-owner-conflict")' $RUNS_DIR/validate-conflict.out >/dev/null"#
+    }
+    judge "PREWRITE — full materialization refuses before either owner writes" {
+      exec #"test "$RUN_materialize_conflict_EXIT" -ne 0 && grep -Fqx FULL-CONFLICT-PREWRITE-GREEN-95 $RUNS_DIR/inspect.out"#
+    }
+    judge "TARGETED — selecting one owner cannot bypass its sibling's claim" {
+      exec #"test "$RUN_materialize_targeted_conflict_EXIT" -ne 0 && grep -Fqx TARGETED-CONFLICT-PREWRITE-GREEN-95 $RUNS_DIR/inspect.out"#
+    }
+    judge "EQUIVALENT — byte-identical shared claims remain valid and idempotent" {
+      exec #"grep -Fqx EQUIVALENT-SHARED-GREEN-95 $RUNS_DIR/inspect.out"#
+    }
+    judge "DIAGNOSTIC — the conflict names the target and both owners" {
+      exec #"grep -F '.st2/PERSONA.md' $RUNS_DIR/materialize-conflict.err >/dev/null && grep -F 'evalhost.worker' $RUNS_DIR/materialize-conflict.err >/dev/null && grep -F 'evalhost.orchestrator' $RUNS_DIR/materialize-conflict.err >/dev/null"#
+    }
+  }
+}

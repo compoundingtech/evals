@@ -1,0 +1,9 @@
+agent "orchestrator" {
+  host "evalhost"
+  workspace "$CATALOG/shared"
+  command "true"
+
+  render {
+    copy "_templates/orchestrator.md" ".st2/PERSONA.md"
+  }
+}

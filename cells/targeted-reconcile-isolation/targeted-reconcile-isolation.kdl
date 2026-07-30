@@ -1,0 +1,33 @@
+// Exact task reconciliation and legacy agent-selector refusal over synthetic terminal-free tasks.
+eval {
+  copy "./fixture"
+  max-timeout "60s"
+
+  run "probe" {
+    command "bash ./probe.sh"
+  }
+
+  judges {
+    judge "SURFACE - task is the selected one-shot reconcile selector" {
+      exec "grep -Fqx TASK-SELECTOR-SURFACE-GREEN-4f2d $RUNS_DIR/probe.out"
+    }
+    judge "REFUSAL - once plus agent fails before inspecting the runner" {
+      exec "grep -Fqx LEGACY-ONCE-AGENT-REFUSAL-GREEN-4f2d $RUNS_DIR/probe.out"
+    }
+    judge "REFUSAL STATE - invalid legacy selection leaves both workspaces untouched" {
+      exec "grep -Fqx LEGACY-REFUSAL-NO-MUTATION-GREEN-4f2d $RUNS_DIR/probe.out"
+    }
+    judge "MATERIALIZE - agent remains an owner-only materialization selector" {
+      exec "grep -Fqx AGENT-MATERIALIZE-ONLY-GREEN-4f2d $RUNS_DIR/probe.out"
+    }
+    judge "TARGET - task materializes and launches only the selected owner" {
+      exec "grep -Fqx TARGETED-OWNER-ONLY-GREEN-4f2d $RUNS_DIR/probe.out"
+    }
+    judge "SIBLING - targeted reconcile neither materializes nor launches its sibling" {
+      exec "grep -Fqx TARGETED-SIBLING-ISOLATION-GREEN-4f2d $RUNS_DIR/probe.out"
+    }
+    judge "CONTROL - unselected once reaches both harmless synthetic tasks" {
+      exec "grep -Fqx WHOLE-CATALOG-CONTROL-GREEN-4f2d $RUNS_DIR/probe.out"
+    }
+  }
+}

@@ -1,8 +1,8 @@
 # Canonical st2 agent specification
 
 This is the sole agent-authoring specification for this repository. It is pinned to st2
-[`9887b2842222def0838c2cd82e6c24c218f7efa6`](https://github.com/compoundingtech/st2/commit/9887b2842222def0838c2cd82e6c24c218f7efa6)
-(`0.1.0`, source `9887b28`). It documents the hand-authored KDL accepted at that commit. Do not infer
+[`2caa0d7f159c3c0d9c483bd63b2579d33f1986ff`](https://github.com/compoundingtech/st2/commit/2caa0d7f159c3c0d9c483bd63b2579d33f1986ff)
+(`0.1.0`, source `2caa0d7`). It documents the hand-authored KDL accepted at that commit. Do not infer
 additional fields or commands from older corpus fixtures.
 
 st2 runs long-lived `service` agents made of interactive `pty` tasks and terminal-free `exec` tasks.
@@ -200,6 +200,64 @@ Render expansion begins with catalog/runtime values and `ST_AGENT=<bus-id>`, the
 task named `agent`. Network startup materializes active declarations for the selected host before
 reconciliation; retired and other-host declarations are skipped. A gating failure suppresses only that agent.
 Prefer a catalog-owned `.st2/` overlay and locally excluded tool loaders.
+
+## Experimental read-only plans
+
+The experimental plan surface is pinned to the
+[source sketch revision `5c1d142`](https://gist.github.com/myobie/d5ecfac24cd3965e095a5031cd2e00cb/5c1d1427c0556d95d13890e5c5086cd85b25d994).
+An external plan is a top-level declaration:
+
+```kdl
+plan "ship-remote-approvals" {
+  owner "app-web"
+  version "0000" resource="file:versions/0000.md"
+  version "0001" resource="file:versions/0001.md" {
+    parent "0000"
+    why "Browser proof exposed an approval race."
+  }
+}
+```
+
+An agent links it with a source-relative declaration:
+
+```kdl
+agent "app-web" {
+  plan-ref "file:plans/ship-remote-approvals/plan.kdl"
+}
+```
+
+The equivalent agent-local form derives its owner from the containing explicit
+agent identity:
+
+```kdl
+agent "app-web" {
+  plan "review-follow-up" {
+    version "0000" resource="file:plans/review-follow-up.md"
+  }
+}
+```
+
+Plan identity is the explicit KDL value, never its directory. External plans
+require one `owner`. Each version requires one source-relative `file:` resource.
+A version may repeat `parent` for multiple immutable parents; parents must
+exist, be unique, and form an acyclic graph. A version with parents requires
+one non-empty `why`. The sorted frontier is derived as every version with no
+child, retaining concurrent siblings. `plan-ref` and version resources resolve
+relative to their declaring KDL and must remain inside the selected catalog.
+
+The only supported CLI is read-only:
+
+```sh
+st2 plan validate [PATH] [--json]
+st2 plan list [PATH] [--json]
+st2 plan show <identity> [PATH] [--json]
+st2 plan inspect <identity> [PATH] [--json]
+```
+
+Global `--catalog` selects the same input. The experiment has no current
+pointer, execution, controller, schedule, step graph, retry, claim, receipt,
+event, reconciliation mutation, agent restart, CAS, merge, or deployment
+behavior. Direct KDL and direct human-to-agent planning remain supported.
 
 ## Validation, health, and lifecycle
 
@@ -432,8 +490,7 @@ Inspect the declaration, every referenced template, and every workspace destinat
 materialization command. Materialization is byte-idempotent and does not imply hook installation. Starting
 the network is a separate, explicitly authorized action.
 
-For source `9887b28`, the accepted Linux executable has SHA256
-`d49d44fd4f3f6f655455c212353a469fefa956082bedf22163deb767d8a36a0d`; its published archive has SHA256
-`32ee103bd17ccb3e155ac63d816a3906c2470a3c98e3cc04b56e5a67138b9927`. `bin/check-corpus.sh` verifies
-the variable-age version contract, exact installed binary, embedded full source commit, strict semantic
+For source `2caa0d7f159c3c0d9c483bd63b2579d33f1986ff`, the accepted local-source Linux executable has
+SHA256 `83efb0564a3cd366404495936b1e29a30ea210b0e429dbfeb6901830b2c49c38`. `bin/check-corpus.sh` verifies
+the variable-age version contract, exact installed binary, shared source-pin consistency, strict semantic
 validation, fixture resets, and the rest of the model-free corpus gate before an eval may run.

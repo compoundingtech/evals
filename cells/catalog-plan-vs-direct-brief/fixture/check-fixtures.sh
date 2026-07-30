@@ -8,8 +8,11 @@ scenario="$root/scenario.tsv"
 measurements="$root/measurement-schema.tsv"
 receipts="$root/receipt-schema.tsv"
 blockers="$root/blockers.tsv"
+runner="$root/runner.tsv"
 lineage="$root/arm-a/catalog/plans/receipt-report/lineage.tsv"
 thread="$root/arm-b/inbox/thread.tsv"
+plan_declaration="$root/arm-a/catalog/plans/receipt-report/plan.kdl"
+agent_declaration="$root/arm-a/catalog/agents/eval/receipt-worker/agent.kdl"
 plan_0000="$root/arm-a/catalog/plans/receipt-report/versions/0000.md"
 plan_0001="$root/arm-a/catalog/plans/receipt-report/versions/0001.md"
 brief_0000="$root/arm-b/inbox/brief-0000.md"
@@ -38,6 +41,7 @@ expect_header "$scenario" $'ordinal\tevent\tarm_a_input\tarm_b_input\tinvariant'
 expect_header "$measurements" $'metric\ttype\tunit\trole\tpreferred_direction\tmodel_free_value\tlive_source'
 expect_header "$receipts" $'field\ttype\trequired\tdescription'
 expect_header "$blockers" $'blocker_id\towner\tdependency\trequired_evidence\tstatus'
+expect_header "$runner" $'field\tvalue'
 expect_header "$lineage" $'version\tparent\treason\tbody_sha256'
 expect_header "$thread" $'revision\tparent\treason\tbody_sha256'
 
@@ -46,6 +50,7 @@ test "$(awk -F '\t' 'NR > 1 { count++ } END { print count + 0 }' "$scenario")" -
 test "$(awk -F '\t' 'NR > 1 { count++ } END { print count + 0 }' "$measurements")" -eq 10
 test "$(awk -F '\t' 'NR > 1 { count++ } END { print count + 0 }' "$receipts")" -eq 17
 test "$(awk -F '\t' 'NR > 1 { count++ } END { print count + 0 }' "$blockers")" -eq 2
+test "$(awk -F '\t' 'NR > 1 { count++ } END { print count + 0 }' "$runner")" -eq 8
 
 grep -Fqx $'allowed_tools\tnode,bash,git' "$experiment"
 grep -Fqx $'network_policy\tdisabled' "$experiment"
@@ -53,6 +58,19 @@ grep -Fqx $'wall_budget_seconds\t1200' "$experiment"
 grep -Fqx $'model_token_budget\t40000' "$experiment"
 grep -Fqx $'initial_revision\t0000' "$experiment"
 grep -Fqx $'steering_revision\t0001' "$experiment"
+grep -Fqx $'source_gist\thttps://gist.github.com/myobie/d5ecfac24cd3965e095a5031cd2e00cb/5c1d1427c0556d95d13890e5c5086cd85b25d994' "$experiment"
+grep -Fqx $'source_gist_revision\t5c1d1427c0556d95d13890e5c5086cd85b25d994' "$experiment"
+grep -Fqx $'st2_plan_source\t2caa0d7f159c3c0d9c483bd63b2579d33f1986ff' "$experiment"
+grep -Fqx $'st2_plan_binary_sha256\t83efb0564a3cd366404495936b1e29a30ea210b0e429dbfeb6901830b2c49c38' "$experiment"
+grep -Fqx $'live_run_status\tblocked-pending-separate-paid-authorization' "$experiment"
+grep -Fqx $'st2_pr\thttps://github.com/compoundingtech/st2/pull/115' "$runner"
+grep -Fqx $'source_full\t2caa0d7f159c3c0d9c483bd63b2579d33f1986ff' "$runner"
+grep -Fqx $'source_short\t2caa0d7' "$runner"
+grep -Fqx $'binary_sha256\t83efb0564a3cd366404495936b1e29a30ea210b0e429dbfeb6901830b2c49c38' "$runner"
+grep -Fqx $'source_gist_revision\t5c1d1427c0556d95d13890e5c5086cd85b25d994' "$runner"
+grep -Fqx $'runtime_scope\tread-only-validate-list-show-inspect' "$runner"
+grep -Fqx $'hosted_run\thttps://github.com/compoundingtech/st2/actions/runs/30589548410' "$runner"
+grep -Fqx $'hosted_status\tpass' "$runner"
 
 cmp -s "$plan_0000" "$brief_0000"
 cmp -s "$plan_0001" "$brief_0001"
@@ -83,6 +101,14 @@ grep -Fqx "0000	-	initial frozen repository task	$expected_0000" "$lineage"
 grep -Fqx "0001	0000	human steering tightens input validation without changing scope	$expected_0001" "$lineage"
 grep -Fqx "0000	-	initial frozen repository task	$expected_0000" "$thread"
 grep -Fqx "0001	0000	human steering tightens input validation without changing scope	$expected_0001" "$thread"
+grep -Fqx 'plan "receipt-report" {' "$plan_declaration"
+grep -Fqx '  owner "receipt-worker"' "$plan_declaration"
+grep -Fqx '  version "0000" resource="file:versions/0000.md"' "$plan_declaration"
+grep -Fqx '  version "0001" resource="file:versions/0001.md" {' "$plan_declaration"
+grep -Fqx '    parent "0000"' "$plan_declaration"
+grep -Fqx '    why "Human steering tightens input validation without changing scope."' "$plan_declaration"
+grep -Fqx 'agent "receipt-worker" {' "$agent_declaration"
+grep -Fqx '  plan-ref "file:../../../plans/receipt-report/plan.kdl"' "$agent_declaration"
 
 if (
   cd "$root/task-repo"
@@ -141,20 +167,22 @@ while IFS=$'\t' read -r path expected; do
   test "$actual" = "$expected"
   checked=$((checked + 1))
 done <"$root/provenance.tsv"
-test "$checked" -eq 23
+test "$checked" -eq 29
 echo "PROVENANCE-GREEN-43af"
 
-test "$(awk -F '\t' 'NR > 1 && $5 == "blocked" { count++ } END { print count + 0 }' "$blockers")" -eq 2
-grep -Fq 'exact immutable source head' "$blockers"
-grep -Fq 'reproducible binary path and SHA256' "$blockers"
+test "$(awk -F '\t' 'NR > 1 && $5 == "ready" { count++ } END { print count + 0 }' "$blockers")" -eq 1
+test "$(awk -F '\t' 'NR > 1 && $5 == "blocked" { count++ } END { print count + 0 }' "$blockers")" -eq 1
+grep -Fq '2caa0d7f159c3c0d9c483bd63b2579d33f1986ff' "$blockers"
+grep -Fq '83efb0564a3cd366404495936b1e29a30ea210b0e429dbfeb6901830b2c49c38' "$blockers"
+grep -Fq 'hosted run 30589548410 green' "$blockers"
 grep -Fq 'separate authorization' "$blockers"
-test -z "$(find "$root/arm-a" -type f -name '*.kdl' -print -quit)"
-echo "PRODUCT-BLOCKERS-GREEN-43af"
+test "$(find "$root/arm-a" -type f -name '*.kdl' | wc -l)" -eq 2
+echo "PRODUCT-PAIRING-GREEN-43af"
 
 if rg -n --pcre2 \
   '(^|[;&|][[:space:]]*)(claude|codex|curl|wget|ssh|gh|st2[[:space:]]+(up|eval|ping)|pty[[:space:]]+(run|send)|eval)[[:space:]]' \
   "$root" -g '*.sh' -g '*.kdl'; then
-  echo "fixture contains a provider, network, product runtime, or nested eval command" >&2
+  echo "fixture contains a provider, network, mutating product runtime, or nested eval command" >&2
   exit 1
 fi
 echo "HERMETIC-SCAFFOLD-GREEN-43af"

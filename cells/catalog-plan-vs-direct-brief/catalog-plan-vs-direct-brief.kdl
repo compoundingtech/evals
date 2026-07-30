@@ -6,6 +6,9 @@ eval {
   run "fixture-contract" {
     command "bash ./check-fixtures.sh"
   }
+  run "plan-contract" {
+    command "bash ./check-plan-contract.sh"
+  }
 
   judges {
     judge "TASK — frozen repository starts red and its arm-neutral reference implementation passes" {
@@ -29,10 +32,28 @@ eval {
     judge "PROVENANCE — every authoritative input has a verified content hash" {
       exec "grep -Fqx PROVENANCE-GREEN-43af $RUNS_DIR/fixture-contract.out"
     }
-    judge "BOUNDARY — unsupported plan runtime and paid execution remain explicit blockers" {
-      exec "grep -Fqx PRODUCT-BLOCKERS-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    judge "PAIRING — exact experimental source and artifact are frozen while live execution stays blocked" {
+      exec "grep -Fqx PRODUCT-PAIRING-GREEN-43af $RUNS_DIR/fixture-contract.out"
     }
-    judge "HERMETIC — the scaffold launches no model, provider, network client, or product runtime" {
+    judge "RUNNER — the exact experimental st2 binary matches the accepted source and SHA256" {
+      exec "grep -Fqx PLAN-RUNNER-PIN-GREEN-43af $RUNS_DIR/plan-contract.out"
+    }
+    judge "PLAN VALIDATE — the external plan and agent reference normalize without errors" {
+      exec "grep -Fqx PLAN-VALIDATE-GREEN-43af $RUNS_DIR/plan-contract.out"
+    }
+    judge "PLAN LIST — explicit identity, owner, and derived frontier are exact" {
+      exec "grep -Fqx PLAN-LIST-GREEN-43af $RUNS_DIR/plan-contract.out"
+    }
+    judge "PLAN SHOW — normalized intent exposes versions but not provenance paths" {
+      exec "grep -Fqx PLAN-SHOW-GREEN-43af $RUNS_DIR/plan-contract.out"
+    }
+    judge "PLAN INSPECT — provenance and resolved resources are exact and read-only" {
+      exec "grep -Fqx PLAN-INSPECT-READONLY-GREEN-43af $RUNS_DIR/plan-contract.out"
+    }
+    judge "PLAN BOUNDARY — a mutable current pointer is rejected with a classified error" {
+      exec "grep -Fqx PLAN-BOUNDARY-GREEN-43af $RUNS_DIR/plan-contract.out"
+    }
+    judge "HERMETIC — the scaffold launches no model, provider, network client, or mutating product runtime" {
       exec "grep -Fqx HERMETIC-SCAFFOLD-GREEN-43af $RUNS_DIR/fixture-contract.out"
     }
   }

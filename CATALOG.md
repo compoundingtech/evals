@@ -16,7 +16,7 @@ harness-native loader plus canonical hook file.
 
 | Cell | Harness | Model(s) / effort | Model seats | Cost | Timeout | Held-out judges | Latest accepted PASS | Last recorded run |
 |---|---|---|---:|---|---|---:|---|---|
-| `catalog-plan-vs-direct-brief` | model-free | — | 0 | none | `60s` | 9 | — | **NO STRUCTURED RUN** |
+| `catalog-plan-vs-direct-brief` | model-free | — | 0 | none | `60s` | 15 | — | **NO STRUCTURED RUN** |
 | `context-resource-continuity` | model-free | — | 0 | none | `90s` | 4 | — | **NO STRUCTURED RUN** |
 | `crash-ding` | mixed | `claude-sonnet-5+gpt-5.6-sol` / medium | 4 | high | `180s` | 5 | — | **NO STRUCTURED RUN** |
 | `ding-mode` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 4 | — | **NO STRUCTURED RUN** |

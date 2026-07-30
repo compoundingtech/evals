@@ -1,5 +1,6 @@
 cell	surface	reason
 agent-new-bundle-contract	cell	deterministic semantic-intent lowering and mutation probe; no harness seat
+canonical-agent-runtime-smoke	cell	deterministic canonical Agent Spec boot, kickoff, reply, and teardown probe; no harness seat
 context-resource-continuity	cell	deterministic native context/resource restart probe; no harness seat
 docs	judge:cold-reader	one-shot offline Claude print grader; no bus identity, DING, or hook surface
 exec-lifecycle-logging	cell	deterministic native exec lifecycle probe; no harness seat

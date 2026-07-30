@@ -56,19 +56,28 @@ for cell in "${cells[@]}"; do
     if [[ "$file" == *.kdl ]]; then
       code="${code%%//*}"
     fi
-    if [[ "$code" =~ exec[[:space:]]+claude([[:space:]]|$) ]] ||
-      [[ "$code" =~ (^|[^[:alnum:]_-])claude[[:space:]]+- ]] ||
-      [[ "$code" =~ exec[[:space:]]+axe[[:space:]]+agent[[:space:]]+launch[[:space:]].*--harness[[:space:]]+claude([[:space:]]|$) ]]; then
+    scan_code="$code"
+    if [[ "$file" == *.kdl.template ]]; then
+      scan_code="${code//\"/}"
+    fi
+    if [[ "$scan_code" =~ exec[[:space:]]+claude([[:space:]]|$) ]] ||
+      [[ "$scan_code" =~ (^|[^[:alnum:]_-])claude[[:space:]]+- ]] ||
+      [[ "$scan_code" =~ (exec[[:space:]]+axe|argv[[:space:]]+[^[:space:]]+)[[:space:]]+agent[[:space:]]+launch[[:space:]].*--harness[[:space:]]+claude([[:space:]]|$) ]]; then
       ((claude += 1))
-    elif [[ "$code" =~ exec[[:space:]]+codex([[:space:]]|$) ]] ||
-      [[ "$code" =~ (^|[^[:alnum:]_-])codex[[:space:]]+- ]] ||
-      [[ "$code" =~ exec[[:space:]]+axe[[:space:]]+agent[[:space:]]+launch[[:space:]].*--harness[[:space:]]+codex([[:space:]]|$) ]]; then
+    elif [[ "$scan_code" =~ exec[[:space:]]+codex([[:space:]]|$) ]] ||
+      [[ "$scan_code" =~ (^|[^[:alnum:]_-])codex[[:space:]]+- ]] ||
+      [[ "$scan_code" =~ (exec[[:space:]]+axe|argv[[:space:]]+[^[:space:]]+)[[:space:]]+agent[[:space:]]+launch[[:space:]].*--harness[[:space:]]+codex([[:space:]]|$) ]]; then
       ((codex += 1))
     fi
   done < <(
-    rg -n --no-heading \
-      'exec[[:space:]]+(claude|codex)|(^|[^[:alnum:]_-])(claude|codex)[[:space:]]+-|exec[[:space:]]+axe[[:space:]]+agent[[:space:]]+launch' \
-      "$cell_dir" -g '*.kdl' -g '*.sh' -g '!**/_git/**' || true
+    {
+      rg -n --no-heading \
+        'exec[[:space:]]+(claude|codex)|(^|[^[:alnum:]_-])(claude|codex)[[:space:]]+-|axe[[:space:]]+agent[[:space:]]+launch' \
+        "$cell_dir" -g '*.kdl' -g '*.sh' -g '!**/_git/**' || true
+      rg -n --no-heading \
+        '"agent"[[:space:]]+"launch"' \
+        "$cell_dir" -g '*.kdl.template' || true
+    }
   )
 
   seats=$((claude + codex))

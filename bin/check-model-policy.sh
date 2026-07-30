@@ -29,6 +29,10 @@ while IFS=: read -r file line text; do
   if [[ "$file" == *.kdl ]]; then
     code="${code%%//*}"
   fi
+  if [[ "$file" == *.kdl.template && "$code" == *argv* && "$code" == *'"agent" "launch"'* ]]; then
+    code="${code//\"/}"
+    code="${code/agent launch/axe agent launch}"
+  fi
 
   remaining="$code"
   remaining="${remaining//--harness claude/--harness claude_harness}"
@@ -108,9 +112,14 @@ while IFS=: read -r file line text; do
     axe_remaining="$axe_after"
   done
 done < <(
-  rg --no-ignore -n --no-heading \
-    'exec[[:space:]]+(claude|codex)|(^|[^[:alnum:]_-])(claude|codex)[[:space:]]+-|axe[[:space:]]+agent[[:space:]]+launch' \
-    "$scan_root" -g '*.kdl' -g '*.sh' -g '!**/_git/**' || true
+  {
+    rg --no-ignore -n --no-heading \
+      'exec[[:space:]]+(claude|codex)|(^|[^[:alnum:]_-])(claude|codex)[[:space:]]+-|axe[[:space:]]+agent[[:space:]]+launch' \
+      "$scan_root" -g '*.kdl' -g '*.sh' -g '!**/_git/**' || true
+    rg --no-ignore -n --no-heading \
+      '"agent"[[:space:]]+"launch"' \
+      "$scan_root" -g '*.kdl.template' || true
+  }
 )
 
 [ "$launches" -gt 0 ] || fail "no maintained Claude or Codex launch sites were found"

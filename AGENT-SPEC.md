@@ -1,8 +1,8 @@
 # Canonical st2 agent specification
 
 This is the sole agent-authoring specification for this repository. It is pinned to st2
-[`9887b2842222def0838c2cd82e6c24c218f7efa6`](https://github.com/compoundingtech/st2/commit/9887b2842222def0838c2cd82e6c24c218f7efa6)
-(`0.1.0`, source `9887b28`). It documents the hand-authored KDL accepted at that commit. Do not infer
+[`0ec6a22e877f9374260202c5f76dabc4579fc7e3`](https://github.com/compoundingtech/st2/commit/0ec6a22e877f9374260202c5f76dabc4579fc7e3)
+(`0.1.0`, source `0ec6a22`). It documents the hand-authored KDL accepted at that commit. Do not infer
 additional fields or commands from older corpus fixtures.
 
 st2 runs long-lived `service` agents made of interactive `pty` tasks and terminal-free `exec` tasks.

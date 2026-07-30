@@ -1,0 +1,9 @@
+agent "probe" {
+  identity "probe"
+  host "evalhost"
+  workspace "$CATALOG"
+  env {
+    ST_AGENT "evalhost.probe"
+  }
+  argv "bash" "$CATALOG/probe.sh"
+}

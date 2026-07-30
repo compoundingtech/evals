@@ -1,20 +1,17 @@
 // One short human request is classified by a constrained temporary interviewer.
 // The interviewer emits semantic intent only; the fixture's deterministic submit
 // boundary validates that intent and renders the final B2 bundle.
-team "new" {
-  agent "interviewer" {
-    workspace "./interviewer"
-    env { ST_AGENT "new.interviewer" }
-    command #"exec axe agent launch --harness claude --persona generalist --model claude-sonnet-5 --effort medium --mode managed-unattended --boot managed-v1"#
-    ding
-  }
-}
+host "evalhost"
 
 eval {
   copy "./fixture"
+  run "publish-canonical-interviewer" {
+    command "bash ./publish-interviewer.sh"
+  }
+  canonical-agents
   message {
     from "requester"
-    to "new.interviewer"
+    to "evalhost.interviewer"
     content "./task.md"
   }
   max-timeout "300s"

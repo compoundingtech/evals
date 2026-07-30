@@ -107,14 +107,24 @@ one-sentence human request
   account per run. Corpus inventory, model policy, lifecycle, and harness
   checks recognize this typed launch as a paid model seat and reject durable
   account pins.
-- **Current composition gate:** `st2 eval` currently boots legacy team
-  `command` seats without creating a canonical Agent Spec for the temporary
-  identity. Axe correctly rejects that seat before account selection because
-  `ST_AGENT` resolves to zero canonical specs. This is a blocked paid
-  experiment, not evidence against account selection or interviewer judgment.
-  The accepted direction is to make eval seats canonical at the runtime seam;
-  a cell-local compatibility wrapper, fabricated spec, account pin, or ambient
-  bare-provider launch is outside the contract.
+- The paid cell uses st2's explicit `canonical-agents` seam. A deterministic
+  pre-admission run reads the active runtime profile and publishes one
+  canonical interviewer declaration with its exact immutable Axe adapter,
+  absolute profile path, and canonical persona source. st2 then carries that
+  declaration unchanged through strict validation, materialization, launch,
+  kickoff routing, singleton completion, and teardown. No compact eval seat,
+  compatibility wrapper, account pin, or ambient provider launch participates.
+- The paid cell is environment-bound to that explicit runtime-profile
+  artifact; the artifact identity belongs in run evidence and results are not
+  represented as hermetic across different profiles.
+- The canonical runtime seam removes the prior zero-Agent-Spec admission
+  blocker. The paid judgment run remains held until the host's Claude
+  workspace-trust projection is independently proven; model-free evidence
+  does not establish provider readiness.
+- The model-free `canonical-agent-runtime-smoke` cell independently proves the
+  runtime seam with one deterministic shell Agent Spec: strict admission,
+  boot, canonical kickoff, fresh reply, and normal teardown, with no Axe,
+  account, model, or provider harness.
 - Passing model-free evidence proves the bundle boundary and its negative
   controls only. The autonomous-selection claim remains unaccepted until the
   paid judgment cell has a structured PASS receipt.

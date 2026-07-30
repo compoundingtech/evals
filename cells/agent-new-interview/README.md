@@ -28,27 +28,21 @@ Run it only with explicit paid-run authorization:
 st2 eval ./cells/agent-new-interview/
 ```
 
-## Current composition gate
+## Canonical eval seam
 
-This proposed cell intentionally uses the production typed launch boundary.
-The current `st2 eval` team loader still boots `team { agent { command ... } }`
-seats as transient commands; it does not materialize those seats as canonical
-Agent Specs in the temporary catalog.
+The cell copies its fixture, deterministically publishes one canonical
+`agents/evalhost/interviewer/agent.kdl` from the active runtime profile, and
+then opts into st2's `canonical-agents` admission. The profile supplies the
+exact immutable Axe adapter, absolute runtime-profile path, and canonical
+generalist prompt. The declaration itself owns the typed launch trajectory and
+contains no account pin.
 
-Current Axe admission requires:
+This makes the paid cell environment-bound by design: the selected runtime
+profile is an explicit test prerequisite and part of the run evidence. The
+cell is not hermetic across different profile artifacts.
 
-1. `CATALOG`, `ST_ROOT`, and `PTY_ROOT` to agree on the st2 eval catalog; and
-2. `ST_AGENT` to resolve to exactly one canonical Agent Spec.
-
-With the eval roots supplied, admission reaches the second check and rejects
-`new.interviewer` because the temporary catalog contains zero canonical Agent
-Specs for that identity. Therefore this paid cell currently fails at boot
-before account selection or provider launch. Tokenlens can independently
-return an eligible Claude account, so lack of pool quota is not the blocker.
-
-The principled fix belongs at the st2 eval/Axe composition seam: eval team
-seats should be represented by canonical Agent Specs (or eval should directly
-execute a canonical fleet declaration) and export the catalog-derived roots.
-This cell must not work around the gap by fabricating an Agent Spec from inside
-the seat, pinning an account in KDL, or launching bare Claude with ambient
-credentials.
+st2 validates and materializes that declaration before launch, routes the
+kickoff through its canonical inbox, and requires a fresh interviewer reply
+before the singleton eval can complete. The paid judgment run remains held
+until the host's Claude workspace-trust projection has independent evidence;
+the model-free bundle cell does not prove provider readiness.

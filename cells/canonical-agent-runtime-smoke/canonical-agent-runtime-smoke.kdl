@@ -1,0 +1,21 @@
+host "evalhost"
+
+eval {
+  copy "./fixture"
+  canonical-agents
+  message {
+    from "requester"
+    to "evalhost.probe"
+    content "./task.md"
+  }
+  max-timeout "30s"
+
+  judges {
+    judge "CANONICAL ROOTS — the shell agent receives only the eval-owned catalog, bus, and PTY roots" {
+      exec "test -f $CATALOG/probe/roots-ok"
+    }
+    judge "CANONICAL KICKOFF — the request arrives in the admitted Agent Spec inbox before reply" {
+      exec "test -f $CATALOG/probe/kickoff-seen"
+    }
+  }
+}

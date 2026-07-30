@@ -1,0 +1,28 @@
+agent "interviewer" {
+  identity "interviewer"
+  host "evalhost"
+  workspace "$CATALOG/interviewer"
+
+  restart {
+    attempts 3
+    interval "60s"
+    delay "0s"
+    mode "delay"
+  }
+
+  env {
+    AGENT_LAUNCH_HOSTED "1"
+    AGENT_PERSONA "generalist"
+    AGENT_RUNTIME_PROFILE "@PROFILE@"
+    ST_AGENT "evalhost.interviewer"
+  }
+
+  argv "@ADAPTER@" "agent" "launch" "--harness" "claude" "--model" "claude-sonnet-5" "--effort" "medium" "--persona" "generalist" "--mode" "managed-unattended" "--boot" "managed-v1"
+  ding
+
+  render {
+    copy "_templates/generalist.md" ".st2/PERSONA.md"
+    copy "_templates/bus.st2.md" ".st2/bus.md"
+    git-exclude ".st2/"
+  }
+}

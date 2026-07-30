@@ -8,6 +8,12 @@ set -euo pipefail
 SB="${CATALOG:?CATALOG must be set — st2 eval provides it to run steps}"
 cd "$SB"
 SEED="$SB/.seed"
+AUTHOR_NAME="$(git config --get user.name)"
+AUTHOR_EMAIL="$(git config --get user.email)"
+[ -n "$AUTHOR_NAME" ] && [ -n "$AUTHOR_EMAIL" ] || {
+  echo "FAIL: the invoking Git identity must be configured before materializing the eval" >&2
+  exit 1
+}
 
 echo "== seed clampkit (a tiny Node lib with a PLANTED above-range bug + a RED test) =="
 mkdir -p "$SEED/src" "$SEED/test"
@@ -61,10 +67,10 @@ git -C "$SB/canonical.git" config extensions.worktreeConfig true
 # refuse commit ("must be run in a work tree"). Override core.bare=false per-worktree so the checkouts work.
 git -C "$SB/wt/feature" config --worktree core.bare false
 git -C "$SB/wt/main"    config --worktree core.bare false
-git -C "$SB/wt/feature" config --worktree user.name  "wt-feature"
-git -C "$SB/wt/feature" config --worktree user.email "wt-feature@eval.local"
-git -C "$SB/wt/main"    config --worktree user.name  "wt-main"
-git -C "$SB/wt/main"    config --worktree user.email "wt-main@eval.local"
+git -C "$SB/wt/feature" config --worktree user.name  "$AUTHOR_NAME"
+git -C "$SB/wt/feature" config --worktree user.email "$AUTHOR_EMAIL"
+git -C "$SB/wt/main"    config --worktree user.name  "$AUTHOR_NAME"
+git -C "$SB/wt/main"    config --worktree user.email "$AUTHOR_EMAIL"
 
 echo "== drop the worker persona into wt/feature (git-excluded so it never shows in the agent's status) =="
 cp "$SB/persona/CLAUDE.md" "$SB/persona/PERSONA.md" "$SB/wt/feature/"

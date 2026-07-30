@@ -47,7 +47,7 @@ MD
 echo "== git init seed -> bare canonical.git (the shared object store + refs) =="
 git -C "$SEED" init -q -b main
 git -C "$SEED" add -A
-git -C "$SEED" -c user.name="eval-seed" -c user.email="seed@eval.local" commit -q -m "clampkit: initial (has a planted above-range bug)"
+git -C "$SEED" commit -q -m "clampkit: initial (has a planted above-range bug)"
 git clone -q --bare "$SEED" "$SB/canonical.git"
 
 echo "== add TWO linked worktrees off the bare canonical (the megarepo shape) =="

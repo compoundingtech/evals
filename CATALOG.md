@@ -94,7 +94,7 @@ while the last-run column makes a recorded failure distinct from a cell with no 
 - `strict-validation-json` / `cell` — deterministic native validation-diagnostics probe; no harness seat
 - `st2-doctor-structure` / `cell` — deterministic catalog-health probe; no harness seat
 - `st2-network` / `cell` — deterministic catalog/message round-trip probe; no harness seat
-- `targeted-reconcile-isolation` / `cell` — deterministic selected reconcile isolation probe; no harness seat
+- `targeted-reconcile-isolation` / `cell` — deterministic selected reconcile isolation probe; no bus-connected agent
 - `two-networks-coexist` / `cell` — deterministic catalog-isolation probe; no harness seat
 
 These **15** rows are generated from structured exclusions. A cell-level row is required for

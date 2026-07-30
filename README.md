@@ -97,7 +97,7 @@ VERDICT: PASS
 ```
 
 Requirements are `st2 0.1.0` from source
-[`9887b28`](https://github.com/compoundingtech/st2/commit/9887b2842222def0838c2cd82e6c24c218f7efa6),
+[`0fed14b`](https://github.com/compoundingtech/st2/commit/0fed14bb5653b67e1d64f1199e240c4c5c612bf7),
 `pty`, Bash, Git, `jq`, Rust/Cargo for the pinned KDL parser gate, and Node for JavaScript fixtures. A paid cell
 also needs every harness named by its dry-run row.
 
@@ -122,6 +122,17 @@ current bus-connected model agent.
 
 Team-less cells use deterministic `run` steps and judges without a model. Current examples cover native hook
 materialization, network health, catalog/pty isolation, and pty send/peek behavior.
+
+## Native Resource-envelope acceptance
+
+`agent-spec-resource-bindings` is the model-free companion to
+[`compoundingtech/st2#86`](https://github.com/compoundingtech/st2/pull/86). It exercises native catalog
+declarations rather than the tournament's synthetic Resource documents. The cell proves strict envelope
+validation, deterministic `st2 agents --json` inspection, opaque downstream tags, exact URI preservation, and
+adoption of a live task after a Resource-only declaration edit.
+
+Folder-eval Resource projection, Resource resolution, access, readiness, and lifecycle policy are outside this
+cell. The portable Agent Spec envelope does not imply any of them.
 
 ## Resource-binding tournament
 

@@ -46,7 +46,7 @@ if [ -z "$ready_line" ] || [ -z "$send_line" ] || [ "$ready_line" -ge "$send_lin
 fi
 
 BUS="$SANDBOX/bus"
-ST_ROOT="$BUS" st2 message send receiver --as sender --subject "durable context changed" \
+st2 message send receiver --catalog "$BUS" --as sender --subject "durable context changed" \
   -m "Durable context changed. Reconcile your own current declaration now." >/dev/null
 MESSAGES=("$BUS/receiver/inbox/"*)
 if [ "${#MESSAGES[@]}" -ne 1 ] ||

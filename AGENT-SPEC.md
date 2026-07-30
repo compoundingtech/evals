@@ -5,8 +5,8 @@ by evals. st2 is the current implementation, not the owner of the contract; a fu
 implementation can target the same contract and proofs.
 
 The current corpus proof is pinned to st2
-[`9887b2842222def0838c2cd82e6c24c218f7efa6`](https://github.com/compoundingtech/st2/commit/9887b2842222def0838c2cd82e6c24c218f7efa6)
-(`0.1.0`, source `9887b28`). The pin identifies the implementation and version the corpus currently proves; it
+[`0fed14bb5653b67e1d64f1199e240c4c5c612bf7`](https://github.com/compoundingtech/st2/commit/0fed14bb5653b67e1d64f1199e240c4c5c612bf7)
+(`0.1.0+0fed14b`, source `0fed14b`). The pin identifies the implementation and version the corpus currently proves; it
 does not transfer ownership of the specification to st2. A proposed behavior change must update this contract
 and its maintained proof cells before an implementation claims conformance. Do not infer additional fields or
 commands from older corpus fixtures.
@@ -52,6 +52,8 @@ agent "<identity>" {
   retired #false
   keep #false
 
+  resource "work" _tag="github-issue" uri="github-issue://example/project/123"
+
   restart {
     attempts 3
     interval "60s"
@@ -88,6 +90,7 @@ Supported agent children are:
 | `supervisor "…"` | Optional bare identity or full bus id for crash-loop routing. |
 | `retired #true` | Decommission the declaration on the next reconciliation. Edit this flag; do not delete a live declaration to retire it. |
 | `keep #true` | Freeze dead evidence and suppress collection/restart for every task; retirement still stops live tasks. |
+| `resource "name" _tag="type" uri="absolute-uri"` | Binds one uniquely named, externally identified Resource as declaration metadata. |
 | `restart { … }` | Optional service restart policy. |
 | `env { KEY "value" }` | Environment inherited by the compact agent task and sidecars. |
 | `command "…"` | Compact interactive task named `agent`. |
@@ -105,6 +108,41 @@ seconds or `ms`, `s|sec|secs`, `m|min|mins`, `h|hr|hrs`, and `d|day|days`. `mode
 the window reset; `mode "fail"` parks the task after attempts are exhausted and sends one best-effort
 crash-loop message to `supervisor`. Invalid restart subfields currently fall back to defaults; authors must not
 rely on that permissiveness.
+
+## Resource bindings
+
+An agent may directly carry zero or more Resource bindings:
+
+```kdl
+resource "work" _tag="github-issue" uri="github-issue://example/project/123"
+resource "source" _tag="worktree" uri="worktree://example/project/main"
+```
+
+The positional name is the Resource's agent-local semantic role. Names are non-empty and unique within one
+agent. `_tag` is a non-empty, opaque discriminator owned by the Resource type's downstream contract. `uri` is
+an RFC 3986 absolute URI and is the Resource identity. st2 preserves the URI's exact bytes; it does not
+normalize or resolve it. Declaration order has no meaning. Canonical KDL and supported TOML/JSON parsing lower
+bindings to deterministic name order.
+
+The generic envelope is closed: each binding has exactly the positional name, `_tag`, and `uri`. Missing or
+duplicate fields, duplicate names, child nodes, invalid URI syntax, and unsupported properties such as access
+or readiness policy fail validation. This prevents an ignored property from appearing enforced.
+
+Resource bindings are declaration metadata, not launch targets. They do not make an otherwise unrunnable
+service runnable and are excluded from effective task launch definitions. Editing only Resource bindings
+therefore updates catalog inspection while an already-live task is adopted without stop, replacement, or
+relaunch. `st2 agents --json [--enrich]` exposes every binding as a name-ordered
+`{"name","_tag","uri"}` descriptor and preserves unknown downstream tags.
+
+The envelope does not define Resource schemas, resolution, access grants, required/optional status, readiness,
+lifecycle, mutation, or rendering. A URI's presence grants no authority. Those semantics belong to the
+concrete Resource type and its consumer, not st2.
+
+Executable evidence:
+[`agent-spec-resource-bindings`](cells/agent-spec-resource-bindings/) covers strict parser failures,
+deterministic JSON inspection, exact URI and unknown-tag preservation, Resource-only live adoption, and
+cleanup. The matched [`assignment-contract-*`](cells/) tournament covers direct Resource selection against
+Focus and Assignment controls; direct bindings are the selected treatment.
 
 ## Compact and explicit tasks
 
@@ -398,7 +436,7 @@ Codex launch explicitly selects `gpt-5.6-sol` at medium reasoning effort.
 
 The folder-eval grammar preserves its `team`, `eval`, kickoff, timeout, and held-out judge shape. Its
 agent projection supports `workspace`, `supervisor`, `env`, `command`, explicit `exec`, and bare
-`ding`; it does not accept a catalog `render` block. For that grammar, `eval { copy … }` and a
+`ding`; it does not accept catalog `resource` or `render` nodes. For that grammar, `eval { copy … }` and a
 deterministic pre-boot materializer must place the equivalent harness files in each declared
 workspace:
 
@@ -421,9 +459,9 @@ agent { command "true" }
 At the pinned source it validates as one agent with zero errors and warnings. Production declarations should
 normally make identity, host, `ST_AGENT`, workspace, and the real harness command explicit.
 
-The complete declaration, compact pair, explicit PTY/exec blocks, restart policy, and render block earlier in
-this document collectively exercise every implemented authoring field. Before validating/materializing the
-example, create every `$CATALOG`-rooted workspace it names.
+The complete declaration, Resource bindings, compact pair, explicit PTY/exec blocks, restart policy, and
+render block earlier in this document collectively exercise every implemented authoring field. Before
+validating/materializing the example, create every `$CATALOG`-rooted workspace it names.
 
 ## Free authoring gate
 
@@ -438,8 +476,11 @@ Inspect the declaration, every referenced template, and every workspace destinat
 materialization command. Materialization is byte-idempotent and does not imply hook installation. Starting
 the network is a separate, explicitly authorized action.
 
-For source `9887b28`, the accepted Linux executable has SHA256
-`d49d44fd4f3f6f655455c212353a469fefa956082bedf22163deb767d8a36a0d`; its published archive has SHA256
-`32ee103bd17ccb3e155ac63d816a3906c2470a3c98e3cc04b56e5a67138b9927`. `bin/check-corpus.sh` verifies
-the variable-age version contract, exact installed binary, embedded full source commit, strict semantic
-validation, fixture resets, and the rest of the model-free corpus gate before an eval may run.
+For source `0fed14b`, the accepted pre-merge Nix-built Linux executable has SHA256
+`96b394f270f0a3eb25dd29574a96f30d527a56bee63c2499d6db7e4a58707648`. There is no published portable
+archive for this unmerged commit. After `compoundingtech/st2#86` merges, this pin must move to its accepted
+release and record the fresh-download archive hash before the corpus is ready. `bin/check-corpus.sh` verifies
+the variable-age Nix version contract, exact installed candidate binary, strict semantic validation, fixture
+resets, and the rest of the model-free corpus gate before an eval may run. The pre-merge Nix stamp embeds only
+the short revision, so the full source link above is review/build provenance rather than a claim extracted
+from the binary; the post-merge portable release must restore fresh-download full-source proof.

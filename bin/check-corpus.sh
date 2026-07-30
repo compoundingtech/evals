@@ -5,10 +5,9 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
-expected_source="9887b28"
-expected_source_full="9887b2842222def0838c2cd82e6c24c218f7efa6"
-expected_binary_sha256="d49d44fd4f3f6f655455c212353a469fefa956082bedf22163deb767d8a36a0d"
-expected_version_regex='^st2 0\.1\.0 — running from local source \(9887b28, .+ ago\)$'
+expected_source="0fed14b"
+expected_binary_sha256="96b394f270f0a3eb25dd29574a96f30d527a56bee63c2499d6db7e4a58707648"
+expected_version_regex='^st2 0\.1\.0\+0fed14b — committed .+ ago$'
 st2_path="$(command -v st2)"
 actual_version="$(st2 --version)"
 [[ "$actual_version" =~ $expected_version_regex ]] || {
@@ -20,11 +19,7 @@ actual_binary_sha256="$(sha256sum "$st2_path" | awk '{ print $1 }')"
   echo "FAIL: expected st2 binary sha256 $expected_binary_sha256, found $actual_binary_sha256 at $st2_path" >&2
   exit 1
 }
-LC_ALL=C grep -aFq "$expected_source_full" "$st2_path" || {
-  echo "FAIL: st2 binary at $st2_path does not embed full pinned source $expected_source_full" >&2
-  exit 1
-}
-echo "PASS: pinned runner source $expected_source ($actual_version; sha256 $actual_binary_sha256)"
+echo "PASS: pinned pre-merge Nix candidate $expected_source ($actual_version; sha256 $actual_binary_sha256)"
 
 mapfile -d '' shell_files < <(
   find bin cells -type f -name '*.sh' -not -path '*/_git/*' -print0 | sort -z

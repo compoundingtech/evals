@@ -1,0 +1,12 @@
+identity = "worker"
+host = "rb"
+workspace = "$CATALOG"
+command = "true"
+
+[resource.work]
+_tag = "github-issue"
+uri = "github-issue://example/project/41"
+
+[resource.work]
+_tag = "github-pr"
+uri = "github-pr://example/project/86"

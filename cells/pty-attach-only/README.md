@@ -3,8 +3,8 @@
 **Type:** pty / lifecycle policy · **Ship:** blocked on
 [compoundingtech/pty#122](https://github.com/compoundingtech/pty/issues/122)
 
-**Capabilities required:** `pty,jq,script`. No model and no bus. The cell uses two
-synthetic one-shot commands under an eval-owned PTY root.
+**Capabilities required:** `pty,jq,script`. No model and no bus. The cell uses
+synthetic commands under an eval-owned PTY root.
 
 **Discriminates:** can a relay request a strict attach-only policy that connects
 to an existing daemon but never evaluates retained launch metadata? A dead
@@ -15,14 +15,20 @@ or creating another daemon incarnation.
 
 - **Surface:** `pty attach --help` advertises `--no-restart`, preventing an
   unknown-option failure from masquerading as safe refusal.
+- **Live positive control:** `--no-restart` attaches to a running reader, carries
+  terminal input through an `ACK` round-trip, and exits with that process without
+  creating another incarnation.
 - **Mutation-valid control:** legacy `pty attach` receives queued future input
   through a real terminal and demonstrably restarts its synthetic dead target.
-- **Refusal:** the same input sent to `--no-restart` receives a nonzero exit and
-  no `Restart? [Y/n]` prompt.
+- **Noninteractive refusal:** a no-input terminal produces exactly one expected
+  dead-session diagnostic and exits nonzero; the queued-input leg permits only
+  that diagnostic plus terminal echo. No prompt, command presentation, or other
+  interactive output is accepted.
 - **No new incarnation:** the candidate target's marker and `session_start`
   event count both remain exactly one.
 - **State preservation:** retained metadata remains `exited`, and neither its
-  original pid nor any pid it still records is live.
+  original pid nor any pid it still records identifies a live daemon for the
+  synthetic root and session.
 - **Isolation and cleanup:** both controls use `$CATALOG/attach-only-pty`, and
   the cell removes their exact synthetic records before grading.
 

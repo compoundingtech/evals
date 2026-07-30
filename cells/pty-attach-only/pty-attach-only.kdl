@@ -11,6 +11,9 @@ eval {
     judge "SURFACE - attach exposes an explicit no-restart policy" {
       exec "grep -Fqx ATTACH-ONLY-SURFACE-GREEN-7ca1 $RUNS_DIR/probe.out"
     }
+    judge "LIVE - attach-only connects to a running daemon and carries terminal input" {
+      exec "grep -Fqx LIVE-ATTACH-ROUNDTRIP-GREEN-7ca1 $RUNS_DIR/probe.out"
+    }
     judge "CONTROL - the same queued input restarts a dead session through legacy attach" {
       exec "grep -Fqx LEGACY-RESTART-CONTROL-GREEN-7ca1 $RUNS_DIR/probe.out"
     }

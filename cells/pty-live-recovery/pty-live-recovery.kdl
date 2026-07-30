@@ -1,0 +1,33 @@
+// Live-daemon pathname recovery, exercised only against eval-owned synthetic PTYs.
+eval {
+  copy "./fixture"
+  max-timeout "90s"
+
+  run "probe" {
+    command "bash ./probe.sh"
+  }
+
+  judges {
+    judge "SURFACE - recovery is explicit and snapshot-gated" {
+      exec "grep -Fqx LIVE-RECOVERY-SURFACE-GREEN-c24d $RUNS_DIR/probe.out"
+    }
+    judge "IDENTITY - daemon PID, generation, and start token are unchanged" {
+      exec "grep -Fqx LIVE-RECOVERY-IDENTITY-GREEN-c24d $RUNS_DIR/probe.out"
+    }
+    judge "CONTINUITY - an established client survives and receives post-rebind output" {
+      exec "grep -Fqx LIVE-RECOVERY-CONTINUITY-GREEN-c24d $RUNS_DIR/probe.out"
+    }
+    judge "ATTACHABILITY - a new client reaches the republished pathname" {
+      exec "grep -Fqx LIVE-RECOVERY-NEW-CLIENT-GREEN-c24d $RUNS_DIR/probe.out"
+    }
+    judge "INCARNATION - recovery never launches a second provider" {
+      exec "grep -Fqx LIVE-RECOVERY-NO-DUPLICATE-GREEN-c24d $RUNS_DIR/probe.out"
+    }
+    judge "REFUSAL - an unsupported snapshot is rejected before signaling" {
+      exec "grep -Fqx LIVE-RECOVERY-UNSUPPORTED-REFUSAL-GREEN-c24d $RUNS_DIR/probe.out"
+    }
+    judge "CLEANUP - only synthetic daemons and the eval root are removed" {
+      exec "grep -Fqx LIVE-RECOVERY-CLEANUP-GREEN-c24d $RUNS_DIR/probe.out"
+    }
+  }
+}

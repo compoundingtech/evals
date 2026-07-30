@@ -18,7 +18,7 @@ harness-native loader plus canonical hook file.
 |---|---|---|---:|---|---|---:|---|---|
 | `agent-new-bundle-contract` | model-free | — | 0 | none | `60s` | 5 | — | **NO STRUCTURED RUN** |
 | `agent-new-interview` | Claude | `claude-sonnet-5` / medium | 1 | low | `300s` | 4 | — | **NO STRUCTURED RUN** |
-| `canonical-agent-runtime-smoke` | model-free | — | 0 | none | `30s` | 4 | — | **NO STRUCTURED RUN** |
+| `canonical-agent-runtime-smoke` | model-free | — | 0 | none | `30s` | 7 | — | **NO STRUCTURED RUN** |
 | `context-resource-continuity` | model-free | — | 0 | none | `90s` | 4 | — | **NO STRUCTURED RUN** |
 | `crash-ding` | mixed | `claude-sonnet-5+gpt-5.6-sol` / medium | 4 | high | `180s` | 5 | — | **NO STRUCTURED RUN** |
 | `ding-mode` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 4 | — | **NO STRUCTURED RUN** |

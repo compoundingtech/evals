@@ -5,6 +5,8 @@ test "$CATALOG" = "$ST_ROOT"
 test "$PTY_ROOT" = "$CATALOG/pty"
 test "$ST_AGENT" = "evalhost.probe"
 mkdir -p "$CATALOG/probe"
+printf '%s\n' "$$" >"$CATALOG/probe/work.pid"
+echo "canonical probe ready"
 touch "$CATALOG/probe/roots-ok"
 
 for _ in $(seq 1 200); do

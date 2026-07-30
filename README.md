@@ -96,9 +96,9 @@ VERDICT: PASS
 ```
 
 Requirements are `st2 0.1.0` from source
-[`0ec6a22`](https://github.com/compoundingtech/st2/commit/0ec6a22e877f9374260202c5f76dabc4579fc7e3),
+[`c6846f6`](https://github.com/compoundingtech/st2/commit/c6846f6239329f0803142afc06c15a07b93937c1),
 using the accepted local-source Linux binary SHA256
-`df0783843e5bb5b2bfd58323467b5ae0d89aebec4e12e5666139915e235ad2db`;
+`2bba8d58be24250bc262f75f835ce2d780369add275774f3f2135c623d23d29c`;
 `pty`, Bash, Git, `jq`, Rust/Cargo for the pinned KDL parser gate, and Node for JavaScript fixtures. A paid cell
 also needs every harness named by its dry-run row.
 

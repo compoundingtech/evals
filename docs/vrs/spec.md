@@ -101,6 +101,20 @@ one-sentence human request
   explicit in that intent; the deterministic boundary owns canonical KDL,
   keeps account selection out of durable state, and places the goal and
   references in an initial inbox Resource.
+- The temporary interviewer itself launches through typed
+  `axe agent launch` with explicit harness, model, effort, persona, mode, and
+  boot axes. The cell does not pin `--account`: Axe selects an eligible
+  account per run. Corpus inventory, model policy, lifecycle, and harness
+  checks recognize this typed launch as a paid model seat and reject durable
+  account pins.
+- **Current composition gate:** `st2 eval` currently boots legacy team
+  `command` seats without creating a canonical Agent Spec for the temporary
+  identity. Axe correctly rejects that seat before account selection because
+  `ST_AGENT` resolves to zero canonical specs. This is a blocked paid
+  experiment, not evidence against account selection or interviewer judgment.
+  The accepted direction is to make eval seats canonical at the runtime seam;
+  a cell-local compatibility wrapper, fabricated spec, account pin, or ambient
+  bare-provider launch is outside the contract.
 - Passing model-free evidence proves the bundle boundary and its negative
   controls only. The autonomous-selection claim remains unaccepted until the
   paid judgment cell has a structured PASS receipt.

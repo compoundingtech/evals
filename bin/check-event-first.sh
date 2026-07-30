@@ -32,6 +32,13 @@ required=(
 while IFS=$'\t' read -r cell agent _harness _workspace _st_agent command_line; do
   kdl="cells/$cell/$cell.kdl"
   command_text="$(sed -n "${command_line}p" "$kdl")"
+  if grep -Fq 'exec axe agent launch ' <<< "$command_text"; then
+    grep -Fq -- '--mode managed-unattended' <<< "$command_text" ||
+      fail "$kdl:$command_line agent $agent Axe launch omits managed-unattended mode"
+    grep -Fq -- '--boot managed-v1' <<< "$command_text" ||
+      fail "$kdl:$command_line agent $agent Axe launch omits managed-v1 event-first boot contract"
+    continue
+  fi
   for phrase in "${required[@]}"; do
     grep -Fiq "$phrase" <<< "$command_text" ||
       fail "$kdl:$command_line agent $agent does not teach '$phrase'"

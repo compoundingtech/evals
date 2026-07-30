@@ -103,6 +103,16 @@ while IFS=$'\t' read -r cell agent harness workspace st_agent command_line; do
 
   kdl="cells/$cell/$cell.kdl"
   command_text="$(sed -n "${command_line}p" "$kdl")"
+  axe_launch=0
+  if grep -Fq 'exec axe agent launch ' <<< "$command_text"; then
+    axe_launch=1
+    grep -Fq -- '--mode managed-unattended' <<< "$command_text" ||
+      { echo "FAIL: $cell/$agent Axe launch omits managed-unattended mode" >&2; failed=1; }
+    grep -Fq -- '--boot managed-v1' <<< "$command_text" ||
+      { echo "FAIL: $cell/$agent Axe launch omits managed-v1 boot contract" >&2; failed=1; }
+    ! grep -Fq -- '--account ' <<< "$command_text" ||
+      { echo "FAIL: $cell/$agent durably pins an account instead of using Axe selection" >&2; failed=1; }
+  fi
   if [ "$harness" = "Claude" ]; then
     [ -s "$target/CLAUDE.md" ] ||
       { echo "FAIL: $cell/$agent has no non-empty CLAUDE.md" >&2; failed=1; continue; }
@@ -112,8 +122,10 @@ while IFS=$'\t' read -r cell agent harness workspace st_agent command_line; do
       { echo "FAIL: $cell/$agent has no non-empty PERSONA.md" >&2; failed=1; }
     cmp -s harness/claude-settings.local.json "$target/.claude/settings.local.json" ||
       { echo "FAIL: $cell/$agent does not materialize the canonical Claude hooks" >&2; failed=1; }
-    grep -Fq 'Read CLAUDE.md.' <<< "$command_text" ||
-      { echo "FAIL: $cell/$agent launch does not use its Claude loader" >&2; failed=1; }
+    if [ "$axe_launch" -eq 0 ]; then
+      grep -Fq 'Read CLAUDE.md.' <<< "$command_text" ||
+        { echo "FAIL: $cell/$agent launch does not use its Claude loader" >&2; failed=1; }
+    fi
     [ ! -e "$target/.codex/hooks.json" ] ||
       { echo "FAIL: $cell/$agent Claude workspace mixes in Codex hooks" >&2; failed=1; }
   else
@@ -121,10 +133,12 @@ while IFS=$'\t' read -r cell agent harness workspace st_agent command_line; do
       { echo "FAIL: $cell/$agent has no non-empty AGENTS.md" >&2; failed=1; continue; }
     cmp -s harness/codex-hooks.json "$target/.codex/hooks.json" ||
       { echo "FAIL: $cell/$agent does not materialize the canonical Codex hooks" >&2; failed=1; }
-    grep -Fq 'Read AGENTS.md.' <<< "$command_text" ||
-      { echo "FAIL: $cell/$agent launch does not use its Codex loader" >&2; failed=1; }
-    grep -Fq -- '--dangerously-bypass-hook-trust' <<< "$command_text" ||
-      { echo "FAIL: $cell/$agent launch does not trust the declared Codex hooks" >&2; failed=1; }
+    if [ "$axe_launch" -eq 0 ]; then
+      grep -Fq 'Read AGENTS.md.' <<< "$command_text" ||
+        { echo "FAIL: $cell/$agent launch does not use its Codex loader" >&2; failed=1; }
+      grep -Fq -- '--dangerously-bypass-hook-trust' <<< "$command_text" ||
+        { echo "FAIL: $cell/$agent launch does not trust the declared Codex hooks" >&2; failed=1; }
+    fi
     [ ! -e "$target/.claude/settings.local.json" ] ||
       { echo "FAIL: $cell/$agent Codex workspace mixes in Claude hooks" >&2; failed=1; }
   fi

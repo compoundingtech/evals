@@ -31,6 +31,8 @@ while IFS=: read -r file line text; do
   fi
 
   remaining="$code"
+  remaining="${remaining//--harness claude/--harness claude_harness}"
+  remaining="${remaining//--harness codex/--harness codex_harness}"
   provider_regex='(^|[^[:alnum:]_-])(exec[[:space:]]+)?(claude|codex)[[:space:]]+-'
   while [[ "$remaining" =~ $provider_regex ]]; do
     match="${BASH_REMATCH[0]}"
@@ -65,9 +67,49 @@ while IFS=: read -r file line text; do
 
     remaining="$after"
   done
+
+  axe_remaining="$code"
+  axe_regex='(^|[^[:alnum:]_-])(exec[[:space:]]+)?axe[[:space:]]+agent[[:space:]]+launch[[:space:]]+'
+  while [[ "$axe_remaining" =~ $axe_regex ]]; do
+    axe_match="${BASH_REMATCH[0]}"
+    axe_after="${axe_remaining#*"$axe_match"}"
+    axe_invocation="$axe_match$axe_after"
+    if [[ "$axe_after" =~ $axe_regex ]]; then
+      next_axe_match="${BASH_REMATCH[0]}"
+      axe_invocation="$axe_match${axe_after%%"$next_axe_match"*}"
+    fi
+
+    ((launches += 1))
+    [[ "$axe_invocation" != *"--account "* ]] ||
+      fail "$file:$line Axe launch durably pins an account instead of selecting per run"
+    [[ "$axe_invocation" == *"--persona "* ]] ||
+      fail "$file:$line Axe launch omits --persona"
+    [[ "$axe_invocation" == *"--mode managed-unattended"* ]] ||
+      fail "$file:$line Axe launch omits --mode managed-unattended"
+    [[ "$axe_invocation" == *"--boot managed-v1"* ]] ||
+      fail "$file:$line Axe launch omits --boot managed-v1"
+
+    if [[ "$axe_invocation" == *"--harness claude"* ]]; then
+      ((claude_launches += 1))
+      [[ "$axe_invocation" == *"--model claude-sonnet-5"* ]] ||
+        fail "$file:$line launches Claude through Axe without --model claude-sonnet-5"
+      [[ "$axe_invocation" == *"--effort medium"* ]] ||
+        fail "$file:$line launches Claude through Axe without --effort medium"
+    elif [[ "$axe_invocation" == *"--harness codex"* ]]; then
+      ((codex_launches += 1))
+      [[ "$axe_invocation" == *"--model gpt-5.6-sol"* ]] ||
+        fail "$file:$line launches Codex through Axe without --model gpt-5.6-sol"
+      [[ "$axe_invocation" == *"--effort medium"* ]] ||
+        fail "$file:$line launches Codex through Axe without --effort medium"
+    else
+      fail "$file:$line Axe launch has no supported explicit --harness claude|codex"
+    fi
+
+    axe_remaining="$axe_after"
+  done
 done < <(
   rg --no-ignore -n --no-heading \
-    'exec[[:space:]]+(claude|codex)|(^|[^[:alnum:]_-])(claude|codex)[[:space:]]+-' \
+    'exec[[:space:]]+(claude|codex)|(^|[^[:alnum:]_-])(claude|codex)[[:space:]]+-|axe[[:space:]]+agent[[:space:]]+launch' \
     "$scan_root" -g '*.kdl' -g '*.sh' -g '!**/_git/**' || true
 )
 

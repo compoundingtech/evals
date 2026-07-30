@@ -100,6 +100,14 @@ while IFS= read -r cell; do
         } else if ($0 ~ /exec codex[[:space:]]/) {
           harness = "Codex"
           command_line = NR
+        } else if ($0 ~ /exec axe agent launch[[:space:]]/ &&
+                   $0 ~ /--harness[[:space:]]+claude([[:space:]]|$)/) {
+          harness = "Claude"
+          command_line = NR
+        } else if ($0 ~ /exec axe agent launch[[:space:]]/ &&
+                   $0 ~ /--harness[[:space:]]+codex([[:space:]]|$)/) {
+          harness = "Codex"
+          command_line = NR
         }
       }
       if (trimmed == child_indent "ding") {
@@ -118,7 +126,7 @@ while IFS= read -r cell; do
 done < <(find cells -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | LC_ALL=C sort)
 
 launches="$(
-  rg -n --no-heading '^[[:space:]]*command[[:space:]]+.*exec (claude|codex)[[:space:]]' \
+  rg -n --no-heading '^[[:space:]]*command[[:space:]]+.*exec ((claude|codex)[[:space:]]|axe agent launch[[:space:]])' \
     cells/*/*.kdl | wc -l | tr -d ' '
 )"
 rows="$(wc -l < "$inventory" | tr -d ' ')"

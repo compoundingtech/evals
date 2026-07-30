@@ -57,15 +57,17 @@ for cell in "${cells[@]}"; do
       code="${code%%//*}"
     fi
     if [[ "$code" =~ exec[[:space:]]+claude([[:space:]]|$) ]] ||
-      [[ "$code" =~ (^|[^[:alnum:]_-])claude[[:space:]]+- ]]; then
+      [[ "$code" =~ (^|[^[:alnum:]_-])claude[[:space:]]+- ]] ||
+      [[ "$code" =~ exec[[:space:]]+axe[[:space:]]+agent[[:space:]]+launch[[:space:]].*--harness[[:space:]]+claude([[:space:]]|$) ]]; then
       ((claude += 1))
     elif [[ "$code" =~ exec[[:space:]]+codex([[:space:]]|$) ]] ||
-      [[ "$code" =~ (^|[^[:alnum:]_-])codex[[:space:]]+- ]]; then
+      [[ "$code" =~ (^|[^[:alnum:]_-])codex[[:space:]]+- ]] ||
+      [[ "$code" =~ exec[[:space:]]+axe[[:space:]]+agent[[:space:]]+launch[[:space:]].*--harness[[:space:]]+codex([[:space:]]|$) ]]; then
       ((codex += 1))
     fi
   done < <(
     rg -n --no-heading \
-      'exec[[:space:]]+(claude|codex)|(^|[^[:alnum:]_-])(claude|codex)[[:space:]]+-' \
+      'exec[[:space:]]+(claude|codex)|(^|[^[:alnum:]_-])(claude|codex)[[:space:]]+-|exec[[:space:]]+axe[[:space:]]+agent[[:space:]]+launch' \
       "$cell_dir" -g '*.kdl' -g '*.sh' -g '!**/_git/**' || true
   )
 

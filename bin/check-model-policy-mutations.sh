@@ -59,3 +59,28 @@ grep -Fq 'selects Opus' "$opus_output" || {
 }
 
 echo "PASS: nested provider launches are counted independently; unpinned and Opus mutations fail"
+
+mkdir -p "$scratch/axe-valid" "$scratch/axe-pinned"
+printf '%s\n' \
+  'team "x" { agent "i" { workspace "./i"; env { ST_AGENT "x.i" }; command #"exec axe agent launch --harness claude --persona generalist --model claude-sonnet-5 --effort medium --mode managed-unattended --boot managed-v1"#; ding } }' \
+  >"$scratch/axe-valid/axe.kdl"
+printf '%s\n' \
+  'team "x" { agent "i" { workspace "./i"; env { ST_AGENT "x.i" }; command #"exec axe agent launch --harness claude --persona generalist --model claude-sonnet-5 --effort medium --mode managed-unattended --boot managed-v1 --account claude/example"#; ding } }' \
+  >"$scratch/axe-pinned/axe.kdl"
+
+bash "$checker" "$scratch/axe-valid" >/dev/null || {
+  echo "FAIL: model policy rejected a fully typed, account-neutral Axe launch" >&2
+  exit 1
+}
+axe_pinned_output="$scratch/axe-pinned.out"
+if bash "$checker" "$scratch/axe-pinned" >"$axe_pinned_output" 2>&1; then
+  echo "FAIL: model policy accepted a durable Axe account pin" >&2
+  exit 1
+fi
+grep -Fq 'durably pins an account' "$axe_pinned_output" || {
+  echo "FAIL: pinned Axe account mutation lacked the expected diagnostic" >&2
+  cat "$axe_pinned_output" >&2
+  exit 1
+}
+
+echo "PASS: typed Axe launches are counted and durable account pins fail"

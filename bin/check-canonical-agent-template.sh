@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Validate the canonical paid model-agent declaration template and publisher.
 set -euo pipefail
 
 template="${1:?canonical Agent Spec template required}"

@@ -81,7 +81,7 @@ next paid cell to start.
 ## Run one cell
 
 `st2 eval` creates a hermetic temporary catalog, copies the fixture, boots declared agents and model judges,
-delivers the kickoff, waits for completion or the cell timeout, tears seats down, and runs the held-out judges:
+delivers the kickoff, waits for completion or the cell timeout, tears agents down, and runs the held-out judges:
 
 ```sh
 st2 eval ./cells/ghost-bug/

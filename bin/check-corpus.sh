@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Complete free preflight for the current overnight corpus. Never starts a model seat.
+# Complete free preflight for the current overnight corpus. Never starts a model agent.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -30,7 +30,7 @@ bin/check-preflight-safety.sh
 bin/check-agent-new-renderer-security.sh
 bin/check-model-policy.sh
 bin/check-model-policy-mutations.sh
-bin/check-canonical-seat-template-mutations.sh
+bin/check-canonical-agent-template-mutations.sh
 bin/check-run-history.sh
 attempt_baseline="${EVALS_EVIDENCE_BASELINE_REF:-}"
 if [ -z "$attempt_baseline" ] && git rev-parse --verify origin/main^{commit} >/dev/null 2>&1; then
@@ -48,7 +48,7 @@ else
 fi
 bin/check-agent-new-interview-attempts-mutations.sh
 bin/check-retired-surfaces.sh
-bin/model-seat-inventory.sh >/dev/null
+bin/model-agent-inventory.sh >/dev/null
 bin/check-event-first.sh
 bin/check-kdl-parse.sh
 bin/check-st2-semantic.sh

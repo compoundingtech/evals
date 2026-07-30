@@ -30,7 +30,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-bin/model-seat-inventory.sh --no-header > "$inventory"
+bin/model-agent-inventory.sh --no-header > "$inventory"
 
 hydrate_gitdirs() {
   local root="$1" gitdir target
@@ -124,7 +124,7 @@ while IFS=$'\t' read -r cell agent harness workspace st_agent source_kind source
   axe_launch=0
   if [ "$source_kind" = "canonical-template" ]; then
     publisher="$(dirname "$source_path")/publish-interviewer.sh"
-    bin/check-canonical-seat-template.sh "$source_path" "$publisher" >/dev/null || {
+    bin/check-canonical-agent-template.sh "$source_path" "$publisher" >/dev/null || {
       failed=1
       continue
     }
@@ -182,7 +182,7 @@ while IFS=$'\t' read -r cell agent harness workspace st_agent source_kind source
 done < "$inventory"
 
 [ "$checked" -gt 0 ] || {
-  echo "FAIL: no $selected model seats were checked" >&2
+  echo "FAIL: no $selected model agents were checked" >&2
   exit 1
 }
 
@@ -209,7 +209,7 @@ grep -Fxq $'docs\tjudge:cold-reader\tone-shot offline Claude print grader; no bu
   }
 
 if [ "$failed" -eq 0 ]; then
-  printf 'PASS: %d %s model seats materialize and use the canonical harness overlay and hooks\n' \
+  printf 'PASS: %d %s model agents materialize and use the canonical harness overlay and hooks\n' \
     "$checked" "$selected"
   printf 'PASS: %d derived model-free cells have explicit harness-hook exclusions\n' \
     "${#expected[@]}"

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-checker="$repo_root/bin/check-canonical-seat-template.sh"
+checker="$repo_root/bin/check-canonical-agent-template.sh"
 source_template="$repo_root/cells/agent-new-interview/fixture/agent.kdl.template"
 source_publisher="$repo_root/cells/agent-new-interview/fixture/publish-interviewer.sh"
 scratch="$(mktemp -d)"

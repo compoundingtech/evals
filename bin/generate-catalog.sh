@@ -141,7 +141,7 @@ done < evidence/harness-exclusions.tsv
 total=0
 model_free=0
 model_backed=0
-while IFS=$'\t' read -r cell harness models effort seats cost timeout judges; do
+while IFS=$'\t' read -r cell harness models effort agents cost timeout judges; do
   ((total += 1))
   if [ "$harness" = "model-free" ]; then
     ((model_free += 1))
@@ -163,16 +163,16 @@ structured run row say so explicitly.
 
 Every model launch is explicitly pinned by \`bin/check-model-policy.sh\`: Claude uses
 \`claude-sonnet-5\` at medium effort and Codex uses \`gpt-5.6-sol\` at medium reasoning effort.
-Every bus-connected model seat is mechanically checked for the event-first DING lifecycle and its
+Every bus-connected model agent is mechanically checked for the event-first DING lifecycle and its
 harness-native loader plus canonical hook file.
 
 ## Included overnight inventory
 
-| Cell | Harness | Model(s) / effort | Model seats | Cost | Timeout | Held-out judges | Latest accepted PASS | Last recorded run |
+| Cell | Harness | Model(s) / effort | Model agents | Cost | Timeout | Held-out judges | Latest accepted PASS | Last recorded run |
 |---|---|---|---:|---|---|---:|---|---|
 EOF
 
-  while IFS=$'\t' read -r cell harness models effort seats cost timeout judges; do
+  while IFS=$'\t' read -r cell harness models effort agents cost timeout judges; do
     if [ "$models" = "-" ]; then
       model_display="—"
     else
@@ -203,7 +203,7 @@ EOF
       last="**NO STRUCTURED RUN**"
     fi
     printf '| `%s` | %s | %s | %s | %s | `%s` | %s | %s | %s |\n' \
-      "$cell" "$harness" "$model_display" "$seats" "$cost" "$timeout" "$judges" "$accepted" "$last"
+      "$cell" "$harness" "$model_display" "$agents" "$cost" "$timeout" "$judges" "$accepted" "$last"
   done < "$inventory"
 
   cat <<EOF
@@ -236,7 +236,7 @@ Run the complete model-free preflight:
 bin/check-corpus.sh
 \`\`\`
 
-Preview the exact lexical run order, harness, model, effort, seat count, cost band, and timeout:
+Preview the exact lexical run order, harness, model, effort, agent count, cost band, and timeout:
 
 \`\`\`sh
 bin/overnight.sh --dry-run

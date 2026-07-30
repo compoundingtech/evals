@@ -19,7 +19,7 @@ sha256="$(sha256sum "$st2_bin" | awk '{ print $1 }')"
 
 bin/corpus-inventory.sh --no-header |
   awk -F '\t' '$1 == "canonical-agent-runtime-smoke" && $2 == "model-free" && $5 == 0 { found = 1 } END { exit !found }' || {
-    echo "FAIL: canonical-agent-runtime-smoke is not classified as zero-seat model-free" >&2
+    echo "FAIL: canonical-agent-runtime-smoke is not classified as zero-model-agent model-free" >&2
     exit 1
   }
 

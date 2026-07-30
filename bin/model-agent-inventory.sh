@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Emit every maintained model seat from compact eval declarations and canonical templates.
+# Emit every maintained model agent from compact eval declarations and canonical templates.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -9,7 +9,7 @@ include_header=1
 if [ "${1:-}" = "--no-header" ]; then
   include_header=0
 elif [ "$#" -ne 0 ]; then
-  echo "usage: bin/model-seat-inventory.sh [--no-header]" >&2
+  echo "usage: bin/model-agent-inventory.sh [--no-header]" >&2
   exit 2
 fi
 
@@ -142,7 +142,7 @@ while IFS= read -r template; do
   fi
   if [ -z "$agent" ] || [ -z "$workspace" ] || [ -z "$st_agent" ] ||
     [ -z "$command_line" ] || [ -z "$harness" ] || [ "$ding_count" -ne 1 ]; then
-    echo "FAIL: canonical model-seat template is incomplete: $template" >&2
+    echo "FAIL: canonical model-agent template is incomplete: $template" >&2
     failed=1
     continue
   fi
@@ -161,7 +161,7 @@ launches="$(
 )"
 rows="$(wc -l < "$inventory" | tr -d ' ')"
 if [ "$rows" -ne "$launches" ]; then
-  echo "FAIL: model-seat inventory found $rows structured seats but $launches root-KDL launch lines" >&2
+  echo "FAIL: model-agent inventory found $rows structured agents but $launches root-KDL launch lines" >&2
   failed=1
 fi
 

@@ -11,8 +11,8 @@ reachable=(
   bin/check-agent-new-interview-attempts-mutations.sh
   bin/check-agent-new-renderer-security.sh
   bin/check-agent-new-interview-attempts.sh
-  bin/check-canonical-seat-template-mutations.sh
-  bin/check-canonical-seat-template.sh
+  bin/check-canonical-agent-template-mutations.sh
+  bin/check-canonical-agent-template.sh
   bin/check-event-first.sh
   bin/check-fixture-reset.sh
   bin/check-fixture-reset-terminal.sh
@@ -33,7 +33,7 @@ reachable=(
   bin/check-weird-git-setup.sh
   bin/corpus-inventory.sh
   bin/generate-catalog.sh
-  bin/model-seat-inventory.sh
+  bin/model-agent-inventory.sh
   bin/st2-pin.sh
 )
 materializers=(
@@ -71,7 +71,7 @@ expected_direct=(
   bin/check-agent-new-interview-attempts-mutations.sh
   bin/check-agent-new-interview-attempts.sh
   bin/check-agent-new-renderer-security.sh
-  bin/check-canonical-seat-template-mutations.sh
+  bin/check-canonical-agent-template-mutations.sh
   bin/check-event-first.sh
   bin/check-fixture-reset-terminal.sh
   bin/check-harness-contract.sh
@@ -90,7 +90,7 @@ expected_direct=(
   bin/check-vrs-variations.sh
   bin/check-weird-git-setup.sh
   bin/generate-catalog.sh
-  bin/model-seat-inventory.sh
+  bin/model-agent-inventory.sh
 )
 if [ "${direct[*]}" != "${expected_direct[*]}" ]; then
   fail "check-corpus.sh direct command set differs from the reviewed allowlist"

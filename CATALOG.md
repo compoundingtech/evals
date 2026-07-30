@@ -9,12 +9,12 @@ structured run row say so explicitly.
 
 Every model launch is explicitly pinned by `bin/check-model-policy.sh`: Claude uses
 `claude-sonnet-5` at medium effort and Codex uses `gpt-5.6-sol` at medium reasoning effort.
-Every bus-connected model seat is mechanically checked for the event-first DING lifecycle and its
+Every bus-connected model agent is mechanically checked for the event-first DING lifecycle and its
 harness-native loader plus canonical hook file.
 
 ## Included overnight inventory
 
-| Cell | Harness | Model(s) / effort | Model seats | Cost | Timeout | Held-out judges | Latest accepted PASS | Last recorded run |
+| Cell | Harness | Model(s) / effort | Model agents | Cost | Timeout | Held-out judges | Latest accepted PASS | Last recorded run |
 |---|---|---|---:|---|---|---:|---|---|
 | `agent-new-bundle-contract` | model-free | — | 0 | none | `60s` | 5 | — | **NO STRUCTURED RUN** |
 | `agent-new-interview` | Claude | `claude-sonnet-5` / medium | 1 | low | `300s` | 4 | — | **NO STRUCTURED RUN** |
@@ -77,30 +77,30 @@ while the last-run column makes a recorded failure distinct from a cell with no 
 - `clean-compose` — retired composition-overlay discriminator
 - `compose-config-load` — retired composition/config-loader discriminator
 - `compose-global-skill` — retired composition/global-skill discriminator
-- `team-standup` — retired runtime seat-generation discriminator
+- `team-standup` — retired runtime agent-generation discriminator
 
 `hook-integrity` is not excluded: it is now a model-free, current-native
 `st2 up --materialize-only` hook installation and idempotency test.
 
 ## Harness hook exclusions
 
-- `agent-new-bundle-contract` / `cell` — deterministic semantic-intent lowering and mutation probe; no harness seat
-- `canonical-agent-runtime-smoke` / `cell` — deterministic canonical Agent Spec boot, kickoff, reply, and teardown probe; no harness seat
-- `context-resource-continuity` / `cell` — deterministic native context/resource restart probe; no harness seat
+- `agent-new-bundle-contract` / `cell` — deterministic semantic-intent lowering and mutation probe; no harness agent
+- `canonical-agent-runtime-smoke` / `cell` — deterministic canonical Agent Spec boot, kickoff, reply, and teardown probe; no harness agent
+- `context-resource-continuity` / `cell` — deterministic native context/resource restart probe; no harness agent
 - `docs` / `judge:cold-reader` — one-shot offline Claude print grader; no bus identity, DING, or hook surface
-- `exec-lifecycle-logging` / `cell` — deterministic native exec lifecycle probe; no harness seat
-- `hook-integrity` / `cell` — deterministic native hook-installation probe; no live harness seat
-- `host-lock-health-negatives` / `cell` — deterministic native doctor negative probe; no harness seat
-- `pty-attach-only` / `cell` — deterministic PTY dead-attach policy probe; no harness seat
-- `pty-send-peek` / `cell` — deterministic PTY transport probe; no harness seat
-- `presence-ding-matrix` / `cell` — deterministic native presence and DING probe; no harness seat
-- `reconcile-retire-keep` / `cell` — deterministic native reconcile lifecycle probe; no harness seat
-- `render-target-safety` / `cell` — deterministic native render-policy probe; no harness seat
-- `strict-validation-json` / `cell` — deterministic native validation-diagnostics probe; no harness seat
-- `st2-doctor-structure` / `cell` — deterministic catalog-health probe; no harness seat
-- `st2-network` / `cell` — deterministic catalog/message round-trip probe; no harness seat
+- `exec-lifecycle-logging` / `cell` — deterministic native exec lifecycle probe; no harness agent
+- `hook-integrity` / `cell` — deterministic native hook-installation probe; no live harness agent
+- `host-lock-health-negatives` / `cell` — deterministic native doctor negative probe; no harness agent
+- `pty-attach-only` / `cell` — deterministic PTY dead-attach policy probe; no harness agent
+- `pty-send-peek` / `cell` — deterministic PTY transport probe; no harness agent
+- `presence-ding-matrix` / `cell` — deterministic native presence and DING probe; no harness agent
+- `reconcile-retire-keep` / `cell` — deterministic native reconcile lifecycle probe; no harness agent
+- `render-target-safety` / `cell` — deterministic native render-policy probe; no harness agent
+- `strict-validation-json` / `cell` — deterministic native validation-diagnostics probe; no harness agent
+- `st2-doctor-structure` / `cell` — deterministic catalog-health probe; no harness agent
+- `st2-network` / `cell` — deterministic catalog/message round-trip probe; no harness agent
 - `targeted-reconcile-isolation` / `cell` — deterministic selected reconcile isolation probe; no bus-connected agent
-- `two-networks-coexist` / `cell` — deterministic catalog-isolation probe; no harness seat
+- `two-networks-coexist` / `cell` — deterministic catalog-isolation probe; no harness agent
 
 These **17** rows are generated from structured exclusions. A cell-level row is required for
 every derived model-free cell. The one-shot docs cold reader is a model-backed grader, but not a bus-connected
@@ -114,7 +114,7 @@ Run the complete model-free preflight:
 bin/check-corpus.sh
 ```
 
-Preview the exact lexical run order, harness, model, effort, seat count, cost band, and timeout:
+Preview the exact lexical run order, harness, model, effort, agent count, cost band, and timeout:
 
 ```sh
 bin/overnight.sh --dry-run

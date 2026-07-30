@@ -421,7 +421,7 @@ example, create every `$CATALOG`-rooted workspace it names.
 
 ## Free authoring gate
 
-These commands parse and materialize without starting a model seat:
+These commands parse and materialize without starting a model agent:
 
 ```sh
 st2 validate --catalog "$CATALOG" --host <host> --strict

@@ -93,9 +93,9 @@ one-sentence human request
   evaluates the renderer contract across multiple intents and closed-input
   failures. Held-out mutation controls reject raw provider argv, drift between
   intent and KDL, and missing initial context.
-- **R06-R09:** The judgment cell uses one explicitly pinned Claude Sonnet seat
+- **R06-R09:** The judgment cell uses one explicitly pinned Claude Sonnet agent
   at medium effort and a five-minute cell timeout. The deterministic cell has
-  no model seat and a one-minute timeout. Normal st2 eval cleanup and receipt
+  no model agent and a one-minute timeout. Normal st2 eval cleanup and receipt
   policy applies to both.
 - The interviewer output is semantic intent, not KDL. Stable launch axes are
   explicit in that intent; the deterministic boundary owns canonical KDL,
@@ -109,7 +109,7 @@ one-sentence human request
   `axe agent launch` with explicit harness, model, effort, persona, mode, and
   boot axes. The cell does not pin `--account`: Axe selects an eligible
   account per run. Corpus inventory, model policy, lifecycle, and harness
-  checks recognize this typed launch as a paid model seat and reject durable
+  checks recognize this typed launch as a paid model agent and reject durable
   account pins.
 - The paid cell uses st2's explicit `canonical-agents` seam. A deterministic
   pre-admission run first creates the copied interviewer workspace as a clean,
@@ -118,12 +118,12 @@ one-sentence human request
   Axe adapter, absolute profile path, and canonical persona source. st2 then
   carries that declaration unchanged through strict validation,
   warning-free materialization, launch, kickoff routing, singleton completion,
-  and teardown. No compact eval seat, compatibility wrapper, account pin, or
+  and teardown. No compact eval agent, compatibility wrapper, account pin, or
   ambient provider launch participates.
 - The paid cell is environment-bound to that explicit runtime-profile
   artifact; the artifact identity belongs in run evidence and results are not
   represented as hermetic across different profiles.
-- One structured seat inventory is authoritative for both compact eval seats
+- One structured model-agent inventory is authoritative for both compact eval agents
   and canonical paid templates. Corpus cost classification, event-first
   policy, and harness-overlay checks consume its source-kind/path records;
   canonical template mutations prove required launch axes and overlays are

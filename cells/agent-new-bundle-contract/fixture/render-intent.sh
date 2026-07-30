@@ -12,7 +12,7 @@ jq -e '
   .schema == "axe.agent-creation-intent.v1" and
   .decision == "commit" and
   (.identity | test("^[a-z0-9][a-z0-9.-]*[a-z0-9]$")) and
-  (.workspace | test("^/")) and
+  (.workspace | test("^/[-A-Za-z0-9._/+:]+$")) and
   (.goal | type == "string" and length > 0 and test("[\"\\n\\r]") | not) and
   (.references | type == "array" and length > 0 and
     all(.[]; type == "string" and test("^https://github\\.com/"))) and

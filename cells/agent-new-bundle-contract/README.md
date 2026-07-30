@@ -5,9 +5,10 @@ interview handoff. A small semantic `axe.agent-creation-intent.v1` record is
 the only interviewer output. The renderer owns canonical Agent Spec KDL and
 the initial inbox Resource.
 
-Two valid one-session intents exercise the same lowering path. Two invalid
+Two valid one-session intents exercise the same lowering path. Three invalid
 inputs prove the input boundary is closed: an interviewer cannot pin an
-account or introduce an unsupported trajectory value.
+account, introduce an unsupported trajectory value, or inject KDL through the
+workspace path.
 
 Held-out mutation checks copy valid output and independently prove that the
 bundle grader rejects:

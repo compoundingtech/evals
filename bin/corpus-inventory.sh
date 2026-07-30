@@ -13,6 +13,13 @@ elif [ "$#" -ne 0 ]; then
   exit 2
 fi
 
+seat_inventory="$(mktemp)"
+cleanup() {
+  rm -f -- "$seat_inventory"
+}
+trap cleanup EXIT
+bin/model-seat-inventory.sh --no-header > "$seat_inventory"
+
 if [ "$include_header" -eq 1 ]; then
   printf 'cell\tharness\tmodels\teffort\tmodel_seats\tcost_band\ttimeout\theld_out_judges\n'
 fi
@@ -45,40 +52,8 @@ for cell in "${cells[@]}"; do
   }
   timeout="${timeouts[0]}"
 
-  claude=0
-  codex=0
-  while IFS=: read -r file line text; do
-    trimmed="${text#"${text%%[![:space:]]*}"}"
-    if [[ "$trimmed" == \#* || "$trimmed" == //* ]]; then
-      continue
-    fi
-    code="$text"
-    if [[ "$file" == *.kdl ]]; then
-      code="${code%%//*}"
-    fi
-    scan_code="$code"
-    if [[ "$file" == *.kdl.template ]]; then
-      scan_code="${code//\"/}"
-    fi
-    if [[ "$scan_code" =~ exec[[:space:]]+claude([[:space:]]|$) ]] ||
-      [[ "$scan_code" =~ (^|[^[:alnum:]_-])claude[[:space:]]+- ]] ||
-      [[ "$scan_code" =~ (exec[[:space:]]+axe|argv[[:space:]]+[^[:space:]]+)[[:space:]]+agent[[:space:]]+launch[[:space:]].*--harness[[:space:]]+claude([[:space:]]|$) ]]; then
-      ((claude += 1))
-    elif [[ "$scan_code" =~ exec[[:space:]]+codex([[:space:]]|$) ]] ||
-      [[ "$scan_code" =~ (^|[^[:alnum:]_-])codex[[:space:]]+- ]] ||
-      [[ "$scan_code" =~ (exec[[:space:]]+axe|argv[[:space:]]+[^[:space:]]+)[[:space:]]+agent[[:space:]]+launch[[:space:]].*--harness[[:space:]]+codex([[:space:]]|$) ]]; then
-      ((codex += 1))
-    fi
-  done < <(
-    {
-      rg -n --no-heading \
-        'exec[[:space:]]+(claude|codex)|(^|[^[:alnum:]_-])(claude|codex)[[:space:]]+-|axe[[:space:]]+agent[[:space:]]+launch' \
-        "$cell_dir" -g '*.kdl' -g '*.sh' -g '!**/_git/**' || true
-      rg -n --no-heading \
-        '"agent"[[:space:]]+"launch"' \
-        "$cell_dir" -g '*.kdl.template' || true
-    }
-  )
+  claude="$(awk -F '\t' -v cell="$cell" '$1 == cell && $3 == "Claude" { count += 1 } END { print count + 0 }' "$seat_inventory")"
+  codex="$(awk -F '\t' -v cell="$cell" '$1 == cell && $3 == "Codex" { count += 1 } END { print count + 0 }' "$seat_inventory")"
 
   seats=$((claude + codex))
   if [ "$claude" -gt 0 ] && [ "$codex" -gt 0 ]; then

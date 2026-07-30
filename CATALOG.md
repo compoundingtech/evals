@@ -23,7 +23,7 @@ harness-native loader plus canonical hook file.
 | `crash-ding` | mixed | `claude-sonnet-5+gpt-5.6-sol` / medium | 4 | high | `180s` | 5 | — | **NO STRUCTURED RUN** |
 | `ding-mode` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 4 | — | **NO STRUCTURED RUN** |
 | `ding-reply` | Claude | `claude-sonnet-5` / medium | 1 | low | `420s` | 2 | — | **NO STRUCTURED RUN** |
-| `docs` | Claude | `claude-sonnet-5` / medium | 3 | high | `1200s` | 5 | — | **NO STRUCTURED RUN** |
+| `docs` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — | **NO STRUCTURED RUN** |
 | `exec-lifecycle-logging` | model-free | — | 0 | none | `90s` | 5 | — | **NO STRUCTURED RUN** |
 | `feature-fit` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — | **NO STRUCTURED RUN** |
 | `fork-in-the-road` | Claude | `claude-sonnet-5` / medium | 4 | high | `1200s` | 5 | — | **NO STRUCTURED RUN** |

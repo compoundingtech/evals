@@ -432,8 +432,8 @@ Inspect the declaration, every referenced template, and every workspace destinat
 materialization command. Materialization is byte-idempotent and does not imply hook installation. Starting
 the network is a separate, explicitly authorized action.
 
-For source `9887b28`, the accepted Linux executable has SHA256
-`d49d44fd4f3f6f655455c212353a469fefa956082bedf22163deb767d8a36a0d`; its published archive has SHA256
-`32ee103bd17ccb3e155ac63d816a3906c2470a3c98e3cc04b56e5a67138b9927`. `bin/check-corpus.sh` verifies
-the variable-age version contract, exact installed binary, embedded full source commit, strict semantic
+For source `0ec6a22e877f9374260202c5f76dabc4579fc7e3`, the accepted local-source Linux executable has
+SHA256 `df0783843e5bb5b2bfd58323467b5ae0d89aebec4e12e5666139915e235ad2db`.
+`bin/check-st2-pin-consistency.sh` keeps this active spec, the README, and executable preflight aligned.
+`bin/check-corpus.sh` verifies the variable-age version contract, exact installed binary, strict semantic
 validation, fixture resets, and the rest of the model-free corpus gate before an eval may run.

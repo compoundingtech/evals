@@ -18,6 +18,10 @@ eval {
     allow-nonzero
     command "bash ./render-intent.sh ./inputs/trajectory-drift.json ./out/trajectory-drift"
   }
+  run "workspace-injection" {
+    allow-nonzero
+    command "bash ./render-intent.sh ./inputs/workspace-injection.json ./out/workspace-injection"
+  }
 
   judges {
     judge "IMPLEMENTATION — typed intent lowers to the exact canonical managed trajectory" {
@@ -29,8 +33,8 @@ eval {
     judge "INITIAL CONTEXT — goal and references become an inbox Resource, not KDL fields" {
       exec "bash ./judges/grade.sh inbox"
     }
-    judge "CLOSED INPUT — account pins, unknown fields, and unstable trajectory values fail closed" {
-      exec #"test "$RUN_forbidden_account_EXIT" -ne 0 && test "$RUN_trajectory_drift_EXIT" -ne 0"#
+    judge "CLOSED INPUT — account pins, unstable trajectory values, and KDL workspace injection fail closed" {
+      exec #"test "$RUN_forbidden_account_EXIT" -ne 0 && test "$RUN_trajectory_drift_EXIT" -ne 0 && test "$RUN_workspace_injection_EXIT" -ne 0 && test ! -e "$CATALOG/out/workspace-injection/agents""#
     }
     judge "NEGATIVE CONTROLS — raw provider argv, trajectory drift, and missing context are rejected" {
       exec "bash ./judges/mutation-check.sh"

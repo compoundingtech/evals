@@ -7,6 +7,9 @@ cd "$repo_root"
 
 reachable=(
   bin/check-corpus.sh
+  bin/check-agent-new-renderer-security.sh
+  bin/check-canonical-seat-template-mutations.sh
+  bin/check-canonical-seat-template.sh
   bin/check-event-first.sh
   bin/check-fixture-reset.sh
   bin/check-fixture-reset-terminal.sh
@@ -20,6 +23,7 @@ reachable=(
   bin/check-preflight-safety.sh
   bin/check-run-history.sh
   bin/check-retired-surfaces.sh
+  bin/check-st2-pin-consistency.sh
   bin/check-st2-semantic.sh
   bin/check-vrs-scope-drift.sh
   bin/check-vrs-variations.sh
@@ -27,8 +31,11 @@ reachable=(
   bin/corpus-inventory.sh
   bin/generate-catalog.sh
   bin/model-seat-inventory.sh
+  bin/st2-pin.sh
 )
 materializers=(
+  cells/agent-new-bundle-contract/fixture/render-intent.sh
+  cells/agent-new-interview/fixture/interviewer/render-intent.sh
   cells/signal-rename/fixture/materialize.sh
   cells/signal-rename-codex/fixture/materialize.sh
   cells/weird-git-setup/fixture/setup-megarepo.sh
@@ -56,6 +63,8 @@ mapfile -t direct < <(
     LC_ALL=C sort -u
 )
 expected_direct=(
+  bin/check-agent-new-renderer-security.sh
+  bin/check-canonical-seat-template-mutations.sh
   bin/check-event-first.sh
   bin/check-fixture-reset-terminal.sh
   bin/check-harness-contract.sh
@@ -68,6 +77,7 @@ expected_direct=(
   bin/check-preflight-safety.sh
   bin/check-retired-surfaces.sh
   bin/check-run-history.sh
+  bin/check-st2-pin-consistency.sh
   bin/check-st2-semantic.sh
   bin/check-vrs-scope-drift.sh
   bin/check-vrs-variations.sh

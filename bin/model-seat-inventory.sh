@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Emit every maintained model seat directly from the root folder-eval declarations.
+# Emit every maintained model seat from compact eval declarations and canonical templates.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -28,7 +28,7 @@ while IFS= read -r cell; do
     continue
   }
 
-  if ! awk -v cell="$cell" '
+  if ! awk -v cell="$cell" -v source_path="$kdl" '
     function direct(line) {
       return index(line, child_indent) == 1
     }
@@ -49,7 +49,7 @@ while IFS= read -r cell; do
         bad = 1
       }
       if (workspace != "" && st_agent != "" && ding == 1) {
-        printf "%s\t%s\t%s\t%s\t%s\t%d\n", cell, agent, harness, workspace, st_agent, command_line
+        printf "%s\t%s\t%s\t%s\t%s\tcompact\t%s\t%d\n", cell, agent, harness, workspace, st_agent, source_path, command_line
       }
     }
     /^[[:space:]]*agent[[:space:]]+"/ {
@@ -125,9 +125,39 @@ while IFS= read -r cell; do
   fi
 done < <(find cells -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | LC_ALL=C sort)
 
+while IFS= read -r template; do
+  cell="${template#cells/}"
+  cell="${cell%%/*}"
+  agent="$(sed -n 's/^[[:space:]]*agent[[:space:]]*"\([^"]*\)".*/\1/p' "$template")"
+  workspace="$(sed -n 's/^[[:space:]]*workspace[[:space:]]*"\([^"]*\)".*/\1/p' "$template")"
+  st_agent="$(sed -n 's/^[[:space:]]*ST_AGENT[[:space:]]*"\([^"]*\)".*/\1/p' "$template")"
+  command_line="$(rg -n '^[[:space:]]*argv[[:space:]].*"agent"[[:space:]]+"launch"' "$template" | cut -d: -f1)"
+  command_text="$(sed -n "${command_line}p" "$template")"
+  ding_count="$(rg -c '^[[:space:]]*ding[[:space:]]*$' "$template" || true)"
+  harness=""
+  if grep -Fq '"--harness" "claude"' <<< "$command_text"; then
+    harness="Claude"
+  elif grep -Fq '"--harness" "codex"' <<< "$command_text"; then
+    harness="Codex"
+  fi
+  if [ -z "$agent" ] || [ -z "$workspace" ] || [ -z "$st_agent" ] ||
+    [ -z "$command_line" ] || [ -z "$harness" ] || [ "$ding_count" -ne 1 ]; then
+    echo "FAIL: canonical model-seat template is incomplete: $template" >&2
+    failed=1
+    continue
+  fi
+  printf '%s\t%s\t%s\t%s\t%s\tcanonical-template\t%s\t%s\n' \
+    "$cell" "$agent" "$harness" "$workspace" "$st_agent" "$template" "$command_line" \
+    >> "$inventory"
+done < <(find cells -type f -name 'agent.kdl.template' | LC_ALL=C sort)
+
 launches="$(
-  rg -n --no-heading '^[[:space:]]*command[[:space:]]+.*exec ((claude|codex)[[:space:]]|axe agent launch[[:space:]])' \
-    cells/*/*.kdl | wc -l | tr -d ' '
+  {
+    rg -n --no-heading '^[[:space:]]*command[[:space:]]+.*exec ((claude|codex)[[:space:]]|axe agent launch[[:space:]])' \
+      cells/*/*.kdl || true
+    rg -n --no-heading '^[[:space:]]*argv[[:space:]].*"agent"[[:space:]]+"launch"' \
+      cells -g 'agent.kdl.template' || true
+  } | wc -l | tr -d ' '
 )"
 rows="$(wc -l < "$inventory" | tr -d ' ')"
 if [ "$rows" -ne "$launches" ]; then
@@ -137,6 +167,6 @@ fi
 
 [ "$failed" -eq 0 ] || exit 1
 if [ "$include_header" -eq 1 ]; then
-  printf 'cell\tagent\tharness\tworkspace\tst_agent\tcommand_line\n'
+  printf 'cell\tagent\tharness\tworkspace\tst_agent\tsource_kind\tsource_path\tsource_line\n'
 fi
 cat "$inventory"

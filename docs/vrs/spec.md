@@ -101,6 +101,10 @@ one-sentence human request
   explicit in that intent; the deterministic boundary owns canonical KDL,
   keeps account selection out of durable state, and places the goal and
   references in an initial inbox Resource.
+- The renderer accepts workspace values only from a closed absolute-path
+  alphabet and rejects invalid input before creating an Agent Spec. A
+  model-free malicious-workspace control gates both renderers against KDL
+  injection.
 - The temporary interviewer itself launches through typed
   `axe agent launch` with explicit harness, model, effort, persona, mode, and
   boot axes. The cell does not pin `--account`: Axe selects an eligible
@@ -117,6 +121,11 @@ one-sentence human request
 - The paid cell is environment-bound to that explicit runtime-profile
   artifact; the artifact identity belongs in run evidence and results are not
   represented as hermetic across different profiles.
+- One structured seat inventory is authoritative for both compact eval seats
+  and canonical paid templates. Corpus cost classification, event-first
+  policy, and harness-overlay checks consume its source-kind/path records;
+  canonical template mutations prove required launch axes and overlays are
+  non-vacuous.
 - The canonical runtime seam removes the prior zero-Agent-Spec admission
   blocker. The paid judgment run remains held until the host's Claude
   workspace-trust projection is independently proven; model-free evidence

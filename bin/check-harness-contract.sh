@@ -6,14 +6,19 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
 selected="all"
+selected_cell=""
 if [ "$#" -eq 2 ] && [ "$1" = "--harness" ]; then
   selected="$2"
   case "$selected" in
     Claude|Codex) ;;
     *) echo "usage: bin/check-harness-contract.sh [--harness Claude|Codex]" >&2; exit 2 ;;
   esac
+elif [ "$#" -eq 2 ] && [ "$1" = "--cell" ]; then
+  selected_cell="$2"
+  [ -d "cells/$selected_cell" ] ||
+    { echo "FAIL: unknown cell $selected_cell" >&2; exit 2; }
 elif [ "$#" -ne 0 ]; then
-  echo "usage: bin/check-harness-contract.sh [--harness Claude|Codex]" >&2
+  echo "usage: bin/check-harness-contract.sh [--harness Claude|Codex] | [--cell CELL]" >&2
   exit 2
 fi
 
@@ -79,7 +84,10 @@ prepare_cell() {
 declare -A roots=()
 failed=0
 checked=0
-while IFS=$'\t' read -r cell agent harness workspace st_agent command_line; do
+while IFS=$'\t' read -r cell agent harness workspace st_agent source_kind source_path source_line; do
+  if [ -n "$selected_cell" ] && [ "$cell" != "$selected_cell" ]; then
+    continue
+  fi
   if [ "$selected" != "all" ] && [ "$harness" != "$selected" ]; then
     continue
   fi
@@ -92,7 +100,11 @@ while IFS=$'\t' read -r cell agent harness workspace st_agent command_line; do
     }
   fi
 
-  relative="${workspace#./}"
+  if [[ "$workspace" == "\$CATALOG/"* ]]; then
+    relative="${workspace#\$CATALOG/}"
+  else
+    relative="${workspace#./}"
+  fi
   target="${roots[$cell]}/$relative"
   [ -n "$relative" ] || target="${roots[$cell]}"
   if [ ! -d "$target" ]; then
@@ -101,10 +113,18 @@ while IFS=$'\t' read -r cell agent harness workspace st_agent command_line; do
     continue
   fi
 
-  kdl="cells/$cell/$cell.kdl"
-  command_text="$(sed -n "${command_line}p" "$kdl")"
+  command_text="$(sed -n "${source_line}p" "$source_path")"
   axe_launch=0
-  if grep -Fq 'exec axe agent launch ' <<< "$command_text"; then
+  if [ "$source_kind" = "canonical-template" ]; then
+    publisher="$(dirname "$source_path")/publish-interviewer.sh"
+    bin/check-canonical-seat-template.sh "$source_path" "$publisher" >/dev/null || {
+      failed=1
+      continue
+    }
+    [ -s "$(dirname "$source_path")/_templates/bus.st2.md" ] ||
+      { echo "FAIL: $cell/$agent canonical bus overlay source is missing" >&2; failed=1; }
+    axe_launch=1
+  elif grep -Fq 'exec axe agent launch ' <<< "$command_text"; then
     axe_launch=1
     grep -Fq -- '--mode managed-unattended' <<< "$command_text" ||
       { echo "FAIL: $cell/$agent Axe launch omits managed-unattended mode" >&2; failed=1; }

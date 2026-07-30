@@ -17,8 +17,9 @@ fi
 exec "$real" "$@"
 EOF
 chmod +x "$tmp/fake/st2"
+st2_dir="$(dirname "${ST2_BIN:-$(command -v st2)}")"
 set +e
-OVN_TEST_FAKE=1 OVN_TEST_FAKE_COMMAND="$tmp/fake/st2" OVN_TEST_WATCHDOG_EXTRA=0 \
+PATH="$st2_dir:$PATH" OVN_TEST_FAKE=1 OVN_TEST_FAKE_COMMAND="$tmp/fake/st2" OVN_TEST_WATCHDOG_EXTRA=0 \
   bash "$tmp/repo/bin/overnight.sh" --run --cell hook-integrity --cell pty-send-peek --state-dir "$tmp/state" >"$tmp/out" 2>&1
 rc=$?
 set -e

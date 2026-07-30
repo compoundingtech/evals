@@ -59,7 +59,7 @@ GI
 echo "== git init seed + bare origin =="
 git -C "$SEED" init -q -b main
 git -C "$SEED" add -A
-git -C "$SEED" -c user.name="eval-seed" -c user.email="seed@local" commit -q -m "seed: synthetic signal workspace (base + relay + hub + config)"
+git -C "$SEED" commit -q -m "seed: synthetic signal workspace (base + relay + hub + config)"
 git clone -q --bare "$SEED" "$SB/origin.git"
 
 echo "== clone one full workspace per agent (distinct authors) + drop its persona =="

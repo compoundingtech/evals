@@ -7,6 +7,7 @@ cd "$repo_root"
 
 mode="dry-run"
 state_dir=".eval-runs/overnight"
+claude_auth_receipt=""
 acknowledge_usage=0
 allow_informational_reset_banner=0
 run_all=0
@@ -15,13 +16,17 @@ selected_cells=()
 usage() {
   cat <<'EOF'
 usage: bin/overnight.sh [--dry-run|--run] [--cell NAME ...|--all] [--state-dir PATH]
-                        [--acknowledge-usage-stop] [--allow-informational-reset-banner]
+                        [--claude-auth-receipt PATH] [--acknowledge-usage-stop]
+                        [--allow-informational-reset-banner]
 
 --dry-run                 Print the complete stable inventory; start nothing (default).
 --run                     Run the free preflight, then execute the explicitly selected cells.
 --cell NAME               Select one maintained cell; repeat to set exact order.
 --all                     Select the complete maintained inventory explicitly.
 --state-dir PATH          Durable logs/receipts root (default: .eval-runs/overnight).
+--claude-auth-receipt PATH
+                          Fresh sanitized receipt from the explicit bounded
+                          real-provider probe. Required for Claude-selected --run.
 --acknowledge-usage-stop  Archive an existing STOPPED guard before an explicitly resumed --run.
 --allow-informational-reset-banner
                           Human-reviewed opt-in: continue after only the Codex
@@ -59,6 +64,14 @@ while [ "$#" -gt 0 ]; do
         exit 2
       }
       state_dir="$2"
+      shift 2
+      ;;
+    --claude-auth-receipt)
+      [ "$#" -ge 2 ] || {
+        usage >&2
+        exit 2
+      }
+      claude_auth_receipt="$2"
       shift 2
       ;;
     --acknowledge-usage-stop)
@@ -156,10 +169,10 @@ fi
 if [ "$requires_claude" -eq 0 ] && [ "$requires_codex" -eq 0 ]; then
   echo 'PROVIDER CHECKS: none; this selected subset is entirely model-free.'
 else
-  providers=()
-  [ "$requires_claude" -eq 0 ] || providers+=(Claude)
-  [ "$requires_codex" -eq 0 ] || providers+=(Codex)
-  printf 'PROVIDER CHECKS: %s binary and auth status before execution.\n' "${providers[*]}"
+  [ "$requires_claude" -eq 0 ] ||
+    echo 'PROVIDER CHECKS: Claude binary, auth metadata, and a fresh real-provider receipt before execution.'
+  [ "$requires_codex" -eq 0 ] ||
+    echo 'PROVIDER CHECKS: Codex binary and auth status before execution.'
 fi
 if [ "$mode" = "dry-run" ]; then
   echo "DRY RUN ONLY: no preflight command, model, judge, or eval was started."
@@ -167,6 +180,15 @@ if [ "$mode" = "dry-run" ]; then
     echo "NO PAID SELECTION: add repeatable --cell NAME or explicit --all together with --run."
   fi
   exit 0
+fi
+
+if [ "$requires_claude" -eq 1 ] && [ -z "$claude_auth_receipt" ]; then
+  echo "FAIL: Claude-selected --run requires --claude-auth-receipt from the explicit real-provider probe" >&2
+  exit 1
+fi
+if [ "$requires_claude" -eq 0 ] && [ -n "$claude_auth_receipt" ]; then
+  echo "FAIL: --claude-auth-receipt applies only to a Claude-selected --run" >&2
+  exit 2
 fi
 
 [ "$(git branch --show-current)" = "main" ] || {
@@ -177,6 +199,9 @@ fi
   echo "FAIL: overnight runs require a clean worktree" >&2
   exit 1
 }
+if [ "$requires_claude" -eq 1 ]; then
+  bin/validate-claude-auth-proof.sh "$claude_auth_receipt"
+fi
 
 echo
 echo "== free preflight (no model seats) =="
@@ -191,6 +216,9 @@ if [ "$requires_claude" -eq 1 ]; then
     echo "FAIL: selected cells require Claude, but claude auth status failed" >&2
     exit 1
   }
+  # Re-check after the free preflight so a receipt that aged out while the
+  # corpus was being validated can never authorize the first paid launch.
+  bin/validate-claude-auth-proof.sh "$claude_auth_receipt"
 fi
 if [ "$requires_codex" -eq 1 ]; then
   command -v codex >/dev/null || {

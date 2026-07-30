@@ -33,6 +33,7 @@ bash -n "${shell_files[@]}"
 echo "PASS: ${#shell_files[@]} shell files parse"
 
 bin/check-preflight-safety.sh
+bin/check-claude-auth-proof.sh
 bin/check-model-policy.sh
 bin/check-model-policy-mutations.sh
 bin/check-run-history.sh

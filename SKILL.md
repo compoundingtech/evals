@@ -35,20 +35,29 @@ st2 eval ./cells/<cell>/ --keep
 When an exact conservative paid queue is explicitly authorized, repeat `--cell` in the approved order:
 
 ```sh
-bin/overnight.sh --run --cell <cell> --cell <cell> --state-dir .eval-runs/overnight
+env -u ANTHROPIC_API_KEY -u CLAUDE_CODE_OAUTH_TOKEN \
+  bin/probe-claude-auth.sh --run \
+  --receipt .eval-runs/overnight/claude-real-auth.env
+bin/overnight.sh --run \
+  --claude-auth-receipt .eval-runs/overnight/claude-real-auth.env \
+  --cell <cell> --cell <cell> --state-dir .eval-runs/overnight
 ```
 
 The common Codex reset-available banner stops the default run before the next cell. A future full unattended
 run therefore requires separate human review of both `--all` and the higher-spend informational-banner opt-in:
 
 ```sh
-bin/overnight.sh --run --all --allow-informational-reset-banner --state-dir .eval-runs/overnight
+bin/overnight.sh --run --all \
+  --claude-auth-receipt .eval-runs/overnight/claude-real-auth.env \
+  --allow-informational-reset-banner --state-dir .eval-runs/overnight
 ```
 
 Paid `--run` rejects an omitted selector, duplicate, unknown, or retired cell. Explicitly selected maintained
-model-free cells execute through the same st2 lifecycle and receipts without provider checks; Claude/Codex
-binary and authentication checks apply only when the selected subset needs that provider. Hard quota/rate-limit
-errors stop unconditionally in both modes. Never infer approval for either paid command.
+model-free cells execute through the same st2 lifecycle and receipts without provider checks. A
+Claude-selected run requires a receipt from the separately authorized bounded real-provider probe; metadata
+from `claude auth status` is supplemental and cannot authorize execution. Codex checks apply only when the
+selected subset needs Codex. Hard quota/rate-limit errors stop unconditionally in both modes. Never infer
+approval for either paid command or for the auth probe.
 
 ## Cell rules
 

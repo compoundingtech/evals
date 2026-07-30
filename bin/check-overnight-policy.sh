@@ -70,7 +70,10 @@ grep -Eq '^hook-integrity[[:space:]]+model-free[[:space:]]+-[[:space:]]+-[[:spac
 grep -Fq '1 selected cells; explicit CLI order; sequential, no overlap.' "$model_free_plan"
 grep -Fq 'PROVIDER CHECKS: none; this selected subset is entirely model-free.' "$model_free_plan"
 grep -Fq 'DRY RUN ONLY: no preflight command, model, judge, or eval was started.' "$model_free_plan"
-grep -Fq 'PROVIDER CHECKS: Claude Codex binary and auth status before execution.' "$queue_plan"
+grep -Fq \
+  'PROVIDER CHECKS: Claude binary, auth metadata, and a fresh real-provider receipt before execution.' \
+  "$queue_plan"
+grep -Fq 'PROVIDER CHECKS: Codex binary and auth status before execution.' "$queue_plan"
 
 printf '%s\n' \
   '#!/usr/bin/env bash' \
@@ -109,6 +112,12 @@ assert_rejected_before_provider \
   'FAIL: unknown or retired cell: clean-compose' --run --cell clean-compose
 assert_rejected_before_provider \
   'FAIL: --cell requires a name' --run --cell
+assert_rejected_before_provider \
+  'FAIL: Claude-selected --run requires --claude-auth-receipt from the explicit real-provider probe' \
+  --run --cell license-mit
+assert_rejected_before_provider \
+  'FAIL: --claude-auth-receipt applies only to a Claude-selected --run' \
+  --run --cell hook-integrity --claude-auth-receipt .eval-runs/unused.env
 
 dry_exit="$(rg -n -F 'if [ "$mode" = "dry-run" ]' bin/overnight.sh | cut -d: -f1)"
 launch_line="$(rg -n 'setsid .*st2 eval' bin/overnight.sh | cut -d: -f1)"
@@ -133,6 +142,20 @@ if rg -n 'claude auth status|codex login status' "$dry_prefix"; then
 fi
 grep -Fq 'if [ "$requires_claude" -eq 1 ]; then' bin/overnight.sh
 grep -Fq 'if [ "$requires_codex" -eq 1 ]; then' bin/overnight.sh
+first_receipt_gate="$(
+  rg -n -F 'bin/validate-claude-auth-proof.sh "$claude_auth_receipt"' bin/overnight.sh |
+    head -1 | cut -d: -f1
+)"
+preflight_line="$(rg -n -F 'bin/check-corpus.sh' bin/overnight.sh | head -1 | cut -d: -f1)"
+last_receipt_gate="$(
+  rg -n -F 'bin/validate-claude-auth-proof.sh "$claude_auth_receipt"' bin/overnight.sh |
+    tail -1 | cut -d: -f1
+)"
+[ -n "$first_receipt_gate" ] && [ -n "$preflight_line" ] && [ -n "$last_receipt_gate" ] &&
+  [ "$first_receipt_gate" -lt "$preflight_line" ] && [ "$last_receipt_gate" -gt "$preflight_line" ] || {
+  echo "FAIL: fresh Claude receipt is not checked both before and after free preflight" >&2
+  exit 1
+}
 grep -Fq 'claude auth status --json >/dev/null 2>&1' bin/overnight.sh
 grep -Fq 'codex login status >/dev/null 2>&1' bin/overnight.sh
 

@@ -119,21 +119,29 @@ The conservative future paid run requires an exact repeated `--cell` queue and s
 either a hard usage error or the informational Codex reset-available banner:
 
 ```sh
-bin/overnight.sh --run --cell ghost-bug --cell ghost-bug-codex --state-dir .eval-runs/overnight
+env -u ANTHROPIC_API_KEY -u CLAUDE_CODE_OAUTH_TOKEN \
+  bin/probe-claude-auth.sh --run \
+  --receipt .eval-runs/overnight/claude-real-auth.env
+bin/overnight.sh --run \
+  --claude-auth-receipt .eval-runs/overnight/claude-real-auth.env \
+  --cell ghost-bug --cell ghost-bug-codex --state-dir .eval-runs/overnight
 ```
 
 Because that common informational banner would prevent a full unattended sweep, the exact future full-run
 command makes both its complete-inventory selection and separately reviewed higher-spend choice visible:
 
 ```sh
-bin/overnight.sh --run --all --allow-informational-reset-banner --state-dir .eval-runs/overnight
+bin/overnight.sh --run --all \
+  --claude-auth-receipt .eval-runs/overnight/claude-real-auth.env \
+  --allow-informational-reset-banner --state-dir .eval-runs/overnight
 ```
 
 With no selector, dry-run remains inventory-only; paid `--run` rejects omitted, duplicate, unknown, and
 retired selections. Explicitly selected maintained model-free cells execute through the same st2 lifecycle
-and receipts without provider checks; Claude/Codex binary and authentication checks apply only when the
-selected subset needs that provider. Neither `--all` nor the informational-banner opt-in is approved merely
-because it is documented or shown by `--dry-run`.
+and receipts without provider checks. A Claude-selected run additionally requires the separately authorized
+bounded real-provider probe's fresh, sanitized receipt; auth metadata alone cannot authorize paid execution.
+Codex authentication checks apply only when the selected subset needs Codex. Neither the probe, `--all`, nor
+the informational-banner opt-in is approved merely because it is documented or shown by `--dry-run`.
 
 The runner executes one cell at a time, applies each cell's declared timeout plus a watchdog grace period,
 keeps durable logs and atomic PASS receipts, and skips matching completed receipts on resume. Hard quota/rate

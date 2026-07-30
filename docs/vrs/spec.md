@@ -40,7 +40,7 @@ tracked cell
 ## Current execution
 
 ```text
-preflight → explicit selection → launch → judge → cleanup → receipt
+explicit selection → fresh provider proof → preflight → launch → judge → cleanup → receipt
 ```
 
 The current corpus runner requires an explicit subset or `--all`, launches
@@ -50,6 +50,11 @@ and continues or stops.
 - **R06–R09:** Runs have explicit budgets and stop conditions, clean up on
   completion or stop, leave durable receipts, and expose model, effort, usage,
   and cost. Resume validates the inputs and prior receipts.
+- A Claude-selected paid run fails closed unless a separately authorized,
+  bounded real-provider turn produced an exact, sanitized proof no more than
+  ten minutes earlier. The proof is bound to the source commit, exact CLI
+  version, and non-secret state/config context. Authentication metadata alone
+  is not evidence that the current OAuth bearer is fresh.
 - This current runner policy is not the permanent KDL execution model. Plans,
   steps, validation loops, schedules, external events, and long-running agents
   remain open for executable design rather than being constrained by this

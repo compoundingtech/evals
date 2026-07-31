@@ -55,6 +55,18 @@ tracked cell
   truncated frames, and side-channel terminal bytes. The fixture controls route
   selection and transport failure but does not import PTY source modules or
   bypass the packaged launcher.
+- **R01, R04, R05, R07, R11:** The model-free
+  `pty-attach-outcomes-and-roles` cell composes two corrections at their public
+  boundaries. The installed launcher must frame an intentional Ctrl-\\ detach
+  as one terminal, empty `DETACH` before clean descriptor EOF and status zero;
+  an eval-owned daemon loss must instead end without `EXIT` or `DETACH` and
+  fail. Independent raw-socket transitions must replace, not accumulate, the
+  client role: `PEEK` to `ATTACH` restores terminal input and shared min-grid
+  participation, while `ATTACH` to `PEEK` suppresses input and resize and
+  removes its geometry constraint. `STATUS` and later PTY output provide causal
+  barriers for the negative assertions. A model-free mutation matrix rejects
+  ambiguous outcomes, false truncation success, failed promotion, retained
+  constraints, and leaked demoted input.
 
 ## Current execution
 

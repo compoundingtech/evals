@@ -1,0 +1,30 @@
+// Compose the shipped PTY attach launcher and raw socket protocol around the two role/outcome corrections.
+eval {
+  copy "./fixture"
+  max-timeout "60s"
+
+  run "contracts" {
+    command "node ./probe.mjs"
+  }
+  run "oracle-mutations" {
+    command "node ./probe.mjs --self-test"
+  }
+
+  judges {
+    judge "DETACH - intentional machine detach is framed before clean EOF" {
+      exec "grep -Fqx MACHINE-DETACH-GREEN-7c42 $RUNS_DIR/contracts.out"
+    }
+    judge "TRUNCATION - socket loss cannot masquerade as an intentional outcome" {
+      exec "grep -Fqx MACHINE-TRUNCATION-GREEN-7c42 $RUNS_DIR/contracts.out"
+    }
+    judge "PROMOTION - PEEK to ATTACH restores writes and min-grid participation" {
+      exec "grep -Fqx ROLE-PROMOTION-GREEN-7c42 $RUNS_DIR/contracts.out"
+    }
+    judge "DEMOTION - ATTACH to PEEK suppresses writes and removes its constraint" {
+      exec "grep -Fqx ROLE-DEMOTION-GREEN-7c42 $RUNS_DIR/contracts.out"
+    }
+    judge "CLEANUP - every eval-owned process and PTY session is removed" {
+      exec "grep -Fqx ATTACH-CORRECTIONS-CLEANUP-GREEN-7c42 $RUNS_DIR/contracts.out"
+    }
+  }
+}

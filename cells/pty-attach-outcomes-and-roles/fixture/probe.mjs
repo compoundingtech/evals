@@ -9,7 +9,7 @@ import { spawn, spawnSync } from "node:child_process"
 const TYPE = { DATA: 0, ATTACH: 1, DETACH: 2, RESIZE: 3, EXIT: 4, SCREEN: 5, PEEK: 6, STATUS: 7, GEOMETRY: 10 }
 const OUTCOMES = new Set([TYPE.DETACH, TYPE.EXIT])
 const PTY = process.env.PTY_BIN ?? "pty"
-const root = process.env.PTY_EVAL_ROOT ?? path.join(os.tmpdir(), `pty-corrections-${process.pid}`)
+const root = fs.mkdtempSync(path.join(os.tmpdir(), "pty-corrections-"))
 const env = { ...process.env, PTY_ROOT: root, PTY_ROOT_LEGACY_SILENT: "1" }
 delete env.PTY_SESSION
 delete env.PTY_SESSION_DIR
@@ -90,9 +90,12 @@ const selfTest = () => {
     mutate(detach, { code: 1 }),
     mutate(detach, { fdEnded: false }),
     mutate(detach, { stdout: Buffer.from("leak") }),
+    mutate(detach, { stderr: Buffer.from("leak") }),
     mutate(detach, { packets: [] }),
     mutate(detach, { packets: [{ type: TYPE.EXIT, payload: Buffer.alloc(4) }] }),
     mutate(detach, { packets: [{ type: TYPE.DETACH, payload: Buffer.from("x") }] }),
+    mutate(detach, { packets: [detach.packets[0], detach.packets[0]] }),
+    mutate(detach, { packets: [{ type: TYPE.EXIT, payload: Buffer.alloc(4) }, detach.packets[0]] }),
   ]) assert.throws(() => validateDetach(bad))
 
   const truncation = { code: 1, fdEnded: true, packets: [{ type: TYPE.GEOMETRY, payload: Buffer.alloc(4) }, { type: TYPE.SCREEN, payload: Buffer.alloc(0) }] }
@@ -101,6 +104,7 @@ const selfTest = () => {
     mutate(truncation, { code: 0 }),
     mutate(truncation, { fdEnded: false }),
     mutate(truncation, { packets: [...truncation.packets, { type: TYPE.DETACH, payload: Buffer.alloc(0) }] }),
+    mutate(truncation, { packets: [...truncation.packets, { type: TYPE.EXIT, payload: Buffer.alloc(4) }] }),
   ]) assert.throws(() => validateTruncation(bad))
 
   const promotion = {
@@ -110,7 +114,8 @@ const selfTest = () => {
   }
   validatePromotion(promotion)
   for (const bad of [
-    mutate(promotion, { stats: { clients: { attached: 1, readOnly: 1 }, terminal: { rows: 30, cols: 100 } } }),
+    mutate(promotion, { stats: { ...promotion.stats, clients: { attached: 1, readOnly: 1 } } }),
+    mutate(promotion, { stats: { ...promotion.stats, terminal: { rows: 30, cols: 100 } } }),
     mutate(promotion, { output: "ANCHOR_AFTER_PROMOTION_7c42" }),
     mutate(promotion, { geometrySeen: false }),
   ]) assert.throws(() => validatePromotion(bad))
@@ -122,7 +127,8 @@ const selfTest = () => {
   }
   validateDemotion(demotion)
   for (const bad of [
-    mutate(demotion, { stats: { clients: { attached: 2, readOnly: 0 }, terminal: { rows: 12, cols: 40 } } }),
+    mutate(demotion, { stats: { ...demotion.stats, clients: { attached: 2, readOnly: 0 } } }),
+    mutate(demotion, { stats: { ...demotion.stats, terminal: { rows: 12, cols: 40 } } }),
     mutate(demotion, { output: "DEMOTED_MUST_NOT_WRITE_7c42\r\nANCHOR_AFTER_DEMOTION_7c42" }),
     mutate(demotion, { restoredGeometrySeen: false }),
   ]) assert.throws(() => validateDemotion(bad))
@@ -331,18 +337,17 @@ const roleScenarios = async () => {
   }
 }
 
-if (process.argv[2] === "--self-test") {
-  selfTest()
-} else {
-  fs.mkdirSync(root, { recursive: true })
-  try {
+try {
+  if (process.argv[2] === "--self-test") {
+    selfTest()
+  } else {
     if (process.argv[2] !== "--roles-only") await machineScenarios()
     if (process.argv[2] !== "--machine-only") await roleScenarios()
     const remaining = runPty(["list", "--json"])
     assert.equal(remaining.status, 0, remaining.stderr)
     assert.deepEqual(JSON.parse(remaining.stdout), [])
     console.log("ATTACH-CORRECTIONS-CLEANUP-GREEN-7c42")
-  } finally {
-    fs.rmSync(root, { recursive: true, force: true })
   }
+} finally {
+  fs.rmSync(root, { recursive: true, force: true })
 }

@@ -27,12 +27,23 @@ fi
 echo "PASS: missing-field mutation fails coverage"
 
 unknown_gap="$tmp/unknown-gap.tsv"
-sed 's/F01\tRED\tG01/F01\tRED\tG09/' "$manifest" >"$unknown_gap"
+sed 's/F04\tRED\tG01/F04\tRED\tG09/' "$manifest" >"$unknown_gap"
 if bash "$oracle" gaps "$good" "$unknown_gap" >/dev/null 2>&1; then
   echo "FAIL: unknown G09 gap passed mapping" >&2
   exit 1
 fi
 echo "PASS: unknown-gap mutation fails mapping"
+
+stale_map="$tmp/stale-map.out"
+sed \
+  -e $'s/RESULT\tsource-noop-heals\tF01\tPASS\t-\tPASS/RESULT\tsource-noop-heals\tF01\tRED\tG01\tRED/' \
+  -e $'s/RESULT\tinvalid-type-refuses\tF04\tRED\tG01\tRED/RESULT\tinvalid-type-refuses\tF04\tPASS\t-\tPASS/' \
+  "$good" >"$stale_map"
+if bash "$oracle" classification "$stale_map" "$manifest" >/dev/null 2>&1; then
+  echo "FAIL: stale pass/red membership with unchanged 4/14 totals passed classification" >&2
+  exit 1
+fi
+echo "PASS: stale pass/red membership fails even when aggregate counts stay 4/14"
 
 red_as_pass="$tmp/red-as-pass.out"
 sed $'s/RESULT\tidentity-remove-add\tF02\tRED\tG03\tRED/RESULT\tidentity-remove-add\tF02\tRED\tG03\tPASS/' \

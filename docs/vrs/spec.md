@@ -33,6 +33,9 @@ tracked cell
 - Hooks and personas must be baked into the fixture for every launched agent so
   the eval tests a controlled, reproducible real-work environment rather than
   mutable external defaults.
+- `shared-workspace-render-ownership` proves that incompatible declarations
+  cannot race on one workspace target, including through targeted
+  materialization, while byte-equivalent shared claims remain valid.
 - An LLM judge is not a defect. Its provider, model, prompt, inputs, and failure
   behavior must be explicit, and mutation checks must demonstrate useful
   discrimination.

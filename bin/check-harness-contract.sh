@@ -36,6 +36,10 @@ hydrate_gitdirs() {
       return 1
     }
     mv -- "$gitdir" "$target"
+    # Frozen metadata can track an ignored empty file that the outer corpus cannot carry.
+    # Restore only missing index-owned paths after hydration.
+    git -C "${target%/.git}" ls-files --deleted -z |
+      git -C "${target%/.git}" checkout-index --stdin -z
   done < <(find "$root" -depth -type d -name _git -print0)
 }
 

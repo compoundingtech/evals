@@ -10,13 +10,13 @@ test -S "$runtime_dir/bus"
 export XDG_RUNTIME_DIR="$runtime_dir"
 
 test "$(sha256sum "$current_st2" | awk '{ print $1 }')" = \
-  "c8bfed6ce0df407fcb692fcc117aa80f0b7321e040e2cf0b9db9c931a0e9c30a"
+  "e193141523bb35a397f90170f6fc182e663d205eef2d95af27a94dcae806cc48"
 test "$(sha256sum "$current_pty" | awk '{ print $1 }')" = \
   "1c9716d435ca56ad9b4f67056d76fa6856cdc08e6bbda1fd4be6f59952e9fde3"
 test "$(sha256sum "$old_st2" | awk '{ print $1 }')" = \
   "d61d12b2b1189a391c196ca28f8f4ba69072d14fcbad2571fc29db1f250f4eed"
 case "$("$current_st2" --version)" in
-  *"(2f8db8a,"*) ;;
+  *"(8ca0f36,"*) ;;
   *) printf 'unexpected current st2 identity: %s\n' "$("$current_st2" --version)" >&2; exit 1 ;;
 esac
 case "$("$old_st2" --version)" in

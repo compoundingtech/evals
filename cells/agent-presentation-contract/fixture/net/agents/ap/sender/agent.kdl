@@ -1,0 +1,8 @@
+agent "sender" {
+  identity "sender"
+  host "ap"
+  role "fixture"
+  retired #true
+  workspace "$CATALOG/workspace"
+  command "true"
+}

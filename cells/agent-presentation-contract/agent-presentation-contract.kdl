@@ -1,0 +1,36 @@
+// Stable-ID routing plus non-unique, mutable presentation projected into live PTY metadata.
+eval {
+  copy "./fixture"
+  max-timeout "90s"
+
+  run "contract" {
+    command "bash ./contract.sh"
+  }
+
+  judges {
+    judge "AUTHORING - presentation edits preserve identity and enforce self, supervisor, ownership, and format boundaries" {
+      exec "grep -Fqx PRESENTATION-AUTHORING-GREEN-b128 $RUNS_DIR/contract.out"
+    }
+    judge "SCHEMA - presentation fields enforce Unicode-scalar bounds and roster output is deterministic" {
+      exec "grep -Fqx PRESENTATION-SCHEMA-GREEN-b128 $RUNS_DIR/contract.out"
+    }
+    judge "DUPLICATES - duplicate names are valid while ambiguous PTY references fail closed with stable IDs" {
+      exec "grep -Fqx PRESENTATION-DUPLICATES-GREEN-b128 $RUNS_DIR/contract.out"
+    }
+    judge "ROUTING - st2 message and presence targets resolve stable IDs only" {
+      exec "grep -Fqx PRESENTATION-ROUTING-GREEN-b128 $RUNS_DIR/contract.out"
+    }
+    judge "PROJECTION - name and description changes and removal fully update PTY metadata" {
+      exec "grep -Fqx PRESENTATION-PROJECTION-GREEN-b128 $RUNS_DIR/contract.out"
+    }
+    judge "IDEMPOTENCE - unchanged presentation emits no event and preserves the runtime generation" {
+      exec "grep -Fqx PRESENTATION-IDEMPOTENCE-GREEN-b128 $RUNS_DIR/contract.out"
+    }
+    judge "LIFECYCLE CONTROL - an exact dead primary process is restarted without disturbing sibling tasks" {
+      exec "grep -Fqx PRESENTATION-LIFECYCLE-CONTROL-GREEN-b128 $RUNS_DIR/contract.out"
+    }
+    judge "CLEANUP - explicit retirement leaves no live or retained PTY state" {
+      exec "grep -Fqx PRESENTATION-CLEANUP-GREEN-b128 $RUNS_DIR/contract.out"
+    }
+  }
+}

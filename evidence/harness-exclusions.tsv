@@ -1,5 +1,7 @@
 cell	surface	reason
 adopt-only-migration	cell	deterministic native adoption/replacement lifecycle probe; no harness seat
+agent-presentation-continuity	cell	deterministic native presentation continuity probe; no harness seat
+agent-presentation-contract	cell	deterministic native Agent Spec and PTY presentation probe; no harness seat
 agent-spec-resource-bindings	cell	deterministic native Agent Spec Resource-envelope probe; no harness seat
 context-resource-continuity	cell	deterministic native context/resource restart probe; no harness seat
 docs	judge:cold-reader	one-shot offline Claude print grader; no bus identity, DING, or hook surface

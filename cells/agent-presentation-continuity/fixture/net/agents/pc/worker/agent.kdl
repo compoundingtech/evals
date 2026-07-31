@@ -1,0 +1,10 @@
+agent "worker" {
+  identity "worker"
+  host "pc"
+  role "worker"
+  workspace "$CATALOG/workspace"
+  env {
+    ST_AGENT "pc.worker"
+  }
+  command "exec bash \"$CATALOG/../task.sh\""
+}

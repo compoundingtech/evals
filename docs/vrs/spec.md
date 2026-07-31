@@ -10,11 +10,12 @@ this document maps their shared lifecycle.
 
 ## Scope
 
-The repository owns executable agent scenarios, harness overlays, grading,
-cleanup, run receipts, cost visibility, and the evidence-derived
-`AGENT-SPEC.md`. st2 is the current runtime. Evals defines and proves the
-executable run shape a current or successor runtime consumes; the runtime's
-repository and product name are not part of that stable contract.
+The repository owns the canonical Agent Spec contract and proof surface:
+`AGENT-SPEC.md`, executable acceptance cells, harness overlays, grading,
+cleanup, run receipts, and cost visibility. st2 is the current implementation,
+not the contract owner. Evals defines and proves the executable run shape a
+current or successor runtime consumes; the runtime's repository and product
+name are not part of that stable contract.
 
 ## Cell contract
 
@@ -66,7 +67,9 @@ and continues or stops.
 
 - **R10:** A proposed capability begins as an executable scenario. Accepted
   evidence updates `AGENT-SPEC.md`; the prose links back to maintained cells.
-  A speculative claim cannot become normative merely by editing the spec.
+  A speculative claim cannot become normative merely by editing the spec. A
+  proposed behavior change updates both the canonical contract and its
+  maintained proof cells before any implementation claims conformance.
 - Harness differences are recorded when the same contract needs different
   Claude and Codex mechanisms. They do not silently change the contract.
 - **R11:** Adding a scenario does not require a custom runner path. Its

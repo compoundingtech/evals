@@ -7,6 +7,9 @@ eval {
   run "stream" {
     command "bash ./stream.sh"
   }
+  run "oracle-mutations" {
+    command "node ./check-stream.mjs --self-test"
+  }
 
   judges {
     judge "LAUNCHER - the shipped pty executable preserves the caller-owned inherited descriptor" {

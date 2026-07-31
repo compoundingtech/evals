@@ -11,6 +11,7 @@ stderr="$root/attach.stderr"
 attach_pid=""
 remote_pid=""
 proxy_pid=""
+small_pid=""
 export PTY_ROOT="$pty_root"
 
 pty_at() {
@@ -22,7 +23,7 @@ cleanup() {
     kill "$attach_pid" >/dev/null 2>&1 || true
     wait "$attach_pid" >/dev/null 2>&1 || true
   fi
-  for pid in "$proxy_pid" "$remote_pid"; do
+  for pid in "$small_pid" "$proxy_pid" "$remote_pid"; do
     if test -n "$pid"; then
       kill "$pid" >/dev/null 2>&1 || true
       wait "$pid" >/dev/null 2>&1 || true
@@ -77,19 +78,26 @@ env -u PTY_SESSION PTY_ROOT="$PTY_ROOT" \
   3>"$stream" >"$stdout" 2>"$stderr" &
 attach_pid="$!"
 
-wait_for "initial machine snapshot" node "$root/check-stream.mjs" "$stream" snapshots 1
+wait_for "initial machine snapshot" node "$root/check-stream.mjs" "$stream" snapshots 1 24x80,13x47
 touch "$root/drop-first"
 wait_for "second fabric dial" test -f "$root/fabric-state/second-dial"
 
 pty_at send ms.target --seq AFTER_DROP_61e8 --seq key:return
 wait_for "post-drop target output" peek_has AFTER_DROP_61e8
+env -u PTY_SESSION PTY_ROOT="$PTY_ROOT" \
+  script -qefc 'stty rows 13 cols 47; exec pty attach --no-restart ms.target' /dev/null \
+  >"$root/small.stdout" 2>"$root/small.stderr" &
+small_pid="$!"
+wait_for "smaller attached client" grep -Fq INITIAL_COLOR_61e8 "$root/small.stdout"
 touch "$root/fabric-state/release-second"
 
-wait_for "reconnect machine snapshot" node "$root/check-stream.mjs" "$stream" snapshots 2
+wait_for "reconnect machine snapshot" node "$root/check-stream.mjs" "$stream" snapshots 2 24x80,13x47
 pty_at send ms.target --seq EXIT_61e8 --seq key:return
 
 wait_for "attach process exit" sh -c "! kill -0 '$attach_pid' 2>/dev/null"
-if ! wait "$attach_pid"; then
+if wait "$attach_pid"; then
+  attach_status=0
+else
   attach_status="$?"
   printf 'machine attach exited %s\n' "$attach_status" >&2
   sed -n '1,120p' "$stderr" >&2
@@ -97,20 +105,18 @@ if ! wait "$attach_pid"; then
 fi
 attach_pid=""
 
-node "$root/check-stream.mjs" "$stream" final > "$root/stream-proof"
+node "$root/check-stream.mjs" "$stream" final 2 24x80,13x47 "$stdout" "$stderr" > "$root/stream-proof"
 grep -Fqx PACKAGED-FD-GREEN-61e8 "$root/stream-proof"
 grep -Fqx INITIAL-SNAPSHOT-GREEN-61e8 "$root/stream-proof"
 grep -Fqx RECONNECT-SNAPSHOT-GREEN-61e8 "$root/stream-proof"
 grep -Fqx FRAMED-TERMINAL-STREAM-GREEN-61e8 "$root/stream-proof"
-test ! -s "$stdout"
-! grep -Fq INITIAL_COLOR_61e8 "$stderr"
-! grep -Fq AFTER_DROP_61e8 "$stderr"
 cat "$root/stream-proof"
 
-for pid in "$proxy_pid" "$remote_pid"; do
+for pid in "$small_pid" "$proxy_pid" "$remote_pid"; do
   kill "$pid" >/dev/null 2>&1 || true
   wait "$pid" >/dev/null 2>&1 || true
 done
+small_pid=""
 proxy_pid=""
 remote_pid=""
 pty_at kill ms.target >/dev/null 2>&1 || true

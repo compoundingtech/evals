@@ -47,11 +47,14 @@ tracked cell
 - **R01, R04, R05, R07, R11:** The model-free
   `pty-attach-machine-stream` cell composes the installed PTY launcher, target
   daemon, remote route, forced transport replacement, and caller-owned framed
-  descriptor. Its held-out judges require ordered `GEOMETRY`, `SCREEN`, live
-  `DATA`, and terminal `EXIT` frames without stdout or stderr contamination,
-  then require removal of every eval-owned process and PTY session. The fixture
-  controls route selection and transport failure but does not import PTY source
-  modules or bypass the packaged launcher.
+  descriptor. Its held-out judges require exact initial and min-wins reconnect
+  geometry, preserved SGR color state, current `SCREEN`, live `DATA`, and one
+  terminal `EXIT` without stdout or stderr contamination, then require removal
+  of every eval-owned process and PTY session. A model-free mutation matrix
+  rejects wrong geometry, stripped color, stale reconnect state, misordered or
+  truncated frames, and side-channel terminal bytes. The fixture controls route
+  selection and transport failure but does not import PTY source modules or
+  bypass the packaged launcher.
 
 ## Current execution
 

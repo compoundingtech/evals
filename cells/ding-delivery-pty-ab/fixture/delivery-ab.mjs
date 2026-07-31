@@ -140,7 +140,6 @@ function createArm(id) {
     archive: [],
     ptyBytes: 0,
     unsafeWrites: 0,
-    collisions: 0,
     wakeAttempts: 0,
   };
 }
@@ -213,7 +212,6 @@ async function aggressiveWake(arm, marker, unsafe) {
   assert.ok(after.length >= before + Buffer.byteLength(marker));
   if (unsafe) {
     arm.unsafeWrites += 1;
-    arm.collisions += 1;
   }
   return { attempted: true, accepted: true, bytes: Buffer.byteLength(marker) };
 }
@@ -312,6 +310,13 @@ try {
         await waitForMarker(arm.receivedPath, draft);
       }));
       caseReceipt.partialDraft = draft;
+      const draftBytes = Buffer.from(draft);
+      for (const arm of arms) {
+        const beforeDelivery = await readBytes(arm.receivedPath);
+        assert.ok(beforeDelivery.subarray(-draftBytes.length).equals(draftBytes),
+          `${arm.id} partial draft was not live immediately before delivery`);
+      }
+      caseReceipt.partialDraftLiveBeforeDelivery = { armA: true, armB: true };
     }
 
     if (caseId === "dnd") {
@@ -342,10 +347,28 @@ try {
       runHook(armB);
     } else {
       const unsafe = activity !== "idle" || caseId === "active-turn";
-      caseReceipt.armA.wake = await aggressiveWake(armA, `A:${caseId}:0`, unsafe);
-      caseReceipt.armB.wake = await guardedWake(armB, `B:${caseId}:0`, {
+      const markerA = `A:${caseId}:0`;
+      const markerB = `B:${caseId}:0`;
+      caseReceipt.armA.wake = await aggressiveWake(armA, markerA, unsafe);
+      caseReceipt.armB.wake = await guardedWake(armB, markerB, {
         composerEmpty: caseId !== "active-turn",
       });
+      if (caseId === "active-turn") {
+        const draftBytes = Buffer.from(caseReceipt.partialDraft);
+        const collisionBytes = Buffer.concat([draftBytes, Buffer.from(markerA)]);
+        const afterA = await readBytes(armA.receivedPath);
+        const afterB = await readBytes(armB.receivedPath);
+        assert.ok(afterA.subarray(-collisionBytes.length).equals(collisionBytes),
+          "arm A DING marker was not observed after the live partial draft");
+        assert.ok(afterB.subarray(-draftBytes.length).equals(draftBytes),
+          "arm B partial draft changed during guarded delivery");
+        assert.equal(afterB.includes(markerB), false);
+        caseReceipt.observedPartialDraftCollision = {
+          armA: true,
+          armB: false,
+          observation: "DING PTY marker arrived after the live partial draft",
+        };
+      }
 
       if (caseId === "hook-failure") {
         assert.deepEqual(runHook(armA, false), []);
@@ -378,6 +401,19 @@ try {
   assert.equal(idleCase.armB.wake.attempted, true);
   assert.equal(idleCase.armB.wake.accepted, true);
 
+  const observedPartialDraftCollisionsA = receipt.cases
+    .filter((entry) => entry.observedPartialDraftCollision?.armA)
+    .length;
+  const observedPartialDraftCollisionsB = receipt.cases
+    .filter((entry) => entry.observedPartialDraftCollision?.armB)
+    .length;
+  assert.deepEqual(activeCase.partialDraftLiveBeforeDelivery, { armA: true, armB: true });
+  assert.deepEqual(activeCase.observedPartialDraftCollision, {
+    armA: true,
+    armB: false,
+    observation: "DING PTY marker arrived after the live partial draft",
+  });
+
   receipt.summary = {
     deliveryParity: true,
     deliveredMessages: armA.archive.length,
@@ -385,15 +421,15 @@ try {
     armBPtyBytes: armB.ptyBytes,
     armAUnsafeWrites: armA.unsafeWrites,
     armBUnsafeWrites: armB.unsafeWrites,
-    armACollisions: armA.collisions,
-    armBCollisions: armB.collisions,
+    armAObservedPartialDraftCollisions: observedPartialDraftCollisionsA,
+    armBObservedPartialDraftCollisions: observedPartialDraftCollisionsB,
     armAWakeAttempts: armA.wakeAttempts,
     armBWakeAttempts: armB.wakeAttempts,
   };
-  assert.ok(receipt.summary.armAUnsafeWrites > 0);
+  assert.equal(receipt.summary.armAUnsafeWrites, 6);
   assert.equal(receipt.summary.armBUnsafeWrites, 0);
-  assert.ok(receipt.summary.armACollisions > 0);
-  assert.equal(receipt.summary.armBCollisions, 0);
+  assert.equal(receipt.summary.armAObservedPartialDraftCollisions, 1);
+  assert.equal(receipt.summary.armBObservedPartialDraftCollisions, 0);
 } finally {
   for (const arm of arms) {
     arm.publisher?.close();

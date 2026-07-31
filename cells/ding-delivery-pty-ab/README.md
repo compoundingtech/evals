@@ -14,7 +14,10 @@ Both arms receive identical durable bodies and preserve SHA256, exactly-once
 delivery, FIFO, DND, hook retry, and restart recovery with zero model calls.
 The active-turn case places the same partial human draft in both PTYs: A
 physically appends its DING marker to that input stream, while B writes zero
-DING bytes and the later hook delivers the message.
+DING bytes and the later hook delivers the message. This is the cell's one
+directly observed collision. The other five non-idle, stale, or unknown A
+writes are classified only as unsafe writes; they are not counted as observed
+collisions.
 
 This cell runs against PTY activity base
 `46c71d31c0d6daee43adf568061b2b84a65ae8c0` and stacked guarded-send successor

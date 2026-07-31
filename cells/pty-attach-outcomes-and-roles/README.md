@@ -39,14 +39,12 @@ anchor marker. Any earlier accepted input necessarily precedes that marker.
 ## Validation revisions
 
 The acceptance cell was proven failing against PTY main `d5fabc3` and passing
-against validation-only fork head
-`4dd713e5cd71b8ba5cc6b07ffeae8b82e7a31e96`. That head merges detach candidate
-#146 at `b58db0c2244e5ebdf41859b9c87d1f28b202ae5e` and role candidate #147 at
-`2c865a56c25e94a7f2546bc1d1dc002db96f023f` onto upstream main
-`1c625c75702e032ff5dc455976ad75005cd2c1c8`, which already contains the attach
-stream fixture prerequisite from #145. The validation-only ref is not a runtime
-dependency; after both corrections merge, the maintained cell runs against the
-packaged PTY on merged main.
+against the packaged PTY built from merged upstream main
+`7effe7b8c4ee22796f62188d321445027c8f5096`. That revision contains the attach
+stream fixture prerequisite from #145, intentional detach outcomes from #146,
+and explicit same-socket role replacement from #147. The maintained cell now
+runs directly against packaged PTY main; it has no validation-only runtime
+dependency.
 
 ## Run it
 

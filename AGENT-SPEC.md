@@ -252,7 +252,7 @@ conformance claim above. The paired model-free experiment is isolated to
 [`catalog-plan-vs-direct-brief`](cells/catalog-plan-vs-direct-brief/) and runs
 against st2 draft PR
 [#115](https://github.com/compoundingtech/st2/pull/115) at exact current-main source
-`044964e4e07e3a656ccc1860bfff8517adf72c16`.
+`60d48bae5b7ac3a83c8d2c3324b61680bd6404dd`.
 
 The experimental plan surface is pinned to the
 [source sketch revision `5c1d142`](https://gist.github.com/myobie/d5ecfac24cd3965e095a5031cd2e00cb/5c1d1427c0556d95d13890e5c5086cd85b25d994).
@@ -290,11 +290,13 @@ agent "app-web" {
 
 Plan identity is the explicit KDL value, never its directory. External plans
 require one `owner`. Each version requires one source-relative `file:` resource.
-A version may repeat `parent` for multiple immutable parents; parents must
+A version may repeat `parent` for multiple declared parents; parents must
 exist, be unique, and form an acyclic graph. A version with parents requires
 one non-empty `why`. The sorted frontier is derived as every version with no
 child, retaining concurrent siblings. `plan-ref` and version resources resolve
 relative to their declaring KDL and must remain inside the selected catalog.
+The experiment stores no content digest or history. It cannot prove that an
+earlier declaration or resource file stayed unchanged.
 
 The only supported CLI is read-only:
 

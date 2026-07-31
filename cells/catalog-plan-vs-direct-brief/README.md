@@ -35,18 +35,20 @@ and neutral judge; it is not substituted for two agent executions.
 
 Arm A uses the exact external `plan.kdl` and agent `plan-ref` contract from
 [st2 draft PR #115](https://github.com/compoundingtech/st2/pull/115) at source
-`044964e4e07e3a656ccc1860bfff8517adf72c16`, paired to the source gist at
+`60d48bae5b7ac3a83c8d2c3324b61680bd6404dd`, paired to the source gist at
 revision `5c1d1427c0556d95d13890e5c5086cd85b25d994`. The accepted Linux
 artifact SHA256 is
-`38a7fe4657e0583c34d13f73a9215e9f388e6cc2b87d6c9b9c70f07a9fce8f81`.
+`f3e935ee8e6c38b5ba29f0507b4639fe2212e3764b43e18967f6762a5962e48a`.
 The fixture exercises only `plan validate`, `list`, `show`, and `inspect`, and
 proves they do not alter the catalog.
 
-The current-main executable is not byte-identical to predecessor source
-`2caa0d7f159c3c0d9c483bd63b2579d33f1986ff`; its binary SHA256 was
-`83efb0564a3cd366404495936b1e29a30ea210b0e429dbfeb6901830b2c49c38`.
-The plan implementation and test blobs are byte-identical across the two
-sources, as are this fixture's JSON outputs for all four read-only commands.
+This plan model stores no content digest or history, so it cannot prove that an
+earlier declaration, parent link, or resource file stayed unchanged. The
+correction executable is not byte-identical to predecessor source
+`044964e4e07e3a656ccc1860bfff8517adf72c16`; its binary SHA256 was
+`38a7fe4657e0583c34d13f73a9215e9f388e6cc2b87d6c9b9c70f07a9fce8f81`.
+The correction changes plan terminology only. The test blob and this fixture's
+JSON outputs for all four read-only commands remain byte-identical.
 
 Arm B uses the product's ordinary durable message store rather than a synthetic
 thread sidecar. Neither arm receives a pre-authored acceptance receipt. The

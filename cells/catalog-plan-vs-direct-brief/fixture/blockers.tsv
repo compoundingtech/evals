@@ -1,3 +1,3 @@
 blocker_id	owner	dependency	required_evidence	status
-st2-plan-runtime	st2-owner	https://github.com/compoundingtech/st2/pull/115	exact current-main source 044964e4e07e3a656ccc1860bfff8517adf72c16 and binary SHA256 38a7fe4657e0583c34d13f73a9215e9f388e6cc2b87d6c9b9c70f07a9fce8f81 with full workspace tests, Clippy, rustfmt, and hosted run 30662043965 green	ready
+st2-plan-runtime	st2-owner	https://github.com/compoundingtech/st2/pull/115	exact current-main source 60d48bae5b7ac3a83c8d2c3324b61680bd6404dd and binary SHA256 f3e935ee8e6c38b5ba29f0507b4639fe2212e3764b43e18967f6762a5962e48a with full workspace tests, Clippy, rustfmt, and hosted run 30666101129 green	ready
 live-ab	evals-owner	future provider-backed execution	separate authorization naming exact plan artifact, model, effort, per-arm token and wall budgets, arm order or counterbalancing, maximum spend, cleanup, and rollback	blocked

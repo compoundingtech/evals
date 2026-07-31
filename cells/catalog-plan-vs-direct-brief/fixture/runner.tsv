@@ -1,9 +1,9 @@
 field	value
 st2_pr	https://github.com/compoundingtech/st2/pull/115
-source_full	044964e4e07e3a656ccc1860bfff8517adf72c16
-source_short	044964e
-binary_sha256	38a7fe4657e0583c34d13f73a9215e9f388e6cc2b87d6c9b9c70f07a9fce8f81
+source_full	60d48bae5b7ac3a83c8d2c3324b61680bd6404dd
+source_short	60d48ba
+binary_sha256	f3e935ee8e6c38b5ba29f0507b4639fe2212e3764b43e18967f6762a5962e48a
 source_gist_revision	5c1d1427c0556d95d13890e5c5086cd85b25d994
 runtime_scope	read-only-validate-list-show-inspect
-hosted_run	https://github.com/compoundingtech/st2/actions/runs/30662043965
+hosted_run	https://github.com/compoundingtech/st2/actions/runs/30666101129
 hosted_status	pass

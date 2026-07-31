@@ -1,0 +1,5 @@
+case_id	expected_outcome	authority
+post-turn-unread	next-context-injection	durable-inbox-only
+post-turn-multiple	next-context-fifo	durable-inbox-only
+post-turn-empty	no-injection	durable-inbox-only
+hook-failure	hold-unread	durable-inbox-only

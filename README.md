@@ -96,9 +96,25 @@ VERDICT: PASS
 ```
 
 Requirements are `st2 0.1.0` from source
-[`9887b28`](https://github.com/compoundingtech/st2/commit/9887b2842222def0838c2cd82e6c24c218f7efa6),
+[`c6846f6`](https://github.com/compoundingtech/st2/commit/c6846f6239329f0803142afc06c15a07b93937c1),
+using the accepted local-source Linux binary SHA256
+`2bba8d58be24250bc262f75f835ce2d780369add275774f3f2135c623d23d29c`;
 `pty`, Bash, Git, `jq`, Rust/Cargo for the pinned KDL parser gate, and Node for JavaScript fixtures. A paid cell
 also needs every harness named by its dry-run row.
+
+The issue #57 PTY draft experiments are separately pinned to activity PR #131
+`46c71d31c0d6daee43adf568061b2b84a65ae8c0` and stacked guarded-send PR #133
+`743ceb796a41a3282e31382575bff0d0e3826d59`. Run their model-free cells with
+`EVALS_PTY_PR133_ROOT` pointing to a clean exact-head checkout built by
+`npm ci && npm run build`; the cells reject any other Git head or package lock.
+
+The integrated configured-DING A/B additionally pins corrected st2 PR #123
+`d7500b0fcad8bb268da9da96c0226d9caddbe305` and its accepted local-source Linux
+release binary SHA256
+`705ad3ebd0bce497a4117c7c7993505c0579fc1f7df2421e0525a22208f6949f`.
+Set `EVALS_ST2_PR123_ROOT` to a clean exact-head checkout built with
+`cargo build --release --locked`; the cell launches the generated configured
+sidecar from that artifact and rejects a different source, lockfile, or binary.
 
 ## Cell layout
 

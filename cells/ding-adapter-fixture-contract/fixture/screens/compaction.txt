@@ -1,0 +1,3 @@
+ACTIVITY DIAGNOSTIC: compaction
+session history is being rewritten
+no prompt readiness is inferred

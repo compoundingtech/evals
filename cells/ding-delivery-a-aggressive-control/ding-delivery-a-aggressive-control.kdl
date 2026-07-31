@@ -1,0 +1,33 @@
+// Model-free current-product control: unconfigured DING sends while PTY activity is unknown.
+eval {
+  copy "./fixture"
+  max-timeout "45s"
+
+  run "aggressive-control" {
+    command "bash ./aggressive-control.sh"
+  }
+
+  judges {
+    judge "EXACT SOURCE — current st2 and stacked PTY heads are exact" {
+      exec "grep -Fqx AGGRESSIVE-EXACT-HEADS-GREEN-57c1 $RUNS_DIR/aggressive-control.out"
+    }
+    judge "UNCONFIGURED — no rich adapter participates in the DING sidecar" {
+      exec "grep -Fqx AGGRESSIVE-UNCONFIGURED-GREEN-57c1 $RUNS_DIR/aggressive-control.out"
+    }
+    judge "UNKNOWN — PTY has no activity publisher and reports exact unknown" {
+      exec "grep -Fqx AGGRESSIVE-UNKNOWN-ACTIVITY-GREEN-57c1 $RUNS_DIR/aggressive-control.out"
+    }
+    judge "ORDINARY INPUT — st2 invokes the ordinary PTY send path despite unknown activity" {
+      exec "grep -Fqx AGGRESSIVE-PTY-SEND-GREEN-57c1 $RUNS_DIR/aggressive-control.out"
+    }
+    judge "PANE BYTES — the raw synthetic composer receives the DING notice" {
+      exec "grep -Fqx AGGRESSIVE-PANE-BYTES-GREEN-57c1 $RUNS_DIR/aggressive-control.out"
+    }
+    judge "DURABLE OWNERSHIP — without a positive receipt the message remains unread" {
+      exec "grep -Fqx AGGRESSIVE-DURABLE-UNREAD-GREEN-57c1 $RUNS_DIR/aggressive-control.out"
+    }
+    judge "CLEANUP/MODEL FREE — sidecar and PTY are gone with zero model calls" {
+      exec "grep -Fqx AGGRESSIVE-CLEANUP-MODEL-FREE-GREEN-57c1 $RUNS_DIR/aggressive-control.out"
+    }
+  }
+}

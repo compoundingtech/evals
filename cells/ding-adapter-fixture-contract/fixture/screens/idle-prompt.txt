@@ -1,0 +1,3 @@
+ACTIVITY DIAGNOSTIC: idle prompt
+explicit prompt-ready event is required
+>

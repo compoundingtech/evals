@@ -1,0 +1,3 @@
+TERMINAL DIAGNOSTIC: alternate screen
+application buffer remains active
+screen mode is not idle authority

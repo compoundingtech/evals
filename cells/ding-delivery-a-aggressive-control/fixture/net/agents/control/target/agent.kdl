@@ -1,0 +1,7 @@
+agent "target" {
+  identity "target"
+  host "control"
+  role "worker"
+  retired #true
+  command "exec sleep 100000"
+}

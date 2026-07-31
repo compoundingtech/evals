@@ -1,5 +1,11 @@
 cell	surface	reason
 context-resource-continuity	cell	deterministic native context/resource restart probe; no harness seat
+ding-adapter-fixture-contract	cell	deterministic fixture provenance and blocker contract; no bus-connected agent
+ding-delivery-a-aggressive-control	cell	deterministic unconfigured DING ordinary-input control; no harness or model agent
+ding-delivery-st2-rich-ab	cell	deterministic exact-source configured generic-adapter versus aggressive DING A/B; no harness or model agent
+ding-delivery-pty-ab	cell	deterministic PTY-boundary aggressive-versus-guarded delivery A/B; no harness or model agent
+ding-pty-activity-lease	cell	deterministic exact-source PTY activity-lease probe; no harness or model agent
+ding-pty-guarded-send	cell	deterministic exact-source PTY compare-and-send race probe; no harness or model agent
 docs	judge:cold-reader	one-shot offline Claude print grader; no bus identity, DING, or hook surface
 exec-lifecycle-logging	cell	deterministic native exec lifecycle probe; no harness seat
 hook-integrity	cell	deterministic native hook-installation probe; no live harness seat

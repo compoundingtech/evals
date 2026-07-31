@@ -1,0 +1,36 @@
+// Matched model-free A/B at the exact PTY boundary; no st2 configured-adapter claim.
+eval {
+  copy "./fixture"
+  max-timeout "120s"
+
+  run "delivery-ab" {
+    command "node ./delivery-ab.mjs"
+  }
+
+  judges {
+    judge "EXACT SOURCE — activity and guarded-send heads are exact and clean" {
+      exec "grep -Fqx DING-AB-EXACT-PTY-HEADS-GREEN-57b1 $RUNS_DIR/delivery-ab.out"
+    }
+    judge "DURABILITY — A and B deliver identical bodies/hashes exactly once in the same order" {
+      exec "grep -Fqx DING-AB-DURABILITY-PARITY-GREEN-57b1 $RUNS_DIR/delivery-ab.out"
+    }
+    judge "ACTIVE TURN — one observed draft collision in A while explicit-idle B writes zero bytes" {
+      exec "grep -Fqx DING-AB-ACTIVE-TURN-IMPROVEMENT-GREEN-57b1 $RUNS_DIR/delivery-ab.out && jq -e '.summary.armAObservedPartialDraftCollisions == 1 and .summary.armBObservedPartialDraftCollisions == 0 and ([.cases[] | select(.caseId == \"active-turn\") | .observedPartialDraftCollision] == [{\"armA\":true,\"armB\":false,\"observation\":\"DING PTY marker arrived after the live partial draft\"}])' $CATALOG/delivery-ab-receipt.json >/dev/null"
+    }
+    judge "IDLE — B performs exactly one bounded guarded wake only for exact idle plus empty composer" {
+      exec "grep -Fqx DING-AB-IDLE-BOUNDED-WAKE-GREEN-57b1 $RUNS_DIR/delivery-ab.out"
+    }
+    judge "HOLDS — child, unknown, DND, hook failure, clear/compaction, and restart remain durable" {
+      exec "grep -Fqx DING-AB-HOLD-RECOVERY-GREEN-57b1 $RUNS_DIR/delivery-ab.out"
+    }
+    judge "FIFO — burst delivery order and ownership are identical with no duplicates" {
+      exec "grep -Fqx DING-AB-FIFO-GREEN-57b1 $RUNS_DIR/delivery-ab.out"
+    }
+    judge "IMPROVEMENT — B preserves delivery while reducing unsafe PTY writes from six to zero" {
+      exec "grep -Fqx DING-AB-IMPROVEMENT-GREEN-57b1 $RUNS_DIR/delivery-ab.out && jq -e '.summary.deliveryParity and .summary.armAUnsafeWrites == 6 and .summary.armBUnsafeWrites == 0' $CATALOG/delivery-ab-receipt.json >/dev/null"
+    }
+    judge "CLEANUP/MODEL FREE — both arms use zero models and leave no PTY sessions" {
+      exec "grep -Fqx DING-AB-CLEANUP-MODEL-FREE-GREEN-57b1 $RUNS_DIR/delivery-ab.out && jq -e '.modelCalls == 0 and .cleanup.sessions == 0' $CATALOG/delivery-ab-receipt.json >/dev/null"
+    }
+  }
+}

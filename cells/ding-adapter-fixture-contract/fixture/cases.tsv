@@ -1,0 +1,10 @@
+case_id	screen_fixture	expected_activity	diagnostic_case	authority
+active-turn	screens/active-turn.txt	active	none	live-activity-only
+idle-prompt	screens/idle-prompt.txt	idle	none	live-activity-only
+long-child	screens/long-child.txt	child_command	none	live-activity-only
+alternate-screen	screens/alternate-screen.txt	unknown	alternate-screen	live-activity-only
+raw-mode	screens/raw-mode.txt	unknown	raw-input	live-activity-only
+restore	screens/restore.txt	idle	terminal-restore	live-activity-only
+compaction	screens/compaction.txt	unknown	compaction	live-activity-only
+clear	screens/clear.txt	unknown	clear	live-activity-only
+crash	screens/crash.txt	unknown	crash	live-activity-only

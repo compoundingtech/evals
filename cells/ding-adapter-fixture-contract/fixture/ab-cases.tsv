@@ -1,0 +1,10 @@
+case_id	a_delivery	b_delivery	durable_expectation	fifo_expectation	model_calls	b_pty_bytes	b_collision_goal
+idle	aggressive-pty	bounded-idle-wake	eventual-exactly-once	preserve	0	exactly-one	zero
+active-turn	aggressive-pty	next-hook-context	eventual-exactly-once	preserve	0	zero	zero
+long-child	aggressive-pty	hold-until-authorized	eventual-exactly-once	preserve	0	zero	zero
+dnd	dnd-hold-then-deliver	dnd-hold-then-authorize	eventual-exactly-once	preserve	0	zero-while-held	zero
+stale-unknown	aggressive-pty	hold-until-authorized	eventual-exactly-once	preserve	0	zero	zero
+hook-failure	aggressive-pty	durable-hold-until-authorized	eventual-exactly-once	preserve	0	zero	zero
+crash-restart	restart-backlog	durable-hold-until-authorized	eventual-exactly-once	preserve	0	zero-before-authorization	zero
+compaction-clear	aggressive-pty	hold-until-authorized	eventual-exactly-once	preserve	0	zero	zero
+fifo-burst	aggressive-fifo	authorized-fifo	eventual-exactly-once	preserve	0	bounded-by-messages	zero

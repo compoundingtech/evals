@@ -1,8 +1,8 @@
 # Canonical st2 agent specification
 
 This is the sole agent-authoring specification for this repository. It is pinned to st2
-[`9887b2842222def0838c2cd82e6c24c218f7efa6`](https://github.com/compoundingtech/st2/commit/9887b2842222def0838c2cd82e6c24c218f7efa6)
-(`0.1.0`, source `9887b28`). It documents the hand-authored KDL accepted at that commit. Do not infer
+[`c6846f6239329f0803142afc06c15a07b93937c1`](https://github.com/compoundingtech/st2/commit/c6846f6239329f0803142afc06c15a07b93937c1)
+(`0.1.0`, source `c6846f6`). It documents the hand-authored KDL accepted at that commit. Do not infer
 additional fields or commands from older corpus fixtures.
 
 st2 runs long-lived `service` agents made of interactive `pty` tasks and terminal-free `exec` tasks.
@@ -248,6 +248,20 @@ idempotently clears a restored inbox copy. New post-start unread work sends:
 Subject and sender are normalized to one bounded printable line. Delivery is one bracketed-paste PTY send,
 500 ms, then Return. DING does not inspect terminal pixels or classify modal state.
 
+The issue #57 experimental matrix separately pins corrected st2 PR #123 at
+`d7500b0fcad8bb268da9da96c0226d9caddbe305`. In that opt-in path, a compact
+`ding { adapter { argv ... } }` lowers to a generated exec sidecar whose argv is
+expanded only after the complete managed task environment is known. Core
+consumes a provider-neutral activity/input-buffer lease, requires exact PTY
+generation/activity sequence plus I/O revision, and performs one atomic
+guarded send only for fresh `idle` + `empty`. A generic `ding-control
+hook-owned` receipt removes exact unread filenames from PTY work when an
+already-occurring post-turn hook owns their next-context delivery. The
+integrated model-free A/B covers 11 durable messages: the aggressive arm makes
+six non-idle/colliding PTY writes and the configured hook-plus-idle arm makes
+zero. Real-provider fixtures, live-pane acceptance, merge, and release remain
+outside that evidence.
+
 Arrivals remain FIFO. `busy` and `away` do not suppress delivery; only fresh `dnd` does. Non-DND presence is
 refreshed every five minutes, while abandoned DND ages to derived `unknown` after 15 minutes and delivery
 resumes. Failed PTY sends retain the queue head. Startup backlog produces one generic unread-work DING rather
@@ -432,8 +446,7 @@ Inspect the declaration, every referenced template, and every workspace destinat
 materialization command. Materialization is byte-idempotent and does not imply hook installation. Starting
 the network is a separate, explicitly authorized action.
 
-For source `9887b28`, the accepted Linux executable has SHA256
-`d49d44fd4f3f6f655455c212353a469fefa956082bedf22163deb767d8a36a0d`; its published archive has SHA256
-`32ee103bd17ccb3e155ac63d816a3906c2470a3c98e3cc04b56e5a67138b9927`. `bin/check-corpus.sh` verifies
-the variable-age version contract, exact installed binary, embedded full source commit, strict semantic
+For source `c6846f6239329f0803142afc06c15a07b93937c1`, the accepted local-source Linux executable has
+SHA256 `2bba8d58be24250bc262f75f835ce2d780369add275774f3f2135c623d23d29c`. `bin/check-corpus.sh` verifies
+the variable-age version contract, exact installed binary, shared source-pin consistency, strict semantic
 validation, fixture resets, and the rest of the model-free corpus gate before an eval may run.

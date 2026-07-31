@@ -1,0 +1,36 @@
+// Exact-source, model-free black-box contract for PTY PR #131 through stacked PR #133.
+eval {
+  copy "./fixture"
+  max-timeout "60s"
+
+  run "activity-lease" {
+    command "node ./activity-lease.mjs"
+  }
+
+  judges {
+    judge "EXACT SOURCE — stacked PTY head contains the exact activity base and clean package lock" {
+      exec "grep -Fqx PTY-PR131-EXACT-HEAD-GREEN-57a1 $RUNS_DIR/activity-lease.out"
+    }
+    judge "GENERATION BOUND — initial and disconnected activity are unknown in the live daemon generation" {
+      exec "grep -Fqx ACTIVITY-GENERATION-UNKNOWN-GREEN-57a1 $RUNS_DIR/activity-lease.out"
+    }
+    judge "ORDERED STATES — active, child_command, and idle publish in one epoch with strict sequence" {
+      exec "grep -Fqx ACTIVITY-ORDERED-STATES-GREEN-57a1 $RUNS_DIR/activity-lease.out"
+    }
+    judge "SINGLE OWNER — a competing publisher is rejected without disturbing the live owner" {
+      exec "grep -Fqx ACTIVITY-SINGLE-OWNER-GREEN-57a1 $RUNS_DIR/activity-lease.out"
+    }
+    judge "FAIL CLOSED — a skipped owner sequence resets authority to unknown" {
+      exec "grep -Fqx ACTIVITY-SEQUENCE-FAIL-CLOSED-GREEN-57a1 $RUNS_DIR/activity-lease.out"
+    }
+    judge "DIAGNOSTIC ONLY — alternate-screen state never implies semantic idle" {
+      exec "grep -Fqx ACTIVITY-DIAGNOSTIC-NONAUTHORITY-GREEN-57a1 $RUNS_DIR/activity-lease.out"
+    }
+    judge "RESTART — daemon replacement changes generation and starts unknown" {
+      exec "grep -Fqx ACTIVITY-RESTART-GENERATION-GREEN-57a1 $RUNS_DIR/activity-lease.out"
+    }
+    judge "CLEANUP/MODEL FREE — receipt records zero model calls and no PTY sessions remain" {
+      exec "grep -Fqx ACTIVITY-CLEANUP-MODEL-FREE-GREEN-57a1 $RUNS_DIR/activity-lease.out && jq -e '.modelCalls == 0 and .cleanup.sessions == 0' $CATALOG/activity-lease-receipt.json >/dev/null"
+    }
+  }
+}

@@ -1,0 +1,3 @@
+ACTIVITY DIAGNOSTIC: crash
+the previous process incarnation ended
+old activity cannot authorize new input

@@ -1,0 +1,3 @@
+ACTIVITY DIAGNOSTIC: long-running child command
+the screen may remain unchanged
+silence is not idle authority

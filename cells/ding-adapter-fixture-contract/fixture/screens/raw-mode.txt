@@ -1,0 +1,3 @@
+TERMINAL DIAGNOSTIC: raw input mode
+application input remains noncanonical
+input mode is not idle authority

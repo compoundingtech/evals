@@ -251,8 +251,8 @@ This candidate contract is not part of the released `0fed14b` corpus
 conformance claim above. The paired model-free experiment is isolated to
 [`catalog-plan-vs-direct-brief`](cells/catalog-plan-vs-direct-brief/) and runs
 against st2 draft PR
-[#115](https://github.com/compoundingtech/st2/pull/115) at exact source
-`2caa0d7f159c3c0d9c483bd63b2579d33f1986ff`.
+[#115](https://github.com/compoundingtech/st2/pull/115) at exact current-main source
+`044964e4e07e3a656ccc1860bfff8517adf72c16`.
 
 The experimental plan surface is pinned to the
 [source sketch revision `5c1d142`](https://gist.github.com/myobie/d5ecfac24cd3965e095a5031cd2e00cb/5c1d1427c0556d95d13890e5c5086cd85b25d994).

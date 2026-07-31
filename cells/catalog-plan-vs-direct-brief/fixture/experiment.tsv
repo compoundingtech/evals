@@ -3,8 +3,8 @@ experiment_id	catalog-plan-vs-direct-brief-v1
 source_gist	https://gist.github.com/myobie/d5ecfac24cd3965e095a5031cd2e00cb/5c1d1427c0556d95d13890e5c5086cd85b25d994
 source_gist_revision	5c1d1427c0556d95d13890e5c5086cd85b25d994
 st2_plan_pr	https://github.com/compoundingtech/st2/pull/115
-st2_plan_source	2caa0d7f159c3c0d9c483bd63b2579d33f1986ff
-st2_plan_binary_sha256	83efb0564a3cd366404495936b1e29a30ea210b0e429dbfeb6901830b2c49c38
+st2_plan_source	044964e4e07e3a656ccc1860bfff8517adf72c16
+st2_plan_binary_sha256	38a7fe4657e0583c34d13f73a9215e9f388e6cc2b87d6c9b9c70f07a9fce8f81
 task_id	receipt-report-latest-pass
 seed_repository	task-repo
 allowed_change	src/report.mjs

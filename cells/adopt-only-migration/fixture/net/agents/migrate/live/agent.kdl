@@ -1,0 +1,10 @@
+agent "live" {
+  host "migrate"
+  role "worker"
+  workspace "$CATALOG/workspace"
+  pty "agent" {
+    id "migrate.live.agent"
+    command "exec bash \"$CATALOG/task.sh\" live"
+    lifecycle "adopt-only"
+  }
+}

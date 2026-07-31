@@ -1,0 +1,5 @@
+agent "receipt-worker" {
+  host "eval"
+  command "true"
+  plan-ref "file:../../../plans/receipt-report/plan.kdl"
+}

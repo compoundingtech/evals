@@ -1,18 +1,25 @@
 field	type	required	description
-receipt_id	string	yes	evaluator-generated unique run receipt id
-arm	enum:A|B	yes	experiment arm
-phase	enum:accepted|recovered|steered|completed	yes	observed evaluator phase
-intent_revision	string	yes	exact accepted intent revision
-intent_sha256	sha256	yes	exact intent body hash
-seed_repo_sha256	sha256	yes	frozen repository tree hash
-correctness	enum:pass|fail|not-run	yes	arm-neutral judge outcome
-cold_restart_recovery	enum:pass|fail|not-run	yes	exact local intent recovery outcome
-partition_recovery	enum:pass|fail|not-run	yes	recovery while remote input is unavailable
-human_steering	enum:pass|fail|not-run	yes	revised intent acceptance outcome
-coordination_messages	nonnegative-integer	yes	observed external message count
-coordination_bytes	nonnegative-integer	yes	observed message and sync payload bytes
-model_input_tokens	nonnegative-integer	yes	harness-reported input tokens
-model_output_tokens	nonnegative-integer	yes	harness-reported output tokens
-cost_usd	nonnegative-decimal	yes	harness-reported cost
-wall_duration_seconds	nonnegative-decimal	yes	evaluator elapsed wall time
-evidence	string	yes	path or immutable URL for supporting output
+schemaVersion	integer	yes	comparison receipt schema version
+experimentId	string	yes	frozen experiment identity
+runner.source	git-sha	yes	exact experimental st2 source
+runner.sha256	sha256	yes	exact experimental st2 executable
+modelCalls	nonnegative-integer	yes	provider/model calls made by this run
+remoteSourcesOfflineDuringRecovery	boolean	yes	both recoveries occurred with remote sources unavailable
+storage.plainFoldersSufficient	boolean	yes	no service or content-addressed store is required
+storage.casRequired	boolean	yes	whether content-addressed storage is required
+arms.A.transport	enum:catalog-plan	yes	arm A durable transport
+arms.B.transport	enum:st2-direct-messages	yes	arm B durable transport
+arms.A.initialIntentSha256	sha256	yes	recovered initial intent hash
+arms.B.initialIntentSha256	sha256	yes	recovered initial intent hash
+arms.A.steeredIntentSha256	sha256	yes	recovered revised intent hash
+arms.B.steeredIntentSha256	sha256	yes	recovered revised intent hash
+outcomes.coldResume.verdict	enum:tie|arm-a|arm-b	yes	comparative cold-resume result
+outcomes.intentRecovery.verdict	enum:tie|arm-a|arm-b	yes	comparative exact-intent result
+outcomes.humanSteering.verdict	enum:tie|arm-a|arm-b	yes	comparative steering result
+outcomes.acceptanceEvidence.verdict	enum:tie|arm-a|arm-b	yes	comparative worker-acceptance evidence result
+planOnly.staticIntentValidation	enum:pass|fail	yes	read-only plan schema and graph validation
+planOnly.provenanceResolution	enum:pass|fail	yes	read-only resolved resource provenance
+directOnly.messageDelivery	enum:pass|fail	yes	durable direct-message delivery
+directOnly.replyLineage	enum:pass|fail	yes	direct-message inReplyTo lineage
+liveUnresolved	array	yes	endpoints requiring separately authorized model runs
+conclusion	enum:no-measured-advantage|arm-a-advantage|arm-b-advantage	yes	model-free comparative conclusion

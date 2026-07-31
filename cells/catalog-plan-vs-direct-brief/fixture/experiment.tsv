@@ -16,4 +16,5 @@ judge_profile	arm-neutral-public-plus-held-out
 done_condition	public and held-out tests pass; only src/report.mjs differs from the seed; no dependency or network change
 initial_revision	0000
 steering_revision	0001
-live_run_status	blocked-pending-separate-paid-authorization
+model_free_result	no-measured-advantage-for-cold-resume-intent-recovery-or-acceptance-evidence
+live_run_status	blocked-pending-separate-provider-authorization

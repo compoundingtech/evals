@@ -1,3 +1,0 @@
-version	parent	reason	body_sha256
-0000	-	initial frozen repository task	4f81d370fe6c09c5c199046cc948f68ebdc8a510a4c30fde8edc6993d1abef11
-0001	0000	human steering tightens input validation without changing scope	aa3075e6fcbec4648209f77cd0b3b9866d70f4a354bb16554d3e58babd7f04b4

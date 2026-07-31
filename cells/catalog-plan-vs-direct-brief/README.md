@@ -11,16 +11,27 @@ revision. Both arms receive durable local input and use the same evaluator-owned
 receipt fields, so direct planning remains a valid control rather than an
 intentionally fragile baseline.
 
-The deterministic fixture proves:
+The deterministic fixture now runs both durable product paths:
 
 - the seeded repository needs a real implementation and the arm-neutral
   reference solution passes public and held-out correctness tests;
-- both arms recover the exact initial intent after a cold restart while their
-  remote source is unavailable;
-- both arms receive and recover the exact steered intent;
-- correctness, restart, partition, and steering are gating outcomes, while
-  coordination traffic and model cost remain reported comparison metrics; and
+- arm A recovers an initial and then revised catalog snapshot through exact
+  `st2 plan show`/`inspect` calls;
+- arm B receives the byte-identical revisions through real isolated
+  `st2 message send` deliveries with `inReplyTo` lineage, then recovers them
+  through `message ls`/`read`;
+- both arms recover the same intent after cold state loss with their remote
+  source offline, so cold resume, intent recovery, and steering are ties;
+- neither read-only plan inspection nor direct-message delivery reports worker
+  acceptance, so acceptance evidence is evaluator-owned in both arms and is
+  also a tie;
+- the plan adds native static validation and resolved provenance, but the
+  current model-free result is `no-measured-advantage`; and
 - no model or provider is launched.
+
+Correctness, coordination traffic, token use, cost, and wall duration remain
+unresolved live-run endpoints. The reference solution establishes a valid task
+and neutral judge; it is not substituted for two agent executions.
 
 Arm A uses the exact external `plan.kdl` and agent `plan-ref` contract from
 [st2 draft PR #115](https://github.com/compoundingtech/st2/pull/115) at source
@@ -31,8 +42,11 @@ artifact SHA256 is
 The fixture exercises only `plan validate`, `list`, `show`, and `inspect`, and
 proves they do not alter the catalog.
 
-Arm B retains equivalent durable message-thread metadata and receipt space.
-The product experiment adds no current pointer, execution, scheduling, steps,
-retries, progress claims, events, reconciliation, or CAS. A paid/live A/B
-remains a separate authorization with an exact model, effort, budget, run
-order, and rollback.
+Arm B uses the product's ordinary durable message store rather than a synthetic
+thread sidecar. Neither arm receives a pre-authored acceptance receipt. The
+experiment uses plain copied folders, requires no server, and sets
+`casRequired` to false. The product experiment adds no current pointer,
+execution, scheduling, steps, retries, progress claims, events,
+reconciliation, or CAS. A provider-backed A/B remains a separate authorization
+with an exact model, effort, budget, run order, spend ceiling, cleanup, and
+rollback.

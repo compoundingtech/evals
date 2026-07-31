@@ -247,6 +247,13 @@ Prefer a catalog-owned `.st2/` overlay and locally excluded tool loaders.
 
 ## Experimental read-only plans
 
+This candidate contract is not part of the released `0fed14b` corpus
+conformance claim above. The paired model-free experiment is isolated to
+[`catalog-plan-vs-direct-brief`](cells/catalog-plan-vs-direct-brief/) and runs
+against st2 draft PR
+[#115](https://github.com/compoundingtech/st2/pull/115) at exact source
+`2caa0d7f159c3c0d9c483bd63b2579d33f1986ff`.
+
 The experimental plan surface is pinned to the
 [source sketch revision `5c1d142`](https://gist.github.com/myobie/d5ecfac24cd3965e095a5031cd2e00cb/5c1d1427c0556d95d13890e5c5086cd85b25d994).
 An external plan is a top-level declaration:
@@ -302,6 +309,11 @@ Global `--catalog` selects the same input. The experiment has no current
 pointer, execution, controller, schedule, step graph, retry, claim, receipt,
 event, reconciliation mutation, agent restart, CAS, merge, or deployment
 behavior. Direct KDL and direct human-to-agent planning remain supported.
+The current model-free A/B finds no plan advantage for cold resume, exact
+intent recovery, or acceptance evidence: both durable paths recover equally,
+and neither surface reports worker acceptance. Static validation and resolved
+provenance are plan-only authoring evidence; live correctness, traffic, cost,
+and duration remain unresolved.
 
 ## Validation, health, and lifecycle
 

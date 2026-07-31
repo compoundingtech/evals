@@ -17,14 +17,26 @@ eval {
     judge "PARITY — task intent, tools, budgets, judges, and done condition match across arms" {
       exec "grep -Fqx ARM-PARITY-GREEN-43af $RUNS_DIR/fixture-contract.out"
     }
-    judge "RESTART — both durable inputs recover the exact accepted revision after cold state loss" {
-      exec "grep -Fqx COLD-RESTART-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    judge "RESTART — catalog plan and real direct-message inbox both recover after cold state loss" {
+      exec "grep -Fqx COLD-RESTART-TIE-43af $RUNS_DIR/fixture-contract.out"
     }
-    judge "PARTITION — recovery uses each arm's local durable source with its remote source unavailable" {
-      exec "grep -Fqx LOCAL-PARTITION-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    judge "PARTITION — both arms recover locally while their remote sources are unavailable" {
+      exec "grep -Fqx LOCAL-PARTITION-TIE-43af $RUNS_DIR/fixture-contract.out"
     }
-    judge "STEERING — a complete new intent version and a direct follow-up carry identical revised intent" {
-      exec "grep -Fqx HUMAN-STEERING-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    judge "INTENT — both arms recover byte-identical initial and revised intent" {
+      exec "grep -Fqx INTENT-RECOVERY-TIE-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "STEERING — a complete plan version and reply-linked direct brief recover equally" {
+      exec "grep -Fqx HUMAN-STEERING-TIE-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "ACCEPTANCE — neither read-only plan inspection nor message delivery proves worker acceptance" {
+      exec "grep -Fqx ACCEPTANCE-EVIDENCE-TIE-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "STATIC VALUE — plan validation and provenance are plan-only authoring evidence" {
+      exec "grep -Fqx PLAN-STATIC-EVIDENCE-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "DIRECT REALISM — the control uses durable st2 messages and reply lineage" {
+      exec "grep -Fqx DIRECT-MESSAGE-EVIDENCE-GREEN-43af $RUNS_DIR/fixture-contract.out"
     }
     judge "MEASUREMENT — correctness gates are separate from neutral traffic and cost observations" {
       exec "grep -Fqx MEASUREMENT-CONTRACT-GREEN-43af $RUNS_DIR/fixture-contract.out"
@@ -34,6 +46,12 @@ eval {
     }
     judge "PAIRING — exact experimental source and artifact are frozen while live execution stays blocked" {
       exec "grep -Fqx PRODUCT-PAIRING-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "STORAGE — plain local folders suffice and CAS is not required" {
+      exec "grep -Fqx PLAIN-FOLDER-NO-CAS-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "VERDICT — the model-free endpoints show no plan advantage and live endpoints stay unresolved" {
+      exec "grep -Fqx MODEL-FREE-OUTCOME-GREEN-43af $RUNS_DIR/fixture-contract.out"
     }
     judge "RUNNER — the exact experimental st2 binary matches the accepted source and SHA256" {
       exec "grep -Fqx PLAN-RUNNER-PIN-GREEN-43af $RUNS_DIR/plan-contract.out"

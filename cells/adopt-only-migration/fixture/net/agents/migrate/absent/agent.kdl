@@ -1,0 +1,10 @@
+agent "absent" {
+  host "migrate"
+  role "worker"
+  workspace "$CATALOG/workspace"
+  pty "agent" {
+    id "migrate.absent.agent"
+    command "exec bash \"$CATALOG/task.sh\" absent"
+    lifecycle "adopt-only"
+  }
+}

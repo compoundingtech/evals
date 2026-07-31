@@ -1,0 +1,24 @@
+// Native Agent Spec Resource envelope: parse failures, roster projection, and nondisruptive adoption.
+eval {
+  copy "./fixture"
+  max-timeout "60s"
+
+  run "contract" {
+    command "bash ./contract.sh"
+  }
+
+  judges {
+    judge "STRICT ENVELOPE — malformed URI, duplicate names, and policy fields fail closed" {
+      exec "grep -Fqx RESOURCE-STRICT-FAILURES-GREEN-c214 $RUNS_DIR/contract.out"
+    }
+    judge "INSPECTION — agents JSON is deterministic and preserves opaque tags plus exact URI bytes" {
+      exec "grep -Fqx RESOURCE-INSPECTION-GREEN-c214 $RUNS_DIR/contract.out"
+    }
+    judge "ADOPTION — a Resource-only declaration edit updates inspection without replacing the live task" {
+      exec "grep -Fqx RESOURCE-NONDISRUPTIVE-ADOPTION-GREEN-c214 $RUNS_DIR/contract.out"
+    }
+    judge "CLEANUP — the catalog leaves no live or retained PTY state" {
+      exec "grep -Fqx RESOURCE-CLEANUP-GREEN-c214 $RUNS_DIR/contract.out"
+    }
+  }
+}

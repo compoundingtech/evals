@@ -1,0 +1,50 @@
+// Resource-only handoff tournament candidate. Task facts exist only behind the stable work URI.
+team "arh" {
+  agent "sup" {
+    workspace "./sup"
+    env { ST_AGENT "arh.sup" }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You cold-started in a hermetic st2 eval. Read AGENTS.md. Drain the inbox once using st2 message, then set status available; presence failure is non-blocking. If there is no work, stand by for DING. After any DING, drain again, act on every message, archive each handled item, coordinate the declared durable work end-to-end, and report completion or blockers over the st2 bus.'"#
+    ding
+  }
+  agent "a" {
+    workspace "./a"
+    env { ST_AGENT "arh.a" }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You cold-started in a hermetic st2 eval. Read AGENTS.md. Drain the inbox once using st2 message, then set status available; presence failure is non-blocking. Reconcile your durable resource declaration now. If there is no work, stand by for DING. After any DING, drain again, act on every message, archive each handled item, reconcile the declaration again, execute only a named work resource currently bound to you, and report completion or blockers over the st2 bus.'"#
+    ding
+  }
+  agent "b" {
+    workspace "./b"
+    env { ST_AGENT "arh.b" }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You cold-started in a hermetic st2 eval. Read AGENTS.md. Drain the inbox once using st2 message, then set status available; presence failure is non-blocking. Reconcile your durable resource declaration now. If there is no work, stand by for DING. After any DING, drain again, act on every message, archive each handled item, reconcile the declaration again, execute only a named work resource currently bound to you, and report completion or blockers over the st2 bus.'"#
+    ding
+  }
+  agent "ctrl" {
+    workspace "./controller"
+    env { ST_AGENT "arh.ctrl" }
+    command #"exec bash ./handoff-controller.sh"#
+  }
+}
+
+eval {
+  copy "./fixture"
+  message {
+    from "requester"
+    to "arh.ctrl"
+    content "./task.md"
+  }
+  max-timeout "1200s"
+  judges {
+    judge "resource contract transitions through no holder without overlap" {
+      exec "bash ./judges/contract.sh"
+    }
+    judge "same work URI is completed in order by A then B without duplicate effects" {
+      exec "bash ./judges/outcome.sh"
+    }
+    judge "B resumes after an explicit pre-commit cold restart" {
+      exec "bash ./judges/recovery.sh"
+    }
+    judge "bus delegation, transition wakeups, reports, and final verification are ordered" {
+      exec "bash ./judges/coordination.sh"
+    }
+  }
+}

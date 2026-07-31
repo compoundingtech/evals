@@ -81,6 +81,13 @@ and continues or stops.
   model-free mutation gate proves that scope expansion, protected-requirement
   edits, missing spec upkeep, escalation-only output, and spec-only output fail
   the intended judges before either paid condition runs.
+- The model-free `agent-spec-resource-bindings` cell traces the portable
+  Resource-envelope claims in `AGENT-SPEC.md` to native st2 parsing,
+  machine-readable inspection, and reconciliation. It rejects malformed or
+  policy-bearing bindings, preserves opaque tags and exact URI bytes in
+  deterministic output, and proves that a Resource-only edit updates declared
+  state without replacing a live task. Folder-eval Resource projection is not
+  part of this acceptance boundary.
 - **R12:** A normal agent run is the same declared execution unit as an eval
   run, even when its outcome is open-ended rather than a pass/fail grade. The
   current runtime—st2 today—executes that unit; evals supplies scenarios and

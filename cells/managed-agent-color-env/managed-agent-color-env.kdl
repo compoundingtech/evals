@@ -15,6 +15,9 @@ eval {
     judge "EXPLICIT - Agent Spec NO_COLOR remains authoritative" {
       exec "grep -Fqx EXPLICIT-NO-COLOR-GREEN-90c4 $RUNS_DIR/matrix.out"
     }
+    judge "SCOPE - both observations run inside real st2 transient scopes" {
+      exec "grep -Fqx SYSTEMD-SCOPE-GREEN-90c4 $RUNS_DIR/matrix.out"
+    }
     judge "ADOPT - reconciliation retains both live generations without changing their environment" {
       exec "grep -Fqx LIVE-ADOPTION-GREEN-90c4 $RUNS_DIR/matrix.out"
     }

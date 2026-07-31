@@ -66,7 +66,8 @@ tracked cell
   removes its geometry constraint. `STATUS` and later PTY output provide causal
   barriers for the negative assertions. A model-free mutation matrix rejects
   ambiguous outcomes, false truncation success, failed promotion, retained
-  constraints, and leaked demoted input.
+  constraints, leaked demoted input, and an empty session catalog that still
+  has a live captured daemon or child PID.
 
 ## Current execution
 

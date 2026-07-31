@@ -13,6 +13,7 @@ const root = fs.mkdtempSync(path.join(os.tmpdir(), "pty-corrections-"))
 const env = { ...process.env, PTY_ROOT: root, PTY_ROOT_LEGACY_SILENT: "1" }
 delete env.PTY_SESSION
 delete env.PTY_SESSION_DIR
+const startedProcesses = []
 
 const frame = (type, payload = Buffer.alloc(0)) => {
   const header = Buffer.alloc(5)
@@ -82,6 +83,15 @@ const validateDemotion = (result) => {
   assert.equal(result.restoredGeometrySeen, true, "demoted client retained a grid constraint")
 }
 
+const validateCleanup = (result) => {
+  assert.deepEqual(result.sessions, [], "eval-owned PTY sessions remain")
+  assert.equal(result.processes.length > 0, true, "cleanup proof captured no process identities")
+  for (const process of result.processes) {
+    assert.equal(process.daemonAlive, false, `${process.name} daemon remains alive`)
+    assert.equal(process.childAlive, false, `${process.name} child remains alive`)
+  }
+}
+
 const mutate = (value, patch) => ({ ...value, ...patch })
 
 const selfTest = () => {
@@ -134,6 +144,14 @@ const selfTest = () => {
     mutate(demotion, { output: "DEMOTED_MUST_NOT_WRITE_7c42\r\nANCHOR_AFTER_DEMOTION_7c42" }),
     mutate(demotion, { restoredGeometrySeen: false }),
   ]) assert.throws(() => validateDemotion(bad))
+
+  const cleanup = { sessions: [], processes: [{ name: "synthetic", daemonAlive: false, childAlive: false }] }
+  validateCleanup(cleanup)
+  for (const bad of [
+    mutate(cleanup, { sessions: [{ name: "synthetic" }] }),
+    mutate(cleanup, { processes: [mutate(cleanup.processes[0], { daemonAlive: true })] }),
+    mutate(cleanup, { processes: [mutate(cleanup.processes[0], { childAlive: true })] }),
+  ]) assert.throws(() => validateCleanup(bad))
   console.log("ORACLE-MUTATIONS-GREEN-7c42")
 }
 
@@ -142,11 +160,35 @@ const runPty = (args, options = {}) => spawnSync(PTY, args, { env, encoding: "ut
 const startSession = (name, command) => {
   const result = runPty(["run", "-d", "--id", name, "--no-display-name", "--", "sh", "-c", command])
   assert.equal(result.status, 0, result.stderr)
+  const stats = runPty(["stats", "--json"])
+  assert.equal(stats.status, 0, stats.stderr)
+  const session = JSON.parse(stats.stdout).find((candidate) => candidate.name === name)
+  assert.equal(Number.isInteger(session?.daemon?.pid), true, `${name} daemon PID was not reported`)
+  assert.equal(Number.isInteger(session?.process?.pid), true, `${name} child PID was not reported`)
+  startedProcesses.push({ name, daemonPid: session.daemon.pid, childPid: session.process.pid })
 }
 
 const removeSession = (name) => {
-  runPty(["kill", name])
-  runPty(["rm", name])
+  const listed = runPty(["list", "--json"])
+  assert.equal(listed.status, 0, listed.stderr)
+  const session = JSON.parse(listed.stdout).find((candidate) => candidate.name === name)
+  assert.notEqual(session, undefined, `${name} metadata disappeared before cleanup`)
+  if (session.status === "running") {
+    const killed = runPty(["kill", name])
+    assert.equal(killed.status, 0, killed.stderr)
+  }
+  const removed = runPty(["rm", name])
+  assert.equal(removed.status, 0, removed.stderr)
+}
+
+const isProcessAlive = (pid) => {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch (error) {
+    if (error?.code === "ESRCH") return false
+    throw error
+  }
 }
 
 const timeout = (label, milliseconds = 8_000) => new Promise((_, reject) => {
@@ -347,7 +389,14 @@ try {
     if (process.argv[2] !== "--machine-only") await roleScenarios()
     const remaining = runPty(["list", "--json"])
     assert.equal(remaining.status, 0, remaining.stderr)
-    assert.deepEqual(JSON.parse(remaining.stdout), [])
+    validateCleanup({
+      sessions: JSON.parse(remaining.stdout),
+      processes: startedProcesses.map((process) => ({
+        name: process.name,
+        daemonAlive: isProcessAlive(process.daemonPid),
+        childAlive: isProcessAlive(process.childPid),
+      })),
+    })
     console.log("ATTACH-CORRECTIONS-CLEANUP-GREEN-7c42")
   }
 } finally {

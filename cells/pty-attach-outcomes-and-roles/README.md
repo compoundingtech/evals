@@ -28,9 +28,10 @@ invoke `dist/cli.js`.
   reach the PTY before a later anchor marker.
 - **Oracle mutations:** synthetic observations reject a missing, non-empty, or
   wrong detach outcome; false truncation success; failed promotion; wrong
-  min-grid; leaked demoted input; and a retained demoted size constraint.
-- **Cleanup:** every socket is closed and every eval-owned daemon/session is
-  removed.
+  min-grid; leaked demoted input; a retained demoted size constraint; and an
+  empty session catalog with a live daemon or child PID.
+- **Cleanup:** every socket is closed, cleanup commands succeed, the session
+  catalog is empty, and every captured eval-owned daemon and child PID is dead.
 
 The output barrier is causal rather than sleep-based: the anchor writes only
 after the transitioning socket receives `STATUS`, and the PTY must emit the

@@ -74,13 +74,14 @@ authored Agent Spec environment
   and an explicitly authored value remains present through live adoption,
   st2-owned replacement, and standalone PTY restart. Its dependency controls
   distinguish st2's managed-agent launch policy from PTY's persisted restart
-  policy. The cell refuses runtime artifacts whose source identity or digest
-  differs from its declared candidate receipt. A real accepted older st2 proves
+  policy. The cell refuses runtime artifacts whose executable digest differs
+  from its declared candidate receipt and also verifies source versions where
+  the executable exposes them. A real accepted older st2 proves
   the initial-launch failure, while a labeled PTY argument mutation proves the
   restart-persistence failure without presenting the mutation as a released
   artifact. Cleanup retains its failure trap until the PTY registry is empty,
-  every observed process identity has ended, and every captured transient scope
-  and cgroup is inactive (R07).
+  every observed process identity has ended, and every captured st2 transient
+  scope is inactive with its exact live-observed cgroup path gone (R07).
 
 ## Current execution
 

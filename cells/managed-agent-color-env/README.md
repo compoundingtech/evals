@@ -31,7 +31,8 @@ managed agents under an ambient `NO_COLOR=1`: one leaves the key undeclared and 
 - **Boundary:** ordinary non-agent PTYs retain their existing ambient-environment behavior. Standalone
   PTYs without an authored unset policy retain their existing ambient-environment behavior.
 - **Cleanup:** the cell retires both declarations, proves its eval-owned PTY root is empty, verifies every
-  observed process identity has ended, and rejects active transient scopes or surviving scope cgroups.
+  observed process identity has ended, and rejects active st2 transient scopes or the exact scope cgroup paths
+  captured while those reconciled generations were live.
 
 ## Run it
 
@@ -39,8 +40,9 @@ managed agents under an ambient `NO_COLOR=1`: one leaves the key undeclared and 
 EVAL_OLD_ST2=/path/to/st2-0fed14b st2 eval ./cells/managed-agent-color-env/
 ```
 
-The current `st2` and `pty` executables on `PATH`, and the `EVAL_OLD_ST2` control executable, are checked by
-source identity and SHA-256 before either run step starts. The control is the Linux executable from the immutable
+The current st2 executable and the `EVAL_OLD_ST2` control are checked by source version and SHA-256; the
+current PTY executable is checked by SHA-256 because its version output does not carry a source revision. These
+checks run before either run step starts. The control is the Linux executable from the immutable
 [`v0.2.0+0fed14b`](https://github.com/compoundingtech/st2/releases/tag/v0.2.0%2B0fed14b) release.
 
 ## Candidate dependency receipt

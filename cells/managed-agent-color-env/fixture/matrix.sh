@@ -25,6 +25,7 @@ echo "EXACT-RUNTIME-PROVENANCE-GREEN-90c4"
 
 process_identities=()
 scope_units=()
+scope_cgroups=()
 
 pty_at() {
   env -u PTY_SESSION PTY_ROOT="$PTY_ROOT" pty "$@"
@@ -73,7 +74,10 @@ in_st2_scope() {
   pid="$(session_pid "$1")"
   scope="$(sed -nE "s#.*(st2-${1//./\\.}-[0-9]+-[0-9]+\\.scope).*#\\1#p" "/proc/$pid/cgroup")"
   test -n "$scope"
+  cgroup="$(awk -F: '$1 == "0" { print $3 }' "/proc/$pid/cgroup")"
+  test -n "$cgroup"
   scope_units+=("$scope")
+  scope_cgroups+=("$cgroup")
 }
 
 assert_cleanup() {
@@ -91,9 +95,10 @@ assert_cleanup() {
       printf 'eval-owned scope remains active: %s\n' "$scope" >&2
       return 1
     fi
-    control_group="$(systemctl --user show --property ControlGroup --value "$scope" 2>/dev/null || true)"
-    if test -n "$control_group" && test -e "/sys/fs/cgroup$control_group"; then
-      printf 'eval-owned scope cgroup remains: %s\n' "$control_group" >&2
+  done
+  for cgroup in "${scope_cgroups[@]}"; do
+    if test -e "/sys/fs/cgroup$cgroup"; then
+      printf 'eval-owned scope cgroup remains: %s\n' "$cgroup" >&2
       return 1
     fi
   done

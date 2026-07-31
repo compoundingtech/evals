@@ -7,6 +7,7 @@ cd "$repo_root"
 
 mode="dry-run"
 state_dir=".eval-runs/overnight"
+max_cell_cost_usd="0.05"
 test_watchdog_extra="180"
 if [ "${OVN_TEST_FAKE:-0}" = "1" ]; then
   test_watchdog_extra="${OVN_TEST_WATCHDOG_EXTRA:-0}"
@@ -240,20 +241,33 @@ if [ "$requires_codex" -eq 1 ]; then
   }
 fi
 
-# Provider cells are fail-closed until the harness exposes both a hard
-# per-cell budget and a structured usage/cost receipt.  Never spend a paid
+# Provider cells are fail-closed until every provider command exposes both a
+# hard per-cell budget and a structured usage/cost receipt. Never spend a paid
 # seat when the selected KDL cannot prove that contract.
-while IFS=$'\t' read -r cell _harness models _effort _seats _cost _timeout _judges; do
+while IFS=$'\t' read -r cell _harness models _effort seats _cost _timeout _judges; do
   if [[ "$models" == *claude-sonnet-5* || "$models" == *gpt-5.6-sol* ]]; then
-    command_text="$(sed -n '/command #"'"'"'exec /p' "cells/$cell/$cell.kdl" 2>/dev/null || true)"
-    if [[ "$command_text" != *"--max-budget-usd 0.05"* || "$command_text" != *"--output-format json"* ]]; then
+    mapfile -t provider_commands < <(
+      rg -N 'command #".*exec (claude|codex)([[:space:]]|$)' "cells/$cell/$cell.kdl" || true
+    )
+    if [ "${#provider_commands[@]}" -ne "$seats" ]; then
+      echo "FAIL: provider cell $cell has ${#provider_commands[@]} guarded provider commands for $seats seats; no provider started" >&2
+      exit 1
+    fi
+    for command_text in "${provider_commands[@]}"; do
+      if [[ "$command_text" != *"--max-budget-usd $max_cell_cost_usd"* ||
+        "$command_text" != *"--output-format json"* ]]; then
+        echo "FAIL: provider cell $cell lacks enforced per-cell spend ceiling and structured usage receipt; no provider started" >&2
+        exit 1
+      fi
+    done
+    if [ "${#provider_commands[@]}" -eq 0 ]; then
       echo "FAIL: provider cell $cell lacks enforced per-cell spend ceiling and structured usage receipt; no provider started" >&2
       exit 1
     fi
   fi
 done < "$inventory"
 
-mkdir -p "$state_dir/logs" "$state_dir/receipts" "$state_dir/failures" "$state_dir/history"
+mkdir -p "$state_dir/logs" "$state_dir/receipts" "$state_dir/failures" "$state_dir/history" "$state_dir/usage"
 stop_guard="$state_dir/STOPPED"
 if [ -f "$stop_guard" ]; then
   if [ "$acknowledge_usage" -eq 0 ]; then
@@ -311,6 +325,44 @@ write_record() {
   mv -- "$temporary" "$destination"
 }
 
+persist_provider_usage() {
+  local log="$1" cell="$2" provider="$3" destination="$4"
+  local line normalized invalid_destination
+  local -a lines=()
+  mapfile -t lines < <(sed -n 's/^USAGE_JSON=//p' "$log")
+  if [ "${#lines[@]}" -ne 1 ]; then
+    usage_parse_error="expected exactly one USAGE_JSON line, found ${#lines[@]}"
+    return 1
+  fi
+  line="${lines[0]}"
+  if ! normalized="$(
+    jq -ceS \
+      --arg cell "$cell" \
+      --arg provider "$provider" \
+      --argjson budget "$max_cell_cost_usd" \
+      'select(
+        type == "object" and
+        .schema_version == 1 and
+        .cell == $cell and
+        .provider == $provider and
+        (.model | type == "string" and length > 0) and
+        (.input_tokens | type == "number" and . >= 0 and floor == .) and
+        (.output_tokens | type == "number" and . >= 0 and floor == .) and
+        (.cost_usd | type == "number" and . >= 0) and
+        .budget_usd == $budget and
+        (.status == "pass" or .status == "fail" or .status == "timeout" or .status == "error")
+      )' <<<"$line" 2>/dev/null
+  )"; then
+    invalid_destination="${destination%.json}.invalid"
+    write_record "$invalid_destination" "$line"
+    usage_parse_error="USAGE_JSON does not satisfy the normalized provider receipt schema"
+    return 1
+  fi
+  write_record "$destination" "$normalized"
+  usage_cost_usd="$(jq -r '.cost_usd' "$destination")"
+  usage_status="$(jq -r '.status' "$destination")"
+}
+
 cleanup_timed_out_catalog() {
   local catalog="$1" ref pid_file task_pid
   st2 down --catalog "$catalog" >/dev/null 2>&1 || true
@@ -348,6 +400,9 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
   stamp="$(date -u +%Y%m%dT%H%M%SZ)"
   log="$state_dir/logs/$cell.$stamp.log"
   watchdog_seconds=$(($(duration_seconds "$declared_timeout") + test_watchdog_extra))
+  if [ "${OVN_TEST_FAKE:-0}" = "1" ] && [ -n "${OVN_TEST_WATCHDOG_SECONDS:-}" ]; then
+    watchdog_seconds="$OVN_TEST_WATCHDOG_SECONDS"
+  fi
   printf '\n== %s: %s, %s, %s seat(s), %s cost, timeout %s (+180s watchdog) ==\n' \
     "$cell" "$harness" "$models" "$seats" "$cost" "$declared_timeout"
 
@@ -405,17 +460,82 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
     rg -q -i "$informational_usage_pattern" "$log" 2>/dev/null; then
     informational_usage_seen=1
   fi
-  if [ "$provider_selected" -eq 1 ] && rg -q '^USAGE_JSON=' "$log" 2>/dev/null; then
-    usage_receipt_seen=1
-  fi
-
   sed -n '1,240p' "$log"
   completed="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+  # This boundary runs after every provider termination and before any product
+  # verdict classification. A valid normalized receipt is persisted first,
+  # including on failure and watchdog timeout.
+  usage_receipt_seen=0
+  usage_receipt=""
+  usage_cost_usd=""
+  usage_status=""
+  usage_parse_error=""
+  usage_failure_class=""
+  if [ "$provider_selected" -eq 1 ]; then
+    provider=codex
+    [[ "$models" != *claude-sonnet-5* ]] || provider=claude
+    usage_receipt="$state_dir/usage/$cell.$stamp.json"
+    if persist_provider_usage "$log" "$cell" "$provider" "$usage_receipt"; then
+      usage_receipt_seen=1
+      if ! jq -e --argjson budget "$max_cell_cost_usd" '.cost_usd <= $budget' \
+        "$usage_receipt" >/dev/null; then
+        usage_failure_class=usage-budget
+        usage_parse_error="provider cost $usage_cost_usd exceeds hard per-cell budget $max_cell_cost_usd"
+      elif [ "$timed_out" -eq 1 ] && [ "$usage_status" != timeout ]; then
+        usage_failure_class=usage-receipt
+        usage_parse_error="timed-out provider receipt has status $usage_status, expected timeout"
+      elif [ "$timed_out" -eq 0 ] && [ "$rc" -eq 0 ] && grep -Fxq 'VERDICT: PASS' "$log" &&
+        [ "$usage_status" != pass ]; then
+        usage_failure_class=usage-receipt
+        usage_parse_error="passing provider result has receipt status $usage_status, expected pass"
+      elif [ "$timed_out" -eq 0 ] &&
+        { [ "$rc" -ne 0 ] || ! grep -Fxq 'VERDICT: PASS' "$log"; } &&
+        [ "$usage_status" != fail ] && [ "$usage_status" != error ]; then
+        usage_failure_class=usage-receipt
+        usage_parse_error="failed provider result has receipt status $usage_status, expected fail or error"
+      fi
+    else
+      usage_failure_class=usage-receipt
+    fi
+  fi
+
+  if [ "$provider_selected" -eq 1 ] && [ -n "$usage_failure_class" ]; then
+    failure="$state_dir/failures/$cell.$stamp.env"
+    write_record "$failure" \
+      "cell=$cell" \
+      "result=FAIL" \
+      "failure_class=$usage_failure_class" \
+      "failure_detail=$usage_parse_error" \
+      "exit_code=$rc" \
+      "timed_out=$timed_out" \
+      "hard_usage_warning=$hard_usage_seen" \
+      "informational_usage_banner=$informational_usage_seen" \
+      "structured_usage_receipt=$usage_receipt_seen" \
+      "usage_receipt=$usage_receipt" \
+      "cost_usd=$usage_cost_usd" \
+      "max_cell_cost_usd=$max_cell_cost_usd" \
+      "allow_informational_reset_banner=$allow_informational_reset_banner" \
+      "source_commit=$source_commit" \
+      "cell_hash=$hash" \
+      "st2_version=$st2_version" \
+      "catalog=$catalog" \
+      "log=$log" \
+      "completed_at=$completed"
+    write_record "$stop_guard" \
+      "reason=$usage_failure_class" \
+      "cell=$cell" \
+      "log=$log" \
+      "record=$failure" \
+      "usage_receipt=$usage_receipt" \
+      "stopped_at=$completed"
+    echo "STOPPED: $cell $usage_failure_class failure: $usage_parse_error" >&2
+    exit 1
+  fi
+
   if [ "$rc" -ne 0 ] || ! grep -Fxq 'VERDICT: PASS' "$log"; then
     failure_class=product
-    if [ "$timed_out" -eq 1 ] || [ ! -s "$log" ]; then
-      failure_class=infrastructure
-    elif [ "$provider_selected" -eq 1 ] && [ "$usage_receipt_seen" -eq 0 ]; then
+    if { [ "$timed_out" -eq 1 ] && [ "$provider_selected" -eq 0 ]; } || [ ! -s "$log" ]; then
       failure_class=infrastructure
     elif rg -q -i '(^|[^[:alpha:]])(401|403|oauth|expired|authentication failed|not logged in|invalid token|api key)([^[:alpha:]]|$)' "$log" 2>/dev/null; then
       failure_class=auth
@@ -434,6 +554,9 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
       "hard_usage_warning=$hard_usage_seen" \
       "informational_usage_banner=$informational_usage_seen" \
       "structured_usage_receipt=$usage_receipt_seen" \
+      "usage_receipt=$usage_receipt" \
+      "cost_usd=$usage_cost_usd" \
+      "max_cell_cost_usd=$max_cell_cost_usd" \
       "allow_informational_reset_banner=$allow_informational_reset_banner" \
       "source_commit=$source_commit" \
       "cell_hash=$hash" \
@@ -492,6 +615,9 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
     "hard_usage_warning=$hard_usage_seen" \
     "informational_usage_banner=$informational_usage_seen" \
     "structured_usage_receipt=$usage_receipt_seen" \
+    "usage_receipt=$usage_receipt" \
+    "cost_usd=$usage_cost_usd" \
+    "max_cell_cost_usd=$max_cell_cost_usd" \
     "allow_informational_reset_banner=$allow_informational_reset_banner" \
     "catalog=$catalog" \
     "log=$log" \

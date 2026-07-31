@@ -175,6 +175,12 @@ grep -Fq 'structured_usage_receipt=$usage_receipt_seen' bin/overnight.sh
 grep -Fq 'usage_receipt_seen=0' bin/overnight.sh
 grep -Fq 'provider_selected=1' bin/overnight.sh
 grep -Fq 'provider cell $cell lacks enforced per-cell spend ceiling and structured usage receipt' bin/overnight.sh
+grep -Fq 'max_cell_cost_usd="0.05"' bin/overnight.sh
+grep -Fq 'persist_provider_usage "$log" "$cell" "$provider" "$usage_receipt"' bin/overnight.sh
+grep -Fq 'usage_failure_class=usage-receipt' bin/overnight.sh
+grep -Fq 'usage_failure_class=usage-budget' bin/overnight.sh
+grep -Fq 'usage_receipt=$usage_receipt' bin/overnight.sh
+grep -Fq 'cost_usd=$usage_cost_usd' bin/overnight.sh
 
 printf 'PASS: dry-run exposes %s-cell inventory, exact six-cell order, and explicit model-free selection; invalid selectors cannot reach providers; conservative usage stops remain enforced\n' \
   "$expected_cells"

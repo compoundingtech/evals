@@ -47,7 +47,8 @@ tracked cell
 ## Current execution
 
 ```text
-explicit selection → fresh provider proof → preflight → launch → judge → cleanup → receipt
+explicit selection → fresh provider proof → preflight → hard-budget gate → launch
+→ cleanup → durable usage receipt → verdict classification → PASS receipt or STOPPED
 ```
 
 The current corpus runner requires an explicit subset or `--all`, launches
@@ -57,6 +58,11 @@ and continues or stops.
 - **R06–R09:** Runs have explicit budgets and stop conditions, clean up on
   completion or stop, leave durable receipts, and expose model, effort, usage,
   and cost. Resume validates the inputs and prior receipts.
+- Each provider termination must yield exactly one schema-valid normalized
+  usage receipt bound to the cell, provider, model, USD 0.05 budget, token
+  counts, cost, and termination status. The runner persists it before
+  classifying a product result. Missing, malformed, contradictory, or
+  over-budget receipts stop before a subsequent paid cell.
 - A Claude-selected paid run fails closed unless a separately authorized,
   bounded real-provider turn produced an exact, sanitized proof no more than
   ten minutes earlier. The proof is bound to the source commit, exact CLI

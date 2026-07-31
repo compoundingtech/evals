@@ -59,6 +59,15 @@ from `claude auth status` is supplemental and cannot authorize execution. Codex 
 selected subset needs Codex. Hard quota/rate-limit errors stop unconditionally in both modes. Never infer
 approval for either paid command or for the auth probe.
 
+Before any provider run, verify that the selected KDL exposes the runner's exact USD 0.05 hard-budget and
+structured JSON contract. The runner persists one normalized usage receipt after every provider termination
+and before verdict classification. Missing, malformed, contradictory, or over-budget receipts stop before the
+next cell. The hermetic public integration proof is:
+
+```sh
+bin/check-overnight-receipt-boundary.sh
+```
+
 ## Cell rules
 
 - One canonical root KDL per cell and one declared `max-timeout`.

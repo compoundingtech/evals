@@ -95,6 +95,17 @@ receipt. A resumed run skips only matching completed receipts. Hard quota/rate-l
 and record its result first, then stops by default; only the explicit informational-banner opt-in permits the
 next paid cell to start.
 
+Provider execution additionally fails closed unless every declared seat has an exact USD 0.05 hard ceiling and
+JSON-output contract. After every provider termination—including a failed or watchdog-timed-out cell—the runner
+parses and atomically persists one normalized usage/cost receipt before classifying the product verdict. A valid
+under-budget product failure or timeout leaves the paired control eligible; a missing, malformed, contradictory,
+or over-budget receipt writes `STOPPED` before another paid cell can start. Exercise that boundary without a
+provider call with:
+
+```sh
+bin/check-overnight-receipt-boundary.sh
+```
+
 ## Run one cell
 
 `st2 eval` creates a hermetic temporary catalog, copies the fixture, boots declared agents and model judges,

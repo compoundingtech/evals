@@ -2,8 +2,7 @@
 
 **Type:** PTY installed-launcher and raw-socket composition. **Upstream
 contracts:** the intentional machine-detach outcome and explicit same-socket
-client-role replacement proposed against PTY main
-[`d5fabc3917407aeb937a012bd97679c303e18033`](https://github.com/compoundingtech/pty/commit/d5fabc3917407aeb937a012bd97679c303e18033).
+client-role replacement proposed against PTY main.
 
 **Capabilities required:** `pty,node`. No model and no bus. The cell executes
 the `pty` binary selected by `PATH`; it does not import PTY source modules or
@@ -41,13 +40,13 @@ anchor marker. Any earlier accepted input necessarily precedes that marker.
 
 The acceptance cell was proven failing against PTY main `d5fabc3` and passing
 against validation-only fork head
-`d1365195a250fa94bb954092bfb521126d68b218`, which composes the runtime change
-from detach candidate #146 (`698e8ebeff0ce5a97510a16612216d5d2ddbb483`;
-current docs-complete head `badc3539c663bef74d53f2bf750b2cae48a71ed7`)
-with role candidate
-`138b6c6cf0e76d658ce3f2a893bf5eda2052bbfa`. The validation-only ref is not a
-runtime dependency; after both corrections merge, the maintained cell runs
-against the packaged PTY on merged main.
+`4dd713e5cd71b8ba5cc6b07ffeae8b82e7a31e96`. That head merges detach candidate
+#146 at `b58db0c2244e5ebdf41859b9c87d1f28b202ae5e` and role candidate #147 at
+`2c865a56c25e94a7f2546bc1d1dc002db96f023f` onto upstream main
+`1c625c75702e032ff5dc455976ad75005cd2c1c8`, which already contains the attach
+stream fixture prerequisite from #145. The validation-only ref is not a runtime
+dependency; after both corrections merge, the maintained cell runs against the
+packaged PTY on merged main.
 
 ## Run it
 

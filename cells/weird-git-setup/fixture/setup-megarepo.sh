@@ -8,6 +8,8 @@ set -euo pipefail
 SB="${CATALOG:?CATALOG must be set — st2 eval provides it to run steps}"
 cd "$SB"
 SEED="$SB/.seed"
+WORKTREE_ACTOR_NAME="Eval Worktree Actor"
+WORKTREE_ACTOR_EMAIL="worktree-actor@eval.invalid"
 
 echo "== seed clampkit (a tiny Node lib with a PLANTED above-range bug + a RED test) =="
 mkdir -p "$SEED/src" "$SEED/test"
@@ -47,7 +49,16 @@ MD
 echo "== git init seed -> bare canonical.git (the shared object store + refs) =="
 git -C "$SEED" init -q -b main
 git -C "$SEED" add -A
-git -C "$SEED" -c user.name="eval-seed" -c user.email="seed@eval.local" commit -q -m "clampkit: initial (has a planted above-range bug)"
+# Seed history is fixture data; plumbing keeps agent commit hooks out of immutable setup.
+seed_tree="$(git -C "$SEED" write-tree)"
+seed_commit="$(
+  printf '%s\n' "clampkit: initial (has a planted above-range bug)" |
+    GIT_AUTHOR_NAME="eval-seed" GIT_AUTHOR_EMAIL="seed@eval.local" \
+    GIT_COMMITTER_NAME="eval-seed" GIT_COMMITTER_EMAIL="seed@eval.local" \
+    GIT_AUTHOR_DATE="2026-07-30T00:00:00Z" GIT_COMMITTER_DATE="2026-07-30T00:00:00Z" \
+    git -C "$SEED" commit-tree "$seed_tree"
+)"
+git -C "$SEED" update-ref refs/heads/main "$seed_commit"
 git clone -q --bare "$SEED" "$SB/canonical.git"
 
 echo "== add TWO linked worktrees off the bare canonical (the megarepo shape) =="
@@ -61,10 +72,12 @@ git -C "$SB/canonical.git" config extensions.worktreeConfig true
 # refuse commit ("must be run in a work tree"). Override core.bare=false per-worktree so the checkouts work.
 git -C "$SB/wt/feature" config --worktree core.bare false
 git -C "$SB/wt/main"    config --worktree core.bare false
-git -C "$SB/wt/feature" config --worktree user.name  "wt-feature"
-git -C "$SB/wt/feature" config --worktree user.email "wt-feature@eval.local"
-git -C "$SB/wt/main"    config --worktree user.name  "wt-main"
-git -C "$SB/wt/main"    config --worktree user.email "wt-main@eval.local"
+# This fixture owns the declared actor policy for ordinary agent-authored product commits. It is intentionally
+# distinct from the deterministic plumbing identity used above to construct immutable seed history.
+git -C "$SB/wt/feature" config --worktree user.name  "$WORKTREE_ACTOR_NAME"
+git -C "$SB/wt/feature" config --worktree user.email "$WORKTREE_ACTOR_EMAIL"
+git -C "$SB/wt/main"    config --worktree user.name  "$WORKTREE_ACTOR_NAME"
+git -C "$SB/wt/main"    config --worktree user.email "$WORKTREE_ACTOR_EMAIL"
 
 echo "== drop the worker persona into wt/feature (git-excluded so it never shows in the agent's status) =="
 cp "$SB/persona/CLAUDE.md" "$SB/persona/PERSONA.md" "$SB/wt/feature/"

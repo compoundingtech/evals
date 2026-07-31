@@ -14,7 +14,6 @@ while read -r sha; do
     *sig-relay@*) bad=$(echo "$files" | grep -vE '^(signal-relay|beacon-relay)/' || true) ;;
     *sig-hub@*)   bad=$(echo "$files" | grep -vE '^(signal-hub|beacon-hub)/'    || true) ;;
     *sig-sup@*)   bad=$(echo "$files" | grep -vE '^(config/|package\.json|README\.md|\.gitignore)' || true) ;;
-    *seed@local*) bad="" ;;
     *) echo "  FAIL: commit $sha by UNEXPECTED author $ae (not a pinned lane owner)"; lane_ok=0; bad="" ;;
   esac
   if [ -n "$bad" ]; then echo "  FAIL: ${ae%%@*} changed out-of-lane files in $sha: $(echo "$bad" | tr '\n' ' ')"; lane_ok=0; fi

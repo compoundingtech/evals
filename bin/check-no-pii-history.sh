@@ -12,19 +12,44 @@ trap cleanup EXIT
 
 forbidden="HISTORY_PRIVATE_"'SENTINEL'
 
+commit_fixture_tree() {
+  local target="$1" message="$2" tree parent commit ref
+  tree="$(git -C "$target" write-tree)"
+  parent="$(git -C "$target" rev-parse --verify HEAD 2>/dev/null || true)"
+  if [ -n "$parent" ]; then
+    commit="$(
+      printf '%s\n' "$message" |
+        GIT_AUTHOR_NAME="Fixture Author" GIT_AUTHOR_EMAIL="fixture@example.invalid" \
+        GIT_COMMITTER_NAME="Fixture Author" GIT_COMMITTER_EMAIL="fixture@example.invalid" \
+        GIT_AUTHOR_DATE="2026-07-30T00:00:00Z" GIT_COMMITTER_DATE="2026-07-30T00:00:00Z" \
+        git -C "$target" commit-tree "$tree" -p "$parent"
+    )"
+  else
+    commit="$(
+      printf '%s\n' "$message" |
+        GIT_AUTHOR_NAME="Fixture Author" GIT_AUTHOR_EMAIL="fixture@example.invalid" \
+        GIT_COMMITTER_NAME="Fixture Author" GIT_COMMITTER_EMAIL="fixture@example.invalid" \
+        GIT_AUTHOR_DATE="2026-07-30T00:00:00Z" GIT_COMMITTER_DATE="2026-07-30T00:00:00Z" \
+        git -C "$target" commit-tree "$tree"
+    )"
+  fi
+  ref="$(git -C "$target" symbolic-ref HEAD)"
+  git -C "$target" update-ref "$ref" "$commit"
+}
+
 make_fixture() {
   local target="$1" content="$2"
   mkdir -p "$target"
   git -C "$target" init -q
-  git -C "$target" config user.name "Fixture Author"
-  git -C "$target" config user.email "fixture@example.invalid"
   printf '%s\n' "portable fixture" >"$target/README.md"
   printf '%s\n' "$content" >"$target/removed.txt"
   git -C "$target" add README.md removed.txt
-  git -C "$target" commit -qm "seed"
+  # This is scanner input construction, not an agent-authored commit lifecycle. Plumbing keeps host commit
+  # hooks and their private provenance trailers outside the synthetic history under test.
+  commit_fixture_tree "$target" "seed"
   rm -f -- "$target/removed.txt"
   git -C "$target" add -u
-  git -C "$target" commit -qm "remove obsolete fixture file"
+  commit_fixture_tree "$target" "remove obsolete fixture file"
   mv -- "$target/.git" "$target/_git"
 }
 

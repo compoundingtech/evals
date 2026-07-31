@@ -41,10 +41,21 @@ hydrate_absent() {
 }
 
 commit_mutation() {
-  local name="$1" message="$2"
-  git -C "$scratch/$name/repo" add -A
-  GIT_AUTHOR_DATE=2026-07-27T20:00:00Z GIT_COMMITTER_DATE=2026-07-27T20:00:00Z \
-    git -C "$scratch/$name/repo" commit -qm "$message"
+  local name="$1" message="$2" repo tree parent commit ref
+  repo="$scratch/$name/repo"
+  git -C "$repo" add -A
+  # These commits are deterministic judge inputs, not agent-authored product history.
+  tree="$(git -C "$repo" write-tree)"
+  parent="$(git -C "$repo" rev-parse HEAD)"
+  commit="$(
+    printf '%s\n' "$message" |
+      GIT_AUTHOR_NAME="Mutation Check" GIT_AUTHOR_EMAIL="mutation@example.invalid" \
+      GIT_COMMITTER_NAME="Mutation Check" GIT_COMMITTER_EMAIL="mutation@example.invalid" \
+      GIT_AUTHOR_DATE="2026-07-27T20:00:00Z" GIT_COMMITTER_DATE="2026-07-27T20:00:00Z" \
+      git -C "$repo" commit-tree "$tree" -p "$parent"
+  )"
+  ref="$(git -C "$repo" symbolic-ref HEAD)"
+  git -C "$repo" update-ref "$ref" "$commit"
 }
 
 expect_fail() {

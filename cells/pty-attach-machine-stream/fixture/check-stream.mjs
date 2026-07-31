@@ -87,8 +87,9 @@ const validateFinal = (data, expectedGeometries, stdout = Buffer.alloc(0), stder
     throw new Error("unexpected packet type in machine stream")
   }
   if (stdout.length !== 0) throw new Error("machine attach wrote to stdout")
-  for (const marker of ["INITIAL_COLOR_61e8", "AFTER_DROP_61e8", "FINAL_DATA_61e8"]) {
-    if (stderr.includes(Buffer.from(marker))) throw new Error(`terminal marker leaked to stderr: ${marker}`)
+  const reconnectStatus = Buffer.from("\r\n[reconnecting… — Ctrl-\\ or Ctrl-C to stop]\r\n")
+  if (!stderr.equals(reconnectStatus)) {
+    throw new Error("machine attach stderr was not exactly one reconnect status")
   }
 }
 
@@ -102,7 +103,8 @@ const selfTest = () => {
     frame(0, Buffer.from("FINAL_DATA_61e8")), frame(4, Buffer.alloc(0)),
   ]
   const valid = Buffer.concat(packets)
-  validateFinal(valid, expected)
+  const reconnectStatus = Buffer.from("\r\n[reconnecting… — Ctrl-\\ or Ctrl-C to stop]\r\n")
+  validateFinal(valid, expected, Buffer.alloc(0), reconnectStatus)
   const uncolored = Buffer.from("\x1b[HINITIAL_COLOR_61e8\x1b[0m")
   const mutations = [
     () => validateFinal(Buffer.concat([frame(10, geometry(1, 1)), ...packets.slice(1)]), expected),
@@ -110,8 +112,8 @@ const selfTest = () => {
     () => validateFinal(Buffer.concat([packets[0], packets[1], packets[2], frame(5, colored), ...packets.slice(4)]), expected),
     () => validateFinal(Buffer.concat([...packets.slice(0, 4), packets[5], packets[4]]), expected),
     () => validateFinal(valid.subarray(0, valid.length - 1), expected),
-    () => validateFinal(valid, expected, Buffer.from("unexpected")),
-    () => validateFinal(valid, expected, Buffer.alloc(0), Buffer.from("FINAL_DATA_61e8")),
+    () => validateFinal(valid, expected, Buffer.from("unexpected"), reconnectStatus),
+    () => validateFinal(valid, expected, Buffer.alloc(0), Buffer.concat([reconnectStatus, Buffer.from("\x1b[32mLEAK")])),
   ]
   for (const mutate of mutations) assert.throws(mutate)
   console.log("ORACLE-MUTATIONS-GREEN-61e8")

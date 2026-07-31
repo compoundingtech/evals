@@ -1,8 +1,9 @@
 # adopt-only-migration
 
-**Type:** st2 / live-migration lifecycle · **Ship:** blocked on
-[compoundingtech/st2#98](https://github.com/compoundingtech/st2/issues/98)
-and tracked by
+**Type:** st2 / live-migration lifecycle · **Runtime dependency:** implemented
+by merged [compoundingtech/st2#99](https://github.com/compoundingtech/st2/pull/99),
+which closed [compoundingtech/st2#98](https://github.com/compoundingtech/st2/issues/98),
+and tracked in evals by
 [compoundingtech/evals#52](https://github.com/compoundingtech/evals/issues/52).
 
 **Capabilities required:** `st2,pty,jq`. No model and no bus. Every declaration,
@@ -37,9 +38,10 @@ lifecycle.
 st2 eval ./cells/adopt-only-migration/
 ```
 
-This cell is intentionally RED against st2 `main` before #98. It becomes GREEN
-only with an implementation that treats adopt-only as a machine-readable
-lifecycle policy rather than inert metadata or a backend `keep` tag.
+The current cell passes 7/7 against merged st2
+`c6846f6239329f0803142afc06c15a07b93937c1`. Historically, it was intentionally
+RED before #98/#99 because the runtime treated `lifecycle` as inert metadata;
+that pre-implementation result is no longer the current shipping state.
 
 Immutable pre-reap generation receipts remain the distinct design and
 acceptance surface in

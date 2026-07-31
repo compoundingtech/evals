@@ -27,12 +27,24 @@ case "$mode" in
     test ! -e "$out/$final_rel"
     ;;
   cancelled)
-    for name in rejected eof sigint; do
+    for name in rejected eof; do
       out="$root/$name"
       retired "$out"
       grep -Fqx cancelled "$out/outcome"
       test ! -e "$out/$final_rel"
     done
+    out="$root/clean-detach"
+    retired "$out"
+    grep -Fqx cancelled-clean-detach "$out/outcome"
+    test ! -e "$out/$final_rel"
+    out="$root/external-sigint"
+    retired "$out"
+    grep -Fqx cancelled-external-sigint-exit-130 "$out/outcome"
+    test ! -e "$out/$final_rel"
+    out="$root/terminal-ctrl-c"
+    grep -Fqx '  retired #false' "$out/$temp_rel/agent.kdl"
+    grep -Fqx terminal-input-0x03-forwarded "$out/outcome"
+    test ! -e "$out/$final_rel"
     ;;
   *)
     echo "unknown grade mode: $mode" >&2

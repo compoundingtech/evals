@@ -16,5 +16,8 @@ Required run inputs:
 The cell covers success, three crash boundaries, cancellation versus process
 failure, single-flight recovery, retained tombstones, main-PTY gating with Ding
 state explicitly indeterminate, exactly-once final publication, and attachment
-to the exact final PTY. Until an exact successor supplies those inputs,
+to the exact final PTY. It distinguishes raw terminal Ctrl-C (`0x03`), which is
+forwarded and does not cancel, from the primary human cancellation path: a
+clean `pty attach` detach via Ctrl+\. External SIGINT/exit 130 is a separate
+secondary cancellation path. Until an exact successor supplies those inputs,
 `st2 eval` must fail before claiming a result.

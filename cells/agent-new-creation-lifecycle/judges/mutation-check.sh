@@ -35,4 +35,9 @@ sed -i 's/attached\tdev3\\.dotfiles\\.cos-misc\\.axe-40\\.implementation/attache
   "$scratch/wrong-attach/trace.tsv"
 expect_rejected wrong-attach success
 
+cp -a "$root/out/terminal-ctrl-c" "$scratch/ctrl-c-cancellation"
+sed -i 's/retired #false/retired #true/' \
+  "$scratch/ctrl-c-cancellation/$temp_rel"
+expect_rejected ctrl-c-cancellation terminal-ctrl-c
+
 echo "PASS: lifecycle mutations fail held-out inspectors"

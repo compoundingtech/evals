@@ -17,8 +17,10 @@ case "$mode" in
     grade_case crash-post-retire
     grade_case crash-post-publish
     ;;
-  cancel-crash)
-    grade_case cancel
+  cancellation-input-crash)
+    grade_case clean-detach
+    grade_case external-sigint
+    grade_case terminal-ctrl-c
     grade_case process-crash-before-intent
     ;;
   concurrency)

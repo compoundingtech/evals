@@ -152,9 +152,11 @@ one-sentence human request
   residue. It cannot be represented as provider evidence.
 - The model-free confirmation cell freezes the safe pre-threshold fallback:
   a valid intent and rendered summary are insufficient; explicit human
-  confirmation alone authorizes final publication. Reject, EOF, or Ctrl-C
+  confirmation alone authorizes final publication. Reject, EOF, a clean
+  `pty attach` detach via Ctrl+\, or externally delivered SIGINT/exit 130
   retires the temporary declaration, retains its tombstone, and publishes no
-  final declaration.
+  final declaration. Attach uses raw terminal mode, so terminal Ctrl-C byte
+  `0x03` is forwarded to the managed session and is not local cancellation.
 - Passing model-free evidence proves only its named structural boundary. The
   autonomous-selection claim remains unaccepted until DQ1 selects a measured
   threshold and every required paid and model-free cell has a structured
@@ -163,9 +165,10 @@ one-sentence human request
   requires exact immutable Axe and model-free-driver inputs and must operate on
   a real canonical temporary declaration and durable transaction records. Its
   cases cover success, crash before retirement, crash after retirement, crash
-  after final publication, cancellation versus process failure, single-flight
-  recovery, exact final attachment, and exactly-once final context. Main-PTY
-  absence is the publication gate; Ding state remains explicitly indeterminate.
+  after final publication, clean detach and external-SIGINT cancellation versus
+  forwarded terminal Ctrl-C and process failure, single-flight recovery, exact
+  final attachment, and exactly-once final context. Main-PTY absence is the
+  publication gate; Ding state remains explicitly indeterminate.
   Held-out mutations reject tombstone loss, a Ding proxy, duplicate final
   publication, and attachment to the wrong identity. A shell stand-in is not
   admissible, so the cell must fail before claiming a result until the successor

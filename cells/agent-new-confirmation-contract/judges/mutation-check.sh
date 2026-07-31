@@ -24,12 +24,20 @@ sed -i 's/retired #true/retired #false/' \
 expect_rejected no-tombstone confirmed
 
 mkdir -p "$scratch/cancel-published/out"
-for name in rejected eof sigint; do
+for name in rejected eof clean-detach external-sigint terminal-ctrl-c; do
   cp -a "$root/out/$name" "$scratch/cancel-published/out/$name"
 done
 cp -a \
   "$root/out/confirmed/agents/dev3/dotfiles.cos-misc.axe-40.implementation" \
   "$scratch/cancel-published/out/rejected/agents/dev3/"
 expect_rejected cancel-published cancelled
+
+mkdir -p "$scratch/ctrl-c-retired/out"
+for name in rejected eof clean-detach external-sigint terminal-ctrl-c; do
+  cp -a "$root/out/$name" "$scratch/ctrl-c-retired/out/$name"
+done
+sed -i 's/retired #false/retired #true/' \
+  "$scratch/ctrl-c-retired/out/terminal-ctrl-c/agents/dev3/global.coding-agents.session-creation.interview-eval/agent.kdl"
+expect_rejected ctrl-c-retired cancelled
 
 echo "PASS: confirmation mutations fail held-out graders"

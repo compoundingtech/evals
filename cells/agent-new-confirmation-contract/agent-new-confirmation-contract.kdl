@@ -15,8 +15,14 @@ eval {
   run "eof" {
     command "bash ./apply-confirmation.sh eof ./out/eof"
   }
-  run "sigint" {
-    command "bash ./apply-confirmation.sh sigint ./out/sigint"
+  run "clean-detach" {
+    command "bash ./apply-confirmation.sh clean-detach ./out/clean-detach"
+  }
+  run "external-sigint" {
+    command "bash ./apply-confirmation.sh external-sigint ./out/external-sigint"
+  }
+  run "terminal-ctrl-c" {
+    command "bash ./apply-confirmation.sh terminal-ctrl-c ./out/terminal-ctrl-c"
   }
 
   judges {
@@ -26,10 +32,10 @@ eval {
     judge "PENDING — a valid intent and rendered summary alone publish nothing" {
       exec "bash ./judges/grade.sh pending"
     }
-    judge "CANCEL — reject, EOF, and Ctrl-C retain retired tombstones and publish no final bundle" {
+    judge "CANCEL — reject, EOF, clean detach, and external SIGINT retire without publication" {
       exec "bash ./judges/grade.sh cancelled"
     }
-    judge "NEGATIVE CONTROLS — missing confirmation, missing tombstone, and false cancellation fail" {
+    judge "NEGATIVE CONTROLS — terminal Ctrl-C stays forwarded; missing confirmation, tombstone, and false cancellation fail" {
       exec "bash ./judges/mutation-check.sh"
     }
   }

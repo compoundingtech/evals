@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-response="${1:?confirm|pending|reject|eof|sigint required}"
+response="${1:?confirm|pending|reject|eof|clean-detach|external-sigint|terminal-ctrl-c required}"
 out="${2:?output root required}"
 temporary="$out/agents/dev3/global.coding-agents.session-creation.interview-eval"
 final="$out/agents/dev3/dotfiles.cos-misc.axe-40.implementation"
@@ -50,9 +50,20 @@ case "$response" in
   pending)
     printf '%s\n' awaiting-confirmation >"$out/outcome"
     ;;
-  reject|eof|sigint)
+  reject|eof)
     write_temporary '#true'
     printf '%s\n' cancelled >"$out/outcome"
+    ;;
+  clean-detach)
+    write_temporary '#true'
+    printf '%s\n' cancelled-clean-detach >"$out/outcome"
+    ;;
+  external-sigint)
+    write_temporary '#true'
+    printf '%s\n' cancelled-external-sigint-exit-130 >"$out/outcome"
+    ;;
+  terminal-ctrl-c)
+    printf '%s\n' terminal-input-0x03-forwarded >"$out/outcome"
     ;;
   *)
     echo "unsupported confirmation response: $response" >&2

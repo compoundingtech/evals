@@ -13,9 +13,23 @@ test "$(find "$final_root" -type f -name agent.kdl 2>/dev/null | wc -l)" -le 1
 test "$(find "$final_root/resources/inbox" -type f 2>/dev/null | wc -l)" -le 1
 
 case "$scenario" in
-  cancel)
+  clean-detach)
     grep -Fqx '  retired #true' "$temp"
     test ! -e "$final_root"
+    grep -Fqx $'termination\tclean-detach' "$trace"
+    grep -Fqx $'attach-exit\t0' "$trace"
+    ;;
+  external-sigint)
+    grep -Fqx '  retired #true' "$temp"
+    test ! -e "$final_root"
+    grep -Fqx $'termination\texternal-sigint' "$trace"
+    grep -Fqx $'attach-exit\t130' "$trace"
+    ;;
+  terminal-ctrl-c)
+    grep -Fqx '  retired #false' "$temp"
+    test ! -e "$final_root"
+    grep -Fqx $'terminal-input\t0x03-forwarded' "$trace"
+    grep -Fqx $'attach-state\tattached' "$trace"
     ;;
   process-crash-before-intent)
     grep -Fqx '  retired #false' "$temp"

@@ -27,6 +27,9 @@ inside the temporary eval catalog; it launches no model or provider harness.
   lock, socket, PID, or metadata publication.
 - A daemon started without a recovery capability is refused without signal,
   restart, relaunch, or a recoverability claim.
+- Cleanup binds every captured PID to its process-start token, uses bounded
+  TERM then KILL only for those exact identities, fails if any survives, and
+  exercises the KILL fallback with a TERM-resistant synthetic sentinel.
 
 The experiment is exact-source draft evidence, not a merged release artifact.
 It deliberately replaces the incompatible PR #127 oracle rather than merely

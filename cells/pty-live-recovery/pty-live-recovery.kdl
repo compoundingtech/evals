@@ -35,8 +35,8 @@ eval {
     judge "UNSUPPORTED - a daemon without a capability is not signaled, relaunched, or claimed recoverable" {
       exec "grep -Fqx LIVE-RECOVERY-UNSUPPORTED-GREEN-d42e $RUNS_DIR/probe.out"
     }
-    judge "CLEANUP/MODEL FREE - only captured daemons and exact eval roots are removed" {
-      exec "grep -Fqx LIVE-RECOVERY-CLEANUP-MODEL-FREE-GREEN-d42e $RUNS_DIR/probe.out && jq -e '.modelCalls == 0 and .cleanup.rootsAbsent and .coverage.duplicateLaunches == 0' $CATALOG/pty-live-recovery-receipt.json >/dev/null"
+    judge "CLEANUP/MODEL FREE - every captured daemon is dead and exact eval roots are removed" {
+      exec "grep -Fqx LIVE-RECOVERY-CLEANUP-MODEL-FREE-GREEN-d42e $RUNS_DIR/probe.out && jq -e '.modelCalls == 0 and .cleanup.rootsAbsent and .cleanup.allTrackedDaemonsDead and .cleanup.trackedDaemons > 0 and .cleanup.killFallbacks > 0 and .coverage.duplicateLaunches == 0' $CATALOG/pty-live-recovery-receipt.json >/dev/null"
     }
   }
 }

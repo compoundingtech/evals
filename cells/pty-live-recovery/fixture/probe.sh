@@ -12,8 +12,11 @@ pty_cli="$package_root/bin/pty"
 root="$catalog/pty-live-recovery-root"
 unsupported_root="$catalog/pty-live-recovery-unsupported-root"
 live_command="$PWD/live.sh"
-daemon_pids=()
+tracked_pids=()
+tracked_start_tokens=()
 client_pids=()
+all_tracked_daemons_dead=false
+cleanup_kill_fallbacks=0
 
 mkdir -p "$root" "$unsupported_root"
 chmod 0700 "$root"
@@ -27,26 +30,80 @@ pty_at_unsupported() {
   PTY_ROOT="$unsupported_root" env -u PTY_SESSION -u PTY_SESSION_DIR "$pty_cli" "$@"
 }
 
-wait_dead() {
-  pid="$1"
-  for _ in $(seq 1 120); do
-    kill -0 "$pid" 2>/dev/null || return 0
-    sleep 0.05
+process_start_token() {
+  local pid="$1"
+  local start_ticks
+  test -r "/proc/$pid/stat" || return 1
+  start_ticks="$(awk '{ print $22 }' "/proc/$pid/stat")"
+  test -n "$start_ticks" || return 1
+  printf 'linux:%s\n' "$start_ticks"
+}
+
+track_pid() {
+  local pid="$1"
+  local start_token
+  start_token="$(process_start_token "$pid")"
+  tracked_pids+=("$pid")
+  tracked_start_tokens+=("$start_token")
+}
+
+tracked_process_alive() {
+  local index="$1"
+  local pid="${tracked_pids[$index]}"
+  local expected_start="${tracked_start_tokens[$index]}"
+  local current_start
+  current_start="$(process_start_token "$pid" 2>/dev/null)" || return 1
+  test "$current_start" = "$expected_start"
+}
+
+wait_tracked_dead() {
+  local index="$1"
+  for _ in $(seq 1 80); do
+    tracked_process_alive "$index" || return 0
+    sleep 0.025
   done
   return 1
 }
 
 cleanup() {
+  local pid index
   for pid in "${client_pids[@]}"; do
     kill "$pid" 2>/dev/null || true
     wait "$pid" 2>/dev/null || true
   done
-  for pid in "${daemon_pids[@]}"; do
-    kill -TERM "$pid" 2>/dev/null || true
+  for index in "${!tracked_pids[@]}"; do
+    if tracked_process_alive "$index"; then
+      pid="${tracked_pids[$index]}"
+      if ! kill -TERM "$pid" 2>/dev/null && tracked_process_alive "$index"; then
+        printf 'failed to TERM tracked daemon %s\n' "$pid" >&2
+        return 1
+      fi
+    fi
   done
-  for pid in "${daemon_pids[@]}"; do
-    wait_dead "$pid" || true
+  for index in "${!tracked_pids[@]}"; do
+    if ! wait_tracked_dead "$index"; then
+      pid="${tracked_pids[$index]}"
+      if tracked_process_alive "$index"; then
+        if ! kill -KILL "$pid" 2>/dev/null && tracked_process_alive "$index"; then
+          printf 'failed to KILL tracked daemon %s\n' "$pid" >&2
+          return 1
+        fi
+        ((cleanup_kill_fallbacks += 1))
+        wait "$pid" 2>/dev/null || true
+      fi
+      wait_tracked_dead "$index" || {
+        printf 'tracked daemon %s remained alive after TERM and KILL\n' "$pid" >&2
+        return 1
+      }
+    fi
   done
+  for index in "${!tracked_pids[@]}"; do
+    tracked_process_alive "$index" && {
+      printf 'tracked daemon %s remains alive\n' "${tracked_pids[$index]}" >&2
+      return 1
+    }
+  done
+  all_tracked_daemons_dead=true
   rm -rf -- "$root" "$unsupported_root"
 }
 trap cleanup EXIT
@@ -134,7 +191,7 @@ start_private_session() {
   wait_running "$id"
   wait_peek "$id" LIVE-RECOVERY-READY
   last_daemon_pid="$(jq -er '.daemonPid' "$root/$id.json")"
-  daemon_pids+=("$last_daemon_pid")
+  track_pid "$last_daemon_pid"
 }
 
 test "$(git -C "$package_root" rev-parse HEAD)" = "$expected_head"
@@ -296,7 +353,7 @@ done
 test -f "$unsupported_root/$unsupported.json"
 jq -e '.recovery == null' "$unsupported_root/$unsupported.json" >/dev/null
 unsupported_pid="$(jq -er '.daemonPid' "$unsupported_root/$unsupported.json")"
-daemon_pids+=("$unsupported_pid")
+track_pid "$unsupported_pid"
 cp "$unsupported_root/$unsupported.json" "$unsupported_snapshot"
 rm "$unsupported_root/$unsupported.sock" \
   "$unsupported_root/$unsupported.pid" \
@@ -316,8 +373,19 @@ test ! -e "$unsupported_root/$unsupported.pid"
 test ! -e "$unsupported_root/$unsupported.json"
 echo "LIVE-RECOVERY-UNSUPPORTED-GREEN-d42e"
 
+cleanup_sentinel_log="$catalog/live-recovery-cleanup-sentinel.log"
+captured_daemon_count="${#tracked_pids[@]}"
+perl -e '$|=1; $SIG{TERM}="IGNORE"; print "CLEANUP-SENTINEL-READY\n"; sleep 1 while 1' \
+  >"$cleanup_sentinel_log" 2>&1 &
+cleanup_sentinel_pid=$!
+wait_text "$cleanup_sentinel_log" CLEANUP-SENTINEL-READY
+track_pid "$cleanup_sentinel_pid"
+tracked_process_count="${#tracked_pids[@]}"
+
 cleanup
 trap - EXIT
+test "$all_tracked_daemons_dead" = true
+test "$cleanup_kill_fallbacks" -ge 1
 test ! -e "$root"
 test ! -e "$unsupported_root"
 jq -n \
@@ -326,6 +394,9 @@ jq -n \
   --arg cliSha256 "$expected_cli" \
   --arg distCliSha256 "$expected_dist_cli" \
   --arg distServerSha256 "$expected_dist_server" \
+  --argjson trackedDaemons "$captured_daemon_count" \
+  --argjson trackedProcesses "$tracked_process_count" \
+  --argjson killFallbacks "$cleanup_kill_fallbacks" \
   '{
     dependency: {
       sourceHead: $sourceHead,
@@ -347,6 +418,12 @@ jq -n \
       duplicateLaunches: 0
     },
     modelCalls: 0,
-    cleanup: { rootsAbsent: true }
+    cleanup: {
+      rootsAbsent: true,
+      trackedDaemons: $trackedDaemons,
+      trackedProcesses: $trackedProcesses,
+      allTrackedDaemonsDead: true,
+      killFallbacks: $killFallbacks
+    }
   }' >"$catalog/pty-live-recovery-receipt.json"
 echo "LIVE-RECOVERY-CLEANUP-MODEL-FREE-GREEN-d42e"

@@ -40,7 +40,8 @@ anchor marker. Any earlier accepted input necessarily precedes that marker.
 ## Validation revisions
 
 The acceptance cell was proven failing against PTY main `d5fabc3` and passing
-against validation-only fork head `d136519`, which composes the runtime change
+against validation-only fork head
+`d1365195a250fa94bb954092bfb521126d68b218`, which composes the runtime change
 from detach candidate #146 (`698e8ebeff0ce5a97510a16612216d5d2ddbb483`;
 current docs-complete head `badc3539c663bef74d53f2bf750b2cae48a71ed7`)
 with role candidate

@@ -46,6 +46,7 @@ bin/check-harness-contract.sh
 bin/check-vrs-scope-drift.sh
 bin/check-vrs-variations.sh
 bin/check-weird-git-setup.sh
+bin/check-preflight-closed-set-mutations.sh
 bin/check-overnight-policy.sh
 bin/check-no-pii.sh
 bin/check-no-pii-history.sh

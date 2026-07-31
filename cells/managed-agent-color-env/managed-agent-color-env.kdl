@@ -24,6 +24,9 @@ eval {
     judge "REPLACE - st2-owned replacement reapplies both environment policies" {
       exec "grep -Fqx REPLACEMENT-POLICY-GREEN-90c4 $RUNS_DIR/matrix.out"
     }
+    judge "RESTART - persisted PTY metadata survives an ambient-polluted standalone restart" {
+      exec "grep -Fqx PTY-RESTART-POLICY-GREEN-90c4 $RUNS_DIR/matrix.out"
+    }
     judge "CLEANUP - the synthetic catalog has no remaining PTY sessions" {
       exec "grep -Fqx COLOR-MATRIX-CLEANUP-GREEN-90c4 $RUNS_DIR/matrix.out"
     }

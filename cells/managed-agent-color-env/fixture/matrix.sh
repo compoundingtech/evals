@@ -89,6 +89,19 @@ in_st2_scope color.ambient
 in_st2_scope color.explicit
 echo "REPLACEMENT-POLICY-GREEN-90c4"
 
+printf '\034' | NO_COLOR=1 env -u PTY_SESSION PTY_ROOT="$PTY_ROOT" \
+  pty restart -y --force color.ambient >"$root/ambient-restart.out" 2>"$root/ambient-restart.err"
+wait_for_file "$net/observed/ambient.3"
+grep -Fqx 'NO_COLOR=<unset>' "$net/observed/ambient.3"
+grep -Fqx 'TERM=xterm-256color' "$net/observed/ambient.3"
+
+printf '\034' | env -u NO_COLOR -u PTY_SESSION PTY_ROOT="$PTY_ROOT" \
+  pty restart -y --force color.explicit >"$root/explicit-restart.out" 2>"$root/explicit-restart.err"
+wait_for_file "$net/observed/explicit.3"
+grep -Fqx 'NO_COLOR=1' "$net/observed/explicit.3"
+grep -Fqx 'TERM=xterm-256color' "$net/observed/explicit.3"
+echo "PTY-RESTART-POLICY-GREEN-90c4"
+
 for agent in ambient explicit; do
   sed -i "/role \"worker\"/a\\  retired #true" "$net/agents/color/$agent/agent.kdl"
 done

@@ -20,9 +20,12 @@ managed agents under an ambient `NO_COLOR=1`: one leaves the key undeclared and 
   default-vs-explicit distinction. The observation is made inside the task, after any transient systemd scope
   wrapper, rather than by inspecting launch arguments. The replacement generations must also run in fresh
   scopes.
+- **standalone PTY restart:** the default agent is restarted by `pty restart` while the operator environment
+  contains `NO_COLOR=1`; its persisted unset policy must still win. The explicit agent is restarted without an
+  ambient value and must retain its authored `NO_COLOR=1`. This proves both precedence directions from stored
+  metadata rather than relying on st2 to reconstruct the command.
 - **Boundary:** ordinary non-agent PTYs retain their existing ambient-environment behavior. Standalone
-  `pty restart` is intentionally outside this cell: st2 owns the negative overlay at reconciliation time,
-  while positive authored values are persisted by PTY.
+  PTYs without an authored unset policy retain their existing ambient-environment behavior.
 - **Cleanup:** the cell retires both declarations and proves its eval-owned PTY root is empty.
 
 ## Run it

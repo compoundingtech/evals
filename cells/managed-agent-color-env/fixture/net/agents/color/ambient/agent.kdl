@@ -1,0 +1,7 @@
+agent "ambient" {
+  host "color"
+  role "worker"
+  workspace "$CATALOG/workspace"
+  env { ST_AGENT "color.ambient" }
+  command "exec bash \"$CATALOG/observe.sh\" ambient"
+}

@@ -1,0 +1,28 @@
+// Managed agent PTYs get a color-capable default even when the reconciler itself was launched under
+// NO_COLOR. An explicit Agent Spec value remains authoritative across adoption and replacement.
+eval {
+  copy "./fixture"
+  max-timeout "90s"
+
+  run "matrix" {
+    command "bash ./matrix.sh"
+  }
+
+  judges {
+    judge "DEFAULT - ambient NO_COLOR is removed from the canonical agent PTY" {
+      exec "grep -Fqx AMBIENT-COLOR-DEFAULT-GREEN-90c4 $RUNS_DIR/matrix.out"
+    }
+    judge "EXPLICIT - Agent Spec NO_COLOR remains authoritative" {
+      exec "grep -Fqx EXPLICIT-NO-COLOR-GREEN-90c4 $RUNS_DIR/matrix.out"
+    }
+    judge "ADOPT - reconciliation retains both live generations without changing their environment" {
+      exec "grep -Fqx LIVE-ADOPTION-GREEN-90c4 $RUNS_DIR/matrix.out"
+    }
+    judge "REPLACE - st2-owned replacement reapplies both environment policies" {
+      exec "grep -Fqx REPLACEMENT-POLICY-GREEN-90c4 $RUNS_DIR/matrix.out"
+    }
+    judge "CLEANUP - the synthetic catalog has no remaining PTY sessions" {
+      exec "grep -Fqx COLOR-MATRIX-CLEANUP-GREEN-90c4 $RUNS_DIR/matrix.out"
+    }
+  }
+}

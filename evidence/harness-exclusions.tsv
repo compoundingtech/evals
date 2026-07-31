@@ -7,6 +7,7 @@ exec-lifecycle-logging	cell	deterministic native exec lifecycle probe; no harnes
 hook-integrity	cell	deterministic native hook-installation probe; no live harness seat
 host-lock-health-negatives	cell	deterministic native doctor negative probe; no harness seat
 pty-attach-machine-stream	cell	deterministic installed PTY attach composition probe; no harness seat
+managed-agent-color-env	cell	deterministic managed-agent environment policy probe; no harness seat
 pty-attach-only	cell	deterministic PTY dead-attach policy probe; no harness seat
 pty-send-peek	cell	deterministic PTY transport probe; no harness seat
 presence-ding-matrix	cell	deterministic native presence and DING probe; no harness seat

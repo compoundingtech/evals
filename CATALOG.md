@@ -44,6 +44,7 @@ harness-native loader plus canonical hook file.
 | `incident-response` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — | **NO STRUCTURED RUN** |
 | `license-mit` | mixed | `claude-sonnet-5+gpt-5.6-sol` / medium | 3 | high | `1200s` | 6 | — | **FAIL** 2026-07-28T13:27:18Z, 5/6, source [`b3cd5fb`](https://github.com/compoundingtech/evals/commit/b3cd5fbd98c11179a4555d0f9bbccfe98351a734), [receipt](evidence/stable-main-phase4-runs-20260728.json) |
 | `license-mit-codex` | Codex | `gpt-5.6-sol` / medium | 3 | high | `1200s` | 6 | **PASS** 2026-07-26, st2 `9d26245`, 1m39s, [`40ec23d`](https://github.com/compoundingtech/evals/commit/40ec23d3e068e5bd70b6d4b9a92a92d291868dce) | **NO STRUCTURED RUN** |
+| `managed-agent-color-env` | model-free | — | 0 | none | `90s` | 5 | — | **NO STRUCTURED RUN** |
 | `migration` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — | **NO STRUCTURED RUN** |
 | `poisoned-pr` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — | **NO STRUCTURED RUN** |
 | `poisoned-pr-codex` | Codex | `gpt-5.6-sol` / medium | 2 | medium | `1200s` | 5 | **PASS** 2026-07-26, st2 `25d8371`, 1m52s, [`514a01d`](https://github.com/compoundingtech/evals/commit/514a01d469b5fdcd06a528a3fbc27eddf6fcb0f9); usage notice: 3 usage-limit resets available | **NO STRUCTURED RUN** |
@@ -102,6 +103,7 @@ while the last-run column makes a recorded failure distinct from a cell with no 
 - `hook-integrity` / `cell` — deterministic native hook-installation probe; no live harness seat
 - `host-lock-health-negatives` / `cell` — deterministic native doctor negative probe; no harness seat
 - `pty-attach-machine-stream` / `cell` — deterministic installed PTY attach composition probe; no harness seat
+- `managed-agent-color-env` / `cell` — deterministic managed-agent environment policy probe; no harness seat
 - `pty-attach-only` / `cell` — deterministic PTY dead-attach policy probe; no harness seat
 - `pty-send-peek` / `cell` — deterministic PTY transport probe; no harness seat
 - `presence-ding-matrix` / `cell` — deterministic native presence and DING probe; no harness seat

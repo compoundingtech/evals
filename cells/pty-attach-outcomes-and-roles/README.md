@@ -41,9 +41,10 @@ anchor marker. Any earlier accepted input necessarily precedes that marker.
 
 The acceptance cell was proven failing against PTY main `d5fabc3` and passing
 against the packaged PTY built from merged upstream main
-`7effe7b8c4ee22796f62188d321445027c8f5096`. That revision contains the attach
+`9eb958c5aae026d5c05690ab72b528662c55708d`. That revision contains the attach
 stream fixture prerequisite from #145, intentional detach outcomes from #146,
-and explicit same-socket role replacement from #147. The maintained cell now
+explicit same-socket role replacement from #147, and live-daemon registry
+recovery from #128. The maintained cell now
 runs directly against packaged PTY main; it has no validation-only runtime
 dependency.
 

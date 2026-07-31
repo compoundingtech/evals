@@ -10,6 +10,22 @@ test -S "$runtime_dir/bus"
 export XDG_RUNTIME_DIR="$runtime_dir"
 systemd-run --user --scope --quiet true
 
+expected_st2_commit="2f8db8a"
+expected_st2_sha256="c8bfed6ce0df407fcb692fcc117aa80f0b7321e040e2cf0b9db9c931a0e9c30a"
+expected_pty_sha256="1c9716d435ca56ad9b4f67056d76fa6856cdc08e6bbda1fd4be6f59952e9fde3"
+st2_path="$(command -v st2)"
+pty_path="$(command -v pty)"
+case "$(st2 --version)" in
+  *"($expected_st2_commit,"*) ;;
+  *) printf 'unexpected st2 identity: %s\n' "$(st2 --version)" >&2; exit 1 ;;
+esac
+test "$(sha256sum "$st2_path" | awk '{ print $1 }')" = "$expected_st2_sha256"
+test "$(sha256sum "$pty_path" | awk '{ print $1 }')" = "$expected_pty_sha256"
+echo "EXACT-RUNTIME-PROVENANCE-GREEN-90c4"
+
+process_identities=()
+scope_units=()
+
 pty_at() {
   env -u PTY_SESSION PTY_ROOT="$PTY_ROOT" pty "$@"
 }
@@ -44,9 +60,43 @@ session_pid() {
     jq -er --arg id "$1" '.[] | select(.name == $id and .status == "running") | .pid'
 }
 
+process_start_time() {
+  sed -E 's/^[0-9]+ \(.*\) //' "/proc/$1/stat" | awk '{ print $20 }'
+}
+
+record_process() {
+  pid="$1"
+  process_identities+=("$pid:$(process_start_time "$pid")")
+}
+
 in_st2_scope() {
   pid="$(session_pid "$1")"
-  grep -Eq "st2-${1//./\\.}-[0-9]+-[0-9]+\\.scope" "/proc/$pid/cgroup"
+  scope="$(sed -nE "s#.*(st2-${1//./\\.}-[0-9]+-[0-9]+\\.scope).*#\\1#p" "/proc/$pid/cgroup")"
+  test -n "$scope"
+  scope_units+=("$scope")
+}
+
+assert_cleanup() {
+  test "$(pty_at list --json | jq 'length')" -eq 0
+  for identity in "${process_identities[@]}"; do
+    pid="${identity%%:*}"
+    expected_start="${identity#*:}"
+    if test -r "/proc/$pid/stat" && test "$(process_start_time "$pid")" = "$expected_start"; then
+      printf 'eval-owned process remains alive: pid=%s start=%s\n' "$pid" "$expected_start" >&2
+      return 1
+    fi
+  done
+  for scope in "${scope_units[@]}"; do
+    if systemctl --user is-active --quiet "$scope"; then
+      printf 'eval-owned scope remains active: %s\n' "$scope" >&2
+      return 1
+    fi
+    control_group="$(systemctl --user show --property ControlGroup --value "$scope" 2>/dev/null || true)"
+    if test -n "$control_group" && test -e "/sys/fs/cgroup$control_group"; then
+      printf 'eval-owned scope cgroup remains: %s\n' "$control_group" >&2
+      return 1
+    fi
+  done
 }
 
 NO_COLOR=1 st2 up --once --catalog "$net" --host color >/dev/null
@@ -63,6 +113,8 @@ echo "EXPLICIT-NO-COLOR-GREEN-90c4"
 
 ambient_pid_1="$(session_pid color.ambient)"
 explicit_pid_1="$(session_pid color.explicit)"
+record_process "$ambient_pid_1"
+record_process "$explicit_pid_1"
 in_st2_scope color.ambient
 in_st2_scope color.explicit
 echo "SYSTEMD-SCOPE-GREEN-90c4"
@@ -85,6 +137,8 @@ grep -Fqx 'NO_COLOR=1' "$net/observed/explicit.2"
 grep -Fqx 'TERM=xterm-256color' "$net/observed/explicit.2"
 test "$(session_pid color.ambient)" -ne "$ambient_pid_1"
 test "$(session_pid color.explicit)" -ne "$explicit_pid_1"
+record_process "$(session_pid color.ambient)"
+record_process "$(session_pid color.explicit)"
 in_st2_scope color.ambient
 in_st2_scope color.explicit
 echo "REPLACEMENT-POLICY-GREEN-90c4"
@@ -94,12 +148,14 @@ printf '\034' | NO_COLOR=1 env -u PTY_SESSION PTY_ROOT="$PTY_ROOT" \
 wait_for_file "$net/observed/ambient.3"
 grep -Fqx 'NO_COLOR=<unset>' "$net/observed/ambient.3"
 grep -Fqx 'TERM=xterm-256color' "$net/observed/ambient.3"
+record_process "$(session_pid color.ambient)"
 
 printf '\034' | env -u NO_COLOR -u PTY_SESSION PTY_ROOT="$PTY_ROOT" \
   pty restart -y --force color.explicit >"$root/explicit-restart.out" 2>"$root/explicit-restart.err"
 wait_for_file "$net/observed/explicit.3"
 grep -Fqx 'NO_COLOR=1' "$net/observed/explicit.3"
 grep -Fqx 'TERM=xterm-256color' "$net/observed/explicit.3"
+record_process "$(session_pid color.explicit)"
 echo "PTY-RESTART-POLICY-GREEN-90c4"
 
 for agent in ambient explicit; do
@@ -107,6 +163,6 @@ for agent in ambient explicit; do
 done
 NO_COLOR=1 st2 up --once --catalog "$net" --host color >/dev/null
 NO_COLOR=1 st2 up --once --catalog "$net" --host color >/dev/null
-trap - EXIT
-test "$(pty_at list --json | jq 'length')" -eq 0
+assert_cleanup
 echo "COLOR-MATRIX-CLEANUP-GREEN-90c4"
+trap - EXIT

@@ -4,11 +4,20 @@ eval {
   copy "./fixture"
   max-timeout "90s"
 
+  run "dependency-mutations" {
+    command "bash ./dependency-mutations.sh"
+  }
   run "matrix" {
     command "bash ./matrix.sh"
   }
 
   judges {
+    judge "PROVENANCE - the composition uses the declared st2 and PTY artifacts" {
+      exec "grep -Fqx EXACT-RUNTIME-PROVENANCE-GREEN-90c4 $RUNS_DIR/matrix.out"
+    }
+    judge "DEPENDENCIES - controls isolate st2 launch policy from PTY restart persistence" {
+      exec "grep -Fqx OLD-ST2-INITIAL-COLOR-RED-90c4 $RUNS_DIR/dependency-mutations.out && grep -Fqx STRIPPED-PTY-RESTART-COLOR-RED-90c4 $RUNS_DIR/dependency-mutations.out"
+    }
     judge "DEFAULT - ambient NO_COLOR is removed from the canonical agent PTY" {
       exec "grep -Fqx AMBIENT-COLOR-DEFAULT-GREEN-90c4 $RUNS_DIR/matrix.out"
     }
@@ -27,7 +36,7 @@ eval {
     judge "RESTART - persisted PTY metadata survives an ambient-polluted standalone restart" {
       exec "grep -Fqx PTY-RESTART-POLICY-GREEN-90c4 $RUNS_DIR/matrix.out"
     }
-    judge "CLEANUP - the synthetic catalog has no remaining PTY sessions" {
+    judge "CLEANUP - no eval-owned PTY, process identity, or transient scope remains" {
       exec "grep -Fqx COLOR-MATRIX-CLEANUP-GREEN-90c4 $RUNS_DIR/matrix.out"
     }
   }

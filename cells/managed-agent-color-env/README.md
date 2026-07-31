@@ -24,15 +24,24 @@ managed agents under an ambient `NO_COLOR=1`: one leaves the key undeclared and 
   contains `NO_COLOR=1`; its persisted unset policy must still win. The explicit agent is restarted without an
   ambient value and must retain its authored `NO_COLOR=1`. This proves both precedence directions from stored
   metadata rather than relying on st2 to reconstruct the command.
+- **Dependency ownership:** the accepted `0fed14b` st2 with the current PTY exposes ambient `NO_COLOR` on the
+  initial launch, while the current st2 with a deterministic PTY mutation that strips `--unset-env` passes the
+  initial observation but reintroduces `NO_COLOR` on restart. These controls isolate launch policy from restart
+  persistence without representing the wrapper mutation as a released PTY artifact.
 - **Boundary:** ordinary non-agent PTYs retain their existing ambient-environment behavior. Standalone
   PTYs without an authored unset policy retain their existing ambient-environment behavior.
-- **Cleanup:** the cell retires both declarations and proves its eval-owned PTY root is empty.
+- **Cleanup:** the cell retires both declarations, proves its eval-owned PTY root is empty, verifies every
+  observed process identity has ended, and rejects active transient scopes or surviving scope cgroups.
 
 ## Run it
 
 ```sh
-st2 eval ./cells/managed-agent-color-env/
+EVAL_OLD_ST2=/path/to/st2-0fed14b st2 eval ./cells/managed-agent-color-env/
 ```
+
+The current `st2` and `pty` executables on `PATH`, and the `EVAL_OLD_ST2` control executable, are checked by
+source identity and SHA-256 before either run step starts. The control is the Linux executable from the immutable
+[`v0.2.0+0fed14b`](https://github.com/compoundingtech/st2/releases/tag/v0.2.0%2B0fed14b) release.
 
 ## Candidate dependency receipt
 
@@ -41,6 +50,12 @@ The current composed candidate uses:
 - PTY `d5fabc3917407aeb937a012bd97679c303e18033` (merged);
 - st2 `2f8db8a573a2ddf421533a7fd3c973c6139d793c` from unmerged
   [st2 #132](https://github.com/compoundingtech/st2/pull/132).
+
+The executable SHA-256 identities are:
+
+- PTY: `1c9716d435ca56ad9b4f67056d76fa6856cdc08e6bbda1fd4be6f59952e9fde3`;
+- st2 candidate: `c8bfed6ce0df407fcb692fcc117aa80f0b7321e040e2cf0b9db9c931a0e9c30a`;
+- st2 `0fed14b` control: `d61d12b2b1189a391c196ca28f8f4ba69072d14fcbad2571fc29db1f250f4eed`.
 
 The st2 identity is a candidate, not a released corpus pin. Replace it with the merged identity before
 recording accepted evidence.

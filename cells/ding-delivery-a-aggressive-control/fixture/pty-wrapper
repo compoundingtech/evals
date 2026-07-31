@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "${1:-}" = "send" ]; then
+  {
+    printf 'send'
+    printf '\t%q' "$@"
+    printf '\n'
+  } >>"${PTY_SEND_LOG:?PTY_SEND_LOG must be set}"
+fi
+exec "${REAL_PTY:?REAL_PTY must be set}" "$@"

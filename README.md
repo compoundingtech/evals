@@ -102,6 +102,12 @@ using the accepted local-source Linux binary SHA256
 `pty`, Bash, Git, `jq`, Rust/Cargo for the pinned KDL parser gate, and Node for JavaScript fixtures. A paid cell
 also needs every harness named by its dry-run row.
 
+The issue #57 PTY draft experiments are separately pinned to activity PR #131
+`46c71d31c0d6daee43adf568061b2b84a65ae8c0` and stacked guarded-send PR #133
+`743ceb796a41a3282e31382575bff0d0e3826d59`. Run their model-free cells with
+`EVALS_PTY_PR133_ROOT` pointing to a clean exact-head checkout built by
+`npm ci && npm run build`; the cells reject any other Git head or package lock.
+
 ## Cell layout
 
 ```text

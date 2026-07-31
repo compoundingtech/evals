@@ -235,17 +235,28 @@ blocker_header="$(head -n 1 "$blockers")"
 [ "$blocker_header" = $'blocker_id\towner\tdependency\trequired_evidence\tstatus' ] ||
   fail "blockers.tsv header changed"
 blocker_count=0
+present_draft_count=0
+partial_draft_count=0
+unresolved_count=0
 while IFS=$'\t' read -r blocker_id owner dependency evidence status; do
   [ "$blocker_id" != "blocker_id" ] || continue
   [ -n "$blocker_id" ] && [ -n "$owner" ] && [ -n "$dependency" ] && [ -n "$evidence" ] ||
     fail "incomplete blocker row"
   case "$status" in
-    pending|blocked) ;;
+    present-draft) ((present_draft_count += 1)) ;;
+    partial-draft) ((partial_draft_count += 1)) ;;
+    pending|blocked) ((unresolved_count += 1)) ;;
     *) fail "$blocker_id has unsupported blocker status $status" ;;
   esac
   ((blocker_count += 1))
 done <"$blockers"
 [ "$blocker_count" -eq 7 ] || fail "expected seven explicit product/fixture blockers"
+[ "$present_draft_count" -eq 2 ] ||
+  fail "expected exact draft activity and guarded-send PTY surfaces"
+[ "$partial_draft_count" -eq 1 ] ||
+  fail "expected one explicitly partial PTY diagnostic boundary"
+[ "$unresolved_count" -eq 4 ] ||
+  fail "expected four unresolved st2/provider/live seams"
 
 echo "DIAGNOSTIC-FIXTURES-GREEN-57d1"
 echo "PROVIDER-SLOTS-GREEN-57d1"
@@ -253,4 +264,5 @@ echo "AB-INVENTORY-GREEN-57d1"
 echo "CONDITIONAL-SEND-INVENTORY-GREEN-57d1"
 echo "PROVENANCE-INVENTORY-GREEN-57d1"
 echo "PRODUCT-BLOCKERS-GREEN-57d1"
+echo "PTY-DRAFT-SEAMS-GREEN-57d1"
 echo "HERMETIC-SKELETON-GREEN-57d1"

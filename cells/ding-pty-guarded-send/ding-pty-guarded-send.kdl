@@ -1,0 +1,36 @@
+// Exact-source, model-free black-box contract for PTY PR #133.
+eval {
+  copy "./fixture"
+  max-timeout "90s"
+
+  run "guarded-send" {
+    command "node ./guarded-send.mjs"
+  }
+
+  judges {
+    judge "EXACT SOURCE — guarded-send head and activity base are exact and clean" {
+      exec "grep -Fqx PTY-PR133-EXACT-HEAD-GREEN-57g1 $RUNS_DIR/guarded-send.out"
+    }
+    judge "EXACTLY ONCE — one exact generation/revision token writes once and replay writes zero" {
+      exec "grep -Fqx GUARDED-SEND-EXACTLY-ONCE-GREEN-57g1 $RUNS_DIR/guarded-send.out"
+    }
+    judge "INPUT RACES — key, newline, paste, escape, and supervisor input reject candidate bytes" {
+      exec "grep -Fqx GUARDED-SEND-INPUT-RACES-GREEN-57g1 $RUNS_DIR/guarded-send.out"
+    }
+    judge "OUTPUT/RESIZE/ACTIVITY — each generic revision race rejects candidate bytes" {
+      exec "grep -Fqx GUARDED-SEND-REVISION-RACES-GREEN-57g1 $RUNS_DIR/guarded-send.out"
+    }
+    judge "VIEWER — an attached non-typing viewer leaves the token valid" {
+      exec "grep -Fqx GUARDED-SEND-VIEWER-NO-IO-GREEN-57g1 $RUNS_DIR/guarded-send.out"
+    }
+    judge "RESTART — an old generation token rejects against a replacement daemon" {
+      exec "grep -Fqx GUARDED-SEND-RESTART-GREEN-57g1 $RUNS_DIR/guarded-send.out"
+    }
+    judge "INVALID — wrong generation, empty data, and oversize data write zero bytes" {
+      exec "grep -Fqx GUARDED-SEND-INVALID-ZERO-BYTES-GREEN-57g1 $RUNS_DIR/guarded-send.out"
+    }
+    judge "CLEANUP/MODEL FREE — receipt records zero model calls and no PTY sessions remain" {
+      exec "grep -Fqx GUARDED-SEND-CLEANUP-MODEL-FREE-GREEN-57g1 $RUNS_DIR/guarded-send.out && jq -e '.modelCalls == 0 and .cleanup.sessions == 0' $CATALOG/guarded-send-receipt.json >/dev/null"
+    }
+  }
+}

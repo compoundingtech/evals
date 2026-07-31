@@ -38,7 +38,7 @@ harness-native loader plus canonical hook file.
 | `poisoned-pr-codex` | Codex | `gpt-5.6-sol` / medium | 2 | medium | `1200s` | 5 | **PASS** 2026-07-26, st2 `25d8371`, 1m52s, [`514a01d`](https://github.com/compoundingtech/evals/commit/514a01d469b5fdcd06a528a3fbc27eddf6fcb0f9); usage notice: 3 usage-limit resets available | **NO STRUCTURED RUN** |
 | `presence-ding-matrix` | model-free | — | 0 | none | `60s` | 6 | — | **NO STRUCTURED RUN** |
 | `pty-attach-only` | model-free | — | 0 | none | `90s` | 7 | — | **NO STRUCTURED RUN** |
-| `pty-live-recovery` | model-free | — | 0 | none | `90s` | 7 | — | **NO STRUCTURED RUN** |
+| `pty-live-recovery` | model-free | — | 0 | none | `120s` | 10 | — | **NO STRUCTURED RUN** |
 | `pty-send-peek` | model-free | — | 0 | none | `120s` | 5 | **PASS** 2026-07-28T19:53:59Z, 13/13, source [`b7da882`](https://github.com/compoundingtech/evals/commit/b7da8826b503e0408e309af8702fb684d28e3a19), [receipt](evidence/stable-main-phase4-runs-20260728.json) | **PASS** 2026-07-28T19:53:59Z, 13/13, source [`b7da882`](https://github.com/compoundingtech/evals/commit/b7da8826b503e0408e309af8702fb684d28e3a19), [receipt](evidence/stable-main-phase4-runs-20260728.json) |
 | `reconcile-retire-keep` | model-free | — | 0 | none | `90s` | 6 | — | **NO STRUCTURED RUN** |
 | `render-target-safety` | model-free | — | 0 | none | `90s` | 5 | — | **NO STRUCTURED RUN** |

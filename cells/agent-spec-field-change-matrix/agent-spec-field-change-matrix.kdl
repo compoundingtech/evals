@@ -1,0 +1,28 @@
+// Contract-first, model-free acceptance for the field-change rules proposed by merged st2 PR #102.
+// The run step is intentionally RED while the exact expected G01-G08 product gaps remain.
+eval {
+  copy "./fixture"
+  max-timeout "180s"
+
+  run "matrix" {
+    command "bash ./matrix.sh"
+  }
+
+  judges {
+    judge "COVERAGE - every F01-F16 field rule plus dry-run and moved intent has one closed-set case" {
+      exec "bash ./judges/contract.sh coverage $RUNS_DIR/matrix.out ./fixture/cases.tsv"
+    }
+    judge "GAPS - every expected red maps only to a named G01-G08 implementation gap" {
+      exec "bash ./judges/contract.sh gaps $RUNS_DIR/matrix.out ./fixture/cases.tsv"
+    }
+    judge "CLASSIFICATION - exact product observations match the frozen pass/red map" {
+      exec "bash ./judges/contract.sh classification $RUNS_DIR/matrix.out ./fixture/cases.tsv"
+    }
+    judge "HONESTY - no expected product red is counted as a conformance pass" {
+      exec "bash ./judges/contract.sh honesty $RUNS_DIR/matrix.out ./fixture/cases.tsv"
+    }
+    judge "CLEANUP - isolated exec and PTY state has zero live residue" {
+      exec "bash ./judges/contract.sh cleanup $RUNS_DIR/matrix.out ./fixture/cases.tsv"
+    }
+  }
+}

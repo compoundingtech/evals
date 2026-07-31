@@ -1,0 +1,19 @@
+case_id	fields	expected	gaps	contract
+source-noop-heals	F01	RED	G01	semantic no-op writes and reports nothing while independently dead work heals
+identity-remove-add	F02	RED	G03	exact old identity is removed before the new identity boots
+host-projection	F03	RED	G05	old and new hosts converge through independent local projections
+invalid-type-refuses	F04	PASS	-	unsupported type refuses before launch write or teardown
+role-metadata-adopts	F05	PASS	-	role-only change preserves the healthy generation without notification
+workspace-survivor-event	F06	RED	G02,G04,G06	workspace survivor keeps its generation and receives one post-commit event
+resource-survivor-event	F07	RED	G02,G06	Resource-only change preserves the generation and emits one post-commit event
+render-survivor-event	F08	RED	G02,G06	changed render commits before one event while unchanged bytes emit none
+task-set-remove	F09	RED	G03	removed child is cleaned by exact ownership without changing its sibling
+task-id-change	F10	RED	G03	exact old task id is removed before the new id boots
+spawn-drift-visible	F11	RED	G03,G04	healthy spawn mismatch stays live and reports desired and observed fingerprints
+invalid-policy-refuses	F12	RED	G03	invalid restart or lifecycle policy refuses instead of defaulting
+retire-removed-child	F13	RED	G03	retirement stops every owned child including one removed in the same revision
+compact-lowering-equal	F14	PASS	-	compact command and ding lower to the same public task contract as explicit tasks
+provider-fields-core-noop	F15	PASS	-	provider-only fields do not change core equality launch or wake behavior
+invalid-agent-isolated	F16	RED	G01,G07	invalid related work refuses while an independent valid agent progresses
+plan-dry-run-order	R05	RED	G07	true dry-run reports the fixed action order and writes nothing
+moved-intent-refusal	MOVED	RED	G08	unsupported moved intent rejects cycles conflicts and host changes

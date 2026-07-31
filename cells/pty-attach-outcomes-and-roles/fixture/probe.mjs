@@ -62,7 +62,8 @@ const validateDetach = (result) => {
 }
 
 const validateTruncation = (result) => {
-  assert.notEqual(result.code, 0, "truncated stream must fail")
+  assert.equal(Number.isInteger(result.code) && result.code !== 0, true, "truncated stream must fail with a nonzero exit code")
+  assert.equal(result.signal, null, "truncated stream must not rely on signal termination")
   assert.equal(result.fdEnded, true, "truncated machine descriptor must reach EOF")
   assert.equal(result.packets.some((packet) => OUTCOMES.has(packet.type)), false, "truncation must not invent an outcome")
 }
@@ -98,10 +99,11 @@ const selfTest = () => {
     mutate(detach, { packets: [{ type: TYPE.EXIT, payload: Buffer.alloc(4) }, detach.packets[0]] }),
   ]) assert.throws(() => validateDetach(bad))
 
-  const truncation = { code: 1, fdEnded: true, packets: [{ type: TYPE.GEOMETRY, payload: Buffer.alloc(4) }, { type: TYPE.SCREEN, payload: Buffer.alloc(0) }] }
+  const truncation = { code: 1, signal: null, fdEnded: true, packets: [{ type: TYPE.GEOMETRY, payload: Buffer.alloc(4) }, { type: TYPE.SCREEN, payload: Buffer.alloc(0) }] }
   validateTruncation(truncation)
   for (const bad of [
     mutate(truncation, { code: 0 }),
+    mutate(truncation, { code: null, signal: "SIGKILL" }),
     mutate(truncation, { fdEnded: false }),
     mutate(truncation, { packets: [...truncation.packets, { type: TYPE.DETACH, payload: Buffer.alloc(0) }] }),
     mutate(truncation, { packets: [...truncation.packets, { type: TYPE.EXIT, payload: Buffer.alloc(4) }] }),

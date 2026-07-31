@@ -11,8 +11,9 @@ The corpus contains Claude, Codex, mixed-family, and model-free cells.
 
 ## Authoritative surfaces
 
-- [`AGENT-SPEC.md`](AGENT-SPEC.md) is the sole hand-authored st2 agent specification, pinned to the exact
-  stabilization commit.
+- [`AGENT-SPEC.md`](AGENT-SPEC.md) and its maintained acceptance cells are the canonical Agent Spec contract
+  and proof surface. The exact st2 pin names the implementation and version the corpus currently proves; st2
+  does not own the specification.
 - [`CATALOG.md`](CATALOG.md) is the generated current cell inventory, cost view, exclusions, latest accepted
   PASS evidence, and last-run status. [`evidence/run-history.tsv`](evidence/run-history.tsv) is the append-only
   PASS/FAIL ledger with exact commits, model/effort, duration, usage/cost, cleanup, and receipt.

@@ -1,9 +1,15 @@
-# Canonical st2 agent specification
+# Canonical agent specification
 
-This is the sole agent-authoring specification for this repository. It is pinned to st2
+This file and the maintained acceptance cells are the canonical Agent Spec contract and proof surface owned
+by evals. st2 is the current implementation, not the owner of the contract; a future st3 or another
+implementation can target the same contract and proofs.
+
+The current corpus proof is pinned to st2
 [`9887b2842222def0838c2cd82e6c24c218f7efa6`](https://github.com/compoundingtech/st2/commit/9887b2842222def0838c2cd82e6c24c218f7efa6)
-(`0.1.0`, source `9887b28`). It documents the hand-authored KDL accepted at that commit. Do not infer
-additional fields or commands from older corpus fixtures.
+(`0.1.0`, source `9887b28`). The pin identifies the implementation and version the corpus currently proves; it
+does not transfer ownership of the specification to st2. A proposed behavior change must update this contract
+and its maintained proof cells before an implementation claims conformance. Do not infer additional fields or
+commands from older corpus fixtures.
 
 st2 runs long-lived `service` agents made of interactive `pty` tasks and terminal-free `exec` tasks.
 `service` is the only supported type and the default. Eval jobs use the separate folder-eval contract.

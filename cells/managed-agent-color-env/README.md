@@ -1,6 +1,6 @@
 # managed-agent-color-env
 
-**Type:** st2 / managed-agent environment policy · **Ship:** blocked on the st2 managed-agent color-default
+**Type:** st2 / managed-agent environment policy · **Ship:** depends on the st2 managed-agent color-default
 change.
 
 **Capabilities required:** `st2,pty,jq,systemd-user`. No model and no bus. The cell reconciles two synthetic
@@ -34,4 +34,13 @@ managed agents under an ambient `NO_COLOR=1`: one leaves the key undeclared and 
 st2 eval ./cells/managed-agent-color-env/
 ```
 
-This cell is intentionally red until the managed-agent environment policy lands in st2.
+## Candidate dependency receipt
+
+The current composed candidate uses:
+
+- PTY `d5fabc3917407aeb937a012bd97679c303e18033` (merged);
+- st2 `2f8db8a573a2ddf421533a7fd3c973c6139d793c` from unmerged
+  [st2 #132](https://github.com/compoundingtech/st2/pull/132).
+
+The st2 identity is a candidate, not a released corpus pin. Replace it with the merged identity before
+recording accepted evidence.

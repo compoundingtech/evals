@@ -44,6 +44,14 @@ tracked cell
   adoption from replacement authority: live generations are adopted, dead or
   absent migration tasks are held without mutation, and only an explicit
   lifecycle transition permits ordinary replacement.
+- **R01, R04, R05, R07, R11:** The model-free
+  `pty-attach-machine-stream` cell composes the installed PTY launcher, target
+  daemon, remote route, forced transport replacement, and caller-owned framed
+  descriptor. Its held-out judges require ordered `GEOMETRY`, `SCREEN`, live
+  `DATA`, and terminal `EXIT` frames without stdout or stderr contamination,
+  then require removal of every eval-owned process and PTY session. The fixture
+  controls route selection and transport failure but does not import PTY source
+  modules or bypass the packaged launcher.
 
 ## Current execution
 

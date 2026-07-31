@@ -1,8 +1,9 @@
 # pty-attach-machine-stream
 
-**Type:** pty / installed attach composition · **Ship:** blocked on
+**Type:** pty / installed attach composition · **Upstream contract:**
 [compoundingtech/pty#140](https://github.com/compoundingtech/pty/pull/140) and
-[compoundingtech/pty#141](https://github.com/compoundingtech/pty/pull/141).
+[compoundingtech/pty#141](https://github.com/compoundingtech/pty/pull/141), merged on PTY main at
+[`d5fabc3917407aeb937a012bd97679c303e18033`](https://github.com/compoundingtech/pty/commit/d5fabc3917407aeb937a012bd97679c303e18033).
 
 **Capabilities required:** `pty,jq,node`. No model and no bus. The cell uses the `pty` executable on `PATH`,
 not a source-tree module or `dist/cli.js` entrypoint.
@@ -32,4 +33,4 @@ Fractal.
 st2 eval ./cells/pty-attach-machine-stream/
 ```
 
-This cell is intentionally red until both upstream PTY changes land.
+The accepted composition proof uses the packaged PTY flake at the exact merged revision above.

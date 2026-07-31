@@ -32,10 +32,10 @@ git -C "$base" branch -M main
 # command contract, then commits them so the real clean-main guard and complete
 # free preflight still run.
 for cell in "$product_cell" "$control_cell"; do
-  sed -i +    's/exec codex /exec codex --max-budget-usd 0.05 --output-format json /g' +    "$base/cells/$cell/$cell.kdl"
+  sed -i 's/exec codex /exec codex --max-budget-usd 0.05 --output-format json /g' "$base/cells/$cell/$cell.kdl"
 done
-git -C "$base" add +  "cells/$product_cell/$product_cell.kdl" +  "cells/$control_cell/$control_cell.kdl"
-GIT_AUTHOR_DATE=2026-07-31T00:00:00Z GIT_COMMITTER_DATE=2026-07-31T00:00:00Z +  git -C "$base" +    -c user.name='Overnight Receipt Fixture' +    -c user.email='overnight-receipt@example.invalid' +    commit -qm 'Install hermetic provider receipt fixture'
+git -C "$base" add "cells/$product_cell/$product_cell.kdl" "cells/$control_cell/$control_cell.kdl"
+GIT_AUTHOR_DATE=2026-07-31T00:00:00Z GIT_COMMITTER_DATE=2026-07-31T00:00:00Z git -C "$base" -c user.name='Overnight Receipt Fixture' -c user.email='overnight-receipt@example.invalid' commit -qm 'Install hermetic provider receipt fixture'
 [ -z "$(git -C "$base" status --porcelain=v1)" ] ||
   fail "temporary main is not clean after installing the provider fixture"
 
@@ -66,7 +66,7 @@ printf '%s\n' "$cell" >> "$OVN_TEST_ACTION_LOG"
 
 emit_usage() {
   local status="$1" cost="$2"
-  printf 'USAGE_JSON={"schema_version":1,"cell":"%s","provider":"codex","model":"gpt-5.6-sol","input_tokens":10,"output_tokens":2,"cost_usd":%s,"budget_usd":0.05,"status":"%s"}\n' +    "$cell" "$cost" "$status"
+  printf 'USAGE_JSON={"schema_version":1,"cell":"%s","provider":"codex","model":"gpt-5.6-sol","input_tokens":10,"output_tokens":2,"cost_usd":%s,"budget_usd":0.05,"status":"%s"}\n' "$cell" "$cost" "$status"
 }
 
 if [ "$cell" != license-mit-codex ]; then
@@ -134,7 +134,7 @@ run_case() {
   set +e
   (
     cd "$repo"
-    PATH="$fake_bin:$st2_dir:$PATH" +      OVN_TEST_FAKE=1 +      OVN_TEST_FAKE_COMMAND="$fake_bin/st2-eval" +      OVN_TEST_SCENARIO="$scenario" +      OVN_TEST_ACTION_LOG="$actions" +      OVN_TEST_WATCHDOG_EXTRA=0 +      OVN_TEST_WATCHDOG_SECONDS=1 +      bash bin/overnight.sh --run +        --cell "$product_cell" +        --cell "$control_cell" +        --state-dir "$state"
+    PATH="$fake_bin:$st2_dir:$PATH" OVN_TEST_FAKE=1 OVN_TEST_FAKE_COMMAND="$fake_bin/st2-eval" OVN_TEST_SCENARIO="$scenario" OVN_TEST_ACTION_LOG="$actions" OVN_TEST_WATCHDOG_EXTRA=0 OVN_TEST_WATCHDOG_SECONDS=1 bash bin/overnight.sh --run --cell "$product_cell" --cell "$control_cell" --state-dir "$state"
   ) > "$output" 2>&1
   rc=$?
   set -e
@@ -158,12 +158,12 @@ run_case() {
       grep -Fq 'OVERNIGHT COMPLETE WITH PRODUCT FAILURES' "$output"
       if [ "$scenario" = b ]; then
         grep -Fxq 'timed_out=1' "$failure"
-        jq -e '.status == "timeout" and .cost_usd == 0.01' +          "$state/usage/$product_cell."*.json >/dev/null
+        jq -e '.status == "timeout" and .cost_usd == 0.01' "$state/usage/$product_cell."*.json >/dev/null
       else
         grep -Fxq 'timed_out=0' "$failure"
-        jq -e '.status == "fail" and .cost_usd == 0.01' +          "$state/usage/$product_cell."*.json >/dev/null
+        jq -e '.status == "fail" and .cost_usd == 0.01' "$state/usage/$product_cell."*.json >/dev/null
       fi
-      printf 'PASS %s: product %s persisted under-budget usage, paired control ran, final rc=1\n' +        "$scenario" "$(grep '^timed_out=' "$failure")"
+      printf 'PASS %s: product %s persisted under-budget usage, paired control ran, final rc=1\n' "$scenario" "$(grep '^timed_out=' "$failure")"
       ;;
     c-missing)
       grep -Fxq 'reason=usage-receipt' "$state/STOPPED"
@@ -185,7 +185,7 @@ run_case() {
       grep -Fxq 'cost_usd=0.06' "$failure"
       [ "$(find "$state/usage" -maxdepth 1 -type f -name '*.json' | wc -l)" -eq 1 ] ||
         fail "$scenario did not persist exactly one over-budget receipt"
-      jq -e '.cost_usd == 0.06 and .budget_usd == 0.05' +        "$state/usage/$product_cell."*.json >/dev/null
+      jq -e '.cost_usd == 0.06 and .budget_usd == 0.05' "$state/usage/$product_cell."*.json >/dev/null
       printf 'PASS %s: over-budget receipt persisted then stopped before control, final rc=1\n' "$scenario"
       ;;
   esac

@@ -10,11 +10,12 @@ this document maps their shared lifecycle.
 
 ## Scope
 
-The repository owns executable agent scenarios, harness overlays, grading,
-cleanup, run receipts, cost visibility, and the evidence-derived
-`AGENT-SPEC.md`. st2 is the current runtime. Evals defines and proves the
-executable run shape a current or successor runtime consumes; the runtime's
-repository and product name are not part of that stable contract.
+The repository owns the canonical Agent Spec contract and proof surface:
+`AGENT-SPEC.md`, executable acceptance cells, harness overlays, grading,
+cleanup, run receipts, and cost visibility. st2 is the current implementation,
+not the contract owner. Evals defines and proves the executable run shape a
+current or successor runtime consumes; the runtime's repository and product
+name are not part of that stable contract.
 
 ## Cell contract
 
@@ -33,9 +34,27 @@ tracked cell
 - Hooks and personas must be baked into the fixture for every launched agent so
   the eval tests a controlled, reproducible real-work environment rather than
   mutable external defaults.
+- `shared-workspace-render-ownership` proves that incompatible declarations
+  cannot race on one workspace target, including through targeted
+  materialization, while byte-equivalent shared claims remain valid.
 - An LLM judge is not a defect. Its provider, model, prompt, inputs, and failure
   behavior must be explicit, and mutation checks must demonstrate useful
   discrimination.
+- The model-free `adopt-only-migration` cell separates process-generation
+  adoption from replacement authority: live generations are adopted, dead or
+  absent migration tasks are held without mutation, and only an explicit
+  lifecycle transition permits ordinary replacement.
+- **R01, R04, R05, R07, R11:** The model-free
+  `pty-attach-machine-stream` cell composes the installed PTY launcher, target
+  daemon, remote route, forced transport replacement, and caller-owned framed
+  descriptor. Its held-out judges require exact initial and min-wins reconnect
+  geometry, preserved SGR color state, current `SCREEN`, live `DATA`, and one
+  terminal `EXIT` without stdout or stderr contamination, then require removal
+  of every eval-owned process and PTY session. A model-free mutation matrix
+  rejects wrong geometry, stripped color, stale reconnect state, misordered or
+  truncated frames, and side-channel terminal bytes. The fixture controls route
+  selection and transport failure but does not import PTY source modules or
+  bypass the packaged launcher.
 
 ## Current execution
 
@@ -59,7 +78,9 @@ and continues or stops.
 
 - **R10:** A proposed capability begins as an executable scenario. Accepted
   evidence updates `AGENT-SPEC.md`; the prose links back to maintained cells.
-  A speculative claim cannot become normative merely by editing the spec.
+  A speculative claim cannot become normative merely by editing the spec. A
+  proposed behavior change updates both the canonical contract and its
+  maintained proof cells before any implementation claims conformance.
 - Harness differences are recorded when the same contract needs different
   Claude and Codex mechanisms. They do not silently change the contract.
 - **R11:** Adding a scenario does not require a custom runner path. Its
@@ -71,6 +92,13 @@ and continues or stops.
   model-free mutation gate proves that scope expansion, protected-requirement
   edits, missing spec upkeep, escalation-only output, and spec-only output fail
   the intended judges before either paid condition runs.
+- The model-free `agent-spec-resource-bindings` cell traces the portable
+  Resource-envelope claims in `AGENT-SPEC.md` to native st2 parsing,
+  machine-readable inspection, and reconciliation. It rejects malformed or
+  policy-bearing bindings, preserves opaque tags and exact URI bytes in
+  deterministic output, and proves that a Resource-only edit updates declared
+  state without replacing a live task. Folder-eval Resource projection is not
+  part of this acceptance boundary.
 - **R12:** A normal agent run is the same declared execution unit as an eval
   run, even when its outcome is open-ended rather than a pass/fail grade. The
   current runtime—st2 today—executes that unit; evals supplies scenarios and

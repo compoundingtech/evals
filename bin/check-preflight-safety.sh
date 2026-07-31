@@ -17,10 +17,10 @@ reachable=(
   bin/check-no-pii-history.sh
   bin/check-no-pii.sh
   bin/check-overnight-policy.sh
+  bin/check-preflight-closed-set-mutations.sh
   bin/check-preflight-safety.sh
   bin/check-run-history.sh
   bin/check-retired-surfaces.sh
-  bin/check-st2-pin-consistency.sh
   bin/check-st2-semantic.sh
   bin/check-vrs-scope-drift.sh
   bin/check-vrs-variations.sh
@@ -28,7 +28,6 @@ reachable=(
   bin/corpus-inventory.sh
   bin/generate-catalog.sh
   bin/model-seat-inventory.sh
-  bin/st2-pin.sh
 )
 materializers=(
   cells/signal-rename/fixture/materialize.sh
@@ -38,6 +37,12 @@ materializers=(
 dry_run_only=(
   bin/overnight.sh
 )
+compatibility_aliases=(
+  bin/check-claude-native.sh
+  bin/check-claude-reset.sh
+  bin/check-codex-native.sh
+  bin/check-codex-reset.sh
+)
 
 failed=0
 fail() {
@@ -46,6 +51,7 @@ fail() {
 }
 
 for file in "${reachable[@]}" "${materializers[@]}" "${dry_run_only[@]}" \
+  "${compatibility_aliases[@]}" \
   tools/kdl-check/Cargo.toml tools/kdl-check/Cargo.lock tools/kdl-check/src/main.rs; do
   [ -f "$file" ] || fail "preflight allowlist target is missing: $file"
 done
@@ -67,10 +73,10 @@ expected_direct=(
   bin/check-no-pii-history.sh
   bin/check-no-pii.sh
   bin/check-overnight-policy.sh
+  bin/check-preflight-closed-set-mutations.sh
   bin/check-preflight-safety.sh
   bin/check-retired-surfaces.sh
   bin/check-run-history.sh
-  bin/check-st2-pin-consistency.sh
   bin/check-st2-semantic.sh
   bin/check-vrs-scope-drift.sh
   bin/check-vrs-variations.sh
@@ -81,6 +87,22 @@ expected_direct=(
 if [ "${direct[*]}" != "${expected_direct[*]}" ]; then
   fail "check-corpus.sh direct command set differs from the reviewed allowlist"
   diff -u <(printf '%s\n' "${expected_direct[@]}") <(printf '%s\n' "${direct[@]}") >&2 || true
+fi
+
+mapfile -t check_definitions < <(
+  find bin -maxdepth 1 -type f -name 'check-*.sh' -printf '%p\n' |
+    LC_ALL=C sort
+)
+mapfile -t classified_checks < <(
+  printf '%s\n' "${reachable[@]}" "${compatibility_aliases[@]}" |
+    rg '^bin/check-[a-z0-9-]+\.sh$' |
+    LC_ALL=C sort -u
+)
+if [ "${check_definitions[*]}" != "${classified_checks[*]}" ]; then
+  fail "check definitions are not a closed set of reachable gates plus explicit compatibility aliases"
+  diff -u \
+    <(printf '%s\n' "${classified_checks[@]}") \
+    <(printf '%s\n' "${check_definitions[@]}") >&2 || true
 fi
 
 for file in "${reachable[@]}"; do
@@ -136,7 +158,7 @@ if rg -n \
 fi
 
 if [ "$failed" -eq 0 ]; then
-  printf 'PASS: free preflight reachability is limited to %d reviewed scripts, %d offline materializers, %d dry-run-only runner, and the locked parser\n' \
-    "${#reachable[@]}" "${#materializers[@]}" "${#dry_run_only[@]}"
+  printf 'PASS: free preflight reachability is limited to %d reviewed scripts, %d explicit compatibility aliases, %d offline materializers, %d dry-run-only runner, and the locked parser\n' \
+    "${#reachable[@]}" "${#compatibility_aliases[@]}" "${#materializers[@]}" "${#dry_run_only[@]}"
 fi
 exit "$failed"

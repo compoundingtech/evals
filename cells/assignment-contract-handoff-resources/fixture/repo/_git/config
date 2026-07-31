@@ -1,0 +1,8 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+[user]
+	name = schickling-assistant
+	email = 261620128+schickling-assistant@users.noreply.github.com

@@ -1,0 +1,7 @@
+agent "worker" {
+  host "rb"
+  workspace "$CATALOG"
+  resource "work" _tag="github-issue" uri="github-issue://example/project/41"
+  resource "work" _tag="github-pr" uri="github-pr://example/project/86"
+  command "true"
+}

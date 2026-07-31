@@ -1,0 +1,9 @@
+agent "control" {
+  host "migrate"
+  role "worker"
+  workspace "$CATALOG/workspace"
+  pty "agent" {
+    id "migrate.control.agent"
+    command "exec bash \"$CATALOG/task.sh\" control"
+  }
+}

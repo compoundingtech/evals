@@ -18,6 +18,13 @@ FIFO burst. It verifies exact bodies and SHA256 values at the inbox before
 archiving, exactly-once order in both arms, real sidecar restart, typed rich
 receipts, and zero residual PTY or exec processes.
 
+Across those scenarios, A makes six PTY writes while activity is non-idle,
+stale, or unknown; B makes none. Collision evidence is intentionally narrower:
+the active-turn case directly observes A's DING bytes arriving after a live
+partial draft, while B leaves that draft untouched and transfers ownership to
+the hook. The other five A writes are classified only as unsafe writes, not as
+observed collisions.
+
 Set `EVALS_ST2_PR123_ROOT` to a clean exact checkout of
 `d7500b0fcad8bb268da9da96c0226d9caddbe305` built with
 `cargo build --release --locked`. The accepted local-source Linux release

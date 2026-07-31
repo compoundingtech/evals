@@ -752,6 +752,14 @@ try {
 
       const beforeA = await readBytes(aBytesPath);
       const beforeB = await readBytes(bBytesPath);
+      if (caseId === "active-turn") {
+        const draftBytes = Buffer.from(caseReceipt.partialDraft);
+        assert.ok(beforeA.subarray(-draftBytes.length).equals(draftBytes),
+          "arm A partial draft was not live immediately before delivery");
+        assert.ok(beforeB.subarray(-draftBytes.length).equals(draftBytes),
+          "arm B partial draft was not live immediately before delivery");
+        caseReceipt.partialDraftLiveBeforeDelivery = { armA: true, armB: true };
+      }
       const bLogStart = (await readFile(sidecarLog("matrix.b"), "utf8")).length;
       const filenameA = await sendMessage("matrix.a", subject, body);
       const filenameB = await sendMessage("matrix.b", subject, body);
@@ -815,6 +823,22 @@ try {
       caseReceipt.armA.ptyWrites += aWrites;
       if (UNSAFE_CASES.has(caseId)) {
         caseReceipt.armA.unsafeWrites += aWrites;
+      }
+      if (caseId === "active-turn") {
+        const draft = caseReceipt.partialDraft;
+        const draftOffsetA = afterA.indexOf(draft);
+        const draftOffsetB = afterB.indexOf(draft);
+        const dingOffsetA = afterA.indexOf(subject, draftOffsetA + Buffer.byteLength(draft));
+        assert.ok(draftOffsetA >= 0, "arm A partial draft disappeared");
+        assert.ok(draftOffsetB >= 0, "arm B partial draft disappeared");
+        assert.ok(dingOffsetA >= draftOffsetA + Buffer.byteLength(draft),
+          "arm A DING was not observed after the live partial draft");
+        assert.equal(occurrences(afterB, subject), occurrences(beforeB, subject));
+        caseReceipt.observedPartialDraftCollision = {
+          armA: true,
+          armB: false,
+          observation: "DING PTY bytes arrived after the live partial draft",
+        };
       }
 
       const archivedA = await readAndArchive("matrix.a", filenameA, message);
@@ -888,6 +912,19 @@ try {
     .reduce((sum, entry) => sum + entry.armB.ptyWrites, 0);
   const hookOwnedB = receipt.cases.reduce((sum, entry) => sum + entry.armB.hookOwned, 0);
   const guardedB = receipt.cases.reduce((sum, entry) => sum + entry.armB.ptyWrites, 0);
+  const observedPartialDraftCollisionsA = receipt.cases
+    .filter((entry) => entry.observedPartialDraftCollision?.armA)
+    .length;
+  const observedPartialDraftCollisionsB = receipt.cases
+    .filter((entry) => entry.observedPartialDraftCollision?.armB)
+    .length;
+  const activeTurn = receipt.cases.find((entry) => entry.caseId === "active-turn");
+  assert.deepEqual(activeTurn.partialDraftLiveBeforeDelivery, { armA: true, armB: true });
+  assert.deepEqual(activeTurn.observedPartialDraftCollision, {
+    armA: true,
+    armB: false,
+    observation: "DING PTY bytes arrived after the live partial draft",
+  });
   receipt.taskEnvironment = {
     correctedArgvExpansion: true,
     noShell: true,
@@ -900,13 +937,15 @@ try {
     deliveredMessages: TOTAL_MESSAGES,
     armAUnsafeWrites: unsafeA,
     armBUnsafeWrites: unsafeB,
-    armACollisions: unsafeA,
-    armBCollisions: unsafeB,
+    armAObservedPartialDraftCollisions: observedPartialDraftCollisionsA,
+    armBObservedPartialDraftCollisions: observedPartialDraftCollisionsB,
     armBGuardedWrites: guardedB,
     armBHookOwned: hookOwnedB,
   };
   assert.equal(unsafeA, 6);
   assert.equal(unsafeB, 0);
+  assert.equal(observedPartialDraftCollisionsA, 1);
+  assert.equal(observedPartialDraftCollisionsB, 0);
   assert.equal(guardedB, 5);
   assert.equal(hookOwnedB, 6);
 } finally {

@@ -21,7 +21,7 @@ harness-native loader plus canonical hook file.
 | `ding-adapter-fixture-contract` | model-free | — | 0 | none | `30s` | 7 | — | **NO STRUCTURED RUN** |
 | `ding-delivery-a-aggressive-control` | model-free | — | 0 | none | `45s` | 7 | — | **NO STRUCTURED RUN** |
 | `ding-delivery-pty-ab` | model-free | — | 0 | none | `120s` | 8 | — | **NO STRUCTURED RUN** |
-| `ding-delivery-st2-rich-ab` | model-free | — | 0 | none | `120s` | 9 | — | **NO STRUCTURED RUN** |
+| `ding-delivery-st2-rich-ab` | model-free | — | 0 | none | `120s` | 10 | — | **NO STRUCTURED RUN** |
 | `ding-mode` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 4 | — | **NO STRUCTURED RUN** |
 | `ding-pty-activity-lease` | model-free | — | 0 | none | `60s` | 8 | — | **NO STRUCTURED RUN** |
 | `ding-pty-guarded-send` | model-free | — | 0 | none | `90s` | 8 | — | **NO STRUCTURED RUN** |

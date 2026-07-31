@@ -20,8 +20,11 @@ eval {
     judge "DURABILITY — both arms deliver the same 11 exact bodies/hashes once and in order" {
       exec "grep -Fqx ST2-RICH-AB-DURABILITY-GREEN-57i1 $RUNS_DIR/integrated-ab.out && jq -e '.summary.deliveryParity and .summary.deliveredMessages == 11' $CATALOG/integrated-ab-receipt.json >/dev/null"
     }
-    judge "DISCRIMINATOR — aggressive unsafe/colliding writes fall from six to zero" {
-      exec "grep -Fqx ST2-RICH-AB-IMPROVEMENT-GREEN-57i1 $RUNS_DIR/integrated-ab.out && jq -e '.summary.armAUnsafeWrites == 6 and .summary.armBUnsafeWrites == 0 and .summary.armACollisions == 6 and .summary.armBCollisions == 0' $CATALOG/integrated-ab-receipt.json >/dev/null"
+    judge "DISCRIMINATOR — aggressive unsafe writes fall from six to zero" {
+      exec "grep -Fqx ST2-RICH-AB-IMPROVEMENT-GREEN-57i1 $RUNS_DIR/integrated-ab.out && jq -e '.summary.armAUnsafeWrites == 6 and .summary.armBUnsafeWrites == 0' $CATALOG/integrated-ab-receipt.json >/dev/null"
+    }
+    judge "OBSERVED COLLISION — active-turn partial draft collides only in aggressive A" {
+      exec "jq -e '.summary.armAObservedPartialDraftCollisions == 1 and .summary.armBObservedPartialDraftCollisions == 0 and ([.cases[] | select(.caseId == \"active-turn\") | .observedPartialDraftCollision] == [{\"armA\":true,\"armB\":false,\"observation\":\"DING PTY bytes arrived after the live partial draft\"}])' $CATALOG/integrated-ab-receipt.json >/dev/null"
     }
     judge "OWNERSHIP — B uses five guarded idle writes and six exact hook-owned deliveries" {
       exec "grep -Fqx ST2-RICH-AB-OWNERSHIP-GREEN-57i1 $RUNS_DIR/integrated-ab.out && jq -e '.summary.armBGuardedWrites == 5 and .summary.armBHookOwned == 6' $CATALOG/integrated-ab-receipt.json >/dev/null"

@@ -1,4 +1,4 @@
-// Held-out, model-free black-box contract for selected PTY PR #128 live recovery.
+// Held-out, model-free black-box contract for merged PTY PR #128 live recovery.
 eval {
   copy "./fixture"
   max-timeout "120s"

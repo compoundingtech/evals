@@ -1,10 +1,11 @@
 # pty-live-recovery
 
 Held-out, model-free black-box coverage for the selected live-daemon recovery
-protocol in [PTY PR #128](https://github.com/compoundingtech/pty/pull/128) at
-exact head `9ad3a4368027d8a9e78a22319615a3ab837347e1`.
+protocol from [PTY PR #128](https://github.com/compoundingtech/pty/pull/128),
+squash-merged at exact source
+`9eb958c5aae026d5c05690ab72b528662c55708d`.
 
-Set `EVALS_PTY_PR128_ROOT` to a clean exact-head checkout after
+Set `EVALS_PTY_PR128_ROOT` to a clean checkout of that merged source after
 `npm ci && npm run build`. The cell rejects any other Git head, package lock,
 or built CLI/server artifacts. Its synthetic PTY roots and providers live only
 inside the temporary eval catalog; it launches no model or provider harness.
@@ -31,7 +32,7 @@ inside the temporary eval catalog; it launches no model or provider harness.
   TERM then KILL only for those exact identities, fails if any survives, and
   exercises the KILL fallback with a TERM-resistant synthetic sentinel.
 
-The experiment is exact-source draft evidence, not a merged release artifact.
+The experiment is exact-source merged evidence, not a published PTY release artifact.
 It deliberately replaces the incompatible PR #127 oracle rather than merely
 retargeting its metadata.
 

@@ -2,12 +2,12 @@
 set -euo pipefail
 
 catalog="${CATALOG:?CATALOG must be set}"
-package_root="${EVALS_PTY_PR128_ROOT:?EVALS_PTY_PR128_ROOT must point to exact PTY PR128 head}"
-expected_head="9ad3a4368027d8a9e78a22319615a3ab837347e1"
+package_root="${EVALS_PTY_PR128_ROOT:?EVALS_PTY_PR128_ROOT must point to exact merged PTY PR128 source}"
+expected_head="9eb958c5aae026d5c05690ab72b528662c55708d"
 expected_package_lock="43189b5b5b1d560be4b9102d2ed0793d89b9b01dbb3bbd976948f10c6669118d"
 expected_cli="3c3d655b713a6e1a40309eb1b45bb75a023e87dc6391f7dbaa54cefc3efb49ab"
-expected_dist_cli="70e6d4e5e0951dac2c6b8195bab060a6791ca190a2ee7135ce71017bc33f8b99"
-expected_dist_server="b5e173544c163416dc47cc578c27717acaf84b67d552e353e02240eaba1e41af"
+expected_dist_cli="46285f9cb0212751ccc8344ba821038643c589c1b31a62cfd4354a5b56d2c5c3"
+expected_dist_server="f7ec154a8f968077c19a3affb5c08bed101fc045fa53cce64178f5512c30711b"
 pty_cli="$package_root/bin/pty"
 root="$catalog/pty-live-recovery-root"
 unsupported_root="$catalog/pty-live-recovery-unsupported-root"

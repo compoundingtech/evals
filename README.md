@@ -108,6 +108,14 @@ The issue #57 PTY draft experiments are separately pinned to activity PR #131
 `EVALS_PTY_PR133_ROOT` pointing to a clean exact-head checkout built by
 `npm ci && npm run build`; the cells reject any other Git head or package lock.
 
+The integrated configured-DING A/B additionally pins corrected st2 PR #123
+`d7500b0fcad8bb268da9da96c0226d9caddbe305` and its accepted local-source Linux
+release binary SHA256
+`705ad3ebd0bce497a4117c7c7993505c0579fc1f7df2421e0525a22208f6949f`.
+Set `EVALS_ST2_PR123_ROOT` to a clean exact-head checkout built with
+`cargo build --release --locked`; the cell launches the generated configured
+sidecar from that artifact and rejects a different source, lockfile, or binary.
+
 ## Cell layout
 
 ```text

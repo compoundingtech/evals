@@ -1,0 +1,39 @@
+// Integrated exact-source st2 configured-DING versus aggressive control; no model seat.
+eval {
+  copy "./fixture"
+  max-timeout "120s"
+
+  run "integrated-ab" {
+    command "node ./integrated-ab.mjs"
+  }
+
+  judges {
+    judge "EXACT ARTIFACTS — corrected st2 and stacked PTY sources/builds are exact and clean" {
+      exec "grep -Fqx ST2-RICH-AB-EXACT-ARTIFACTS-GREEN-57i1 $RUNS_DIR/integrated-ab.out"
+    }
+    judge "TASK ENV — generated rich argv launches from final managed env with exact boundaries" {
+      exec "grep -Fqx ST2-RICH-AB-TASK-ENV-GREEN-57i1 $RUNS_DIR/integrated-ab.out && jq -e '.taskEnvironment.correctedArgvExpansion and .taskEnvironment.noShell and .taskEnvironment.adapterLaunches >= 2' $CATALOG/integrated-ab-receipt.json >/dev/null"
+    }
+    judge "SELECTION — A uses fallback while B uses configured rich receipts only" {
+      exec "grep -Fqx ST2-RICH-AB-SELECTION-GREEN-57i1 $RUNS_DIR/integrated-ab.out"
+    }
+    judge "DURABILITY — both arms deliver the same 11 exact bodies/hashes once and in order" {
+      exec "grep -Fqx ST2-RICH-AB-DURABILITY-GREEN-57i1 $RUNS_DIR/integrated-ab.out && jq -e '.summary.deliveryParity and .summary.deliveredMessages == 11' $CATALOG/integrated-ab-receipt.json >/dev/null"
+    }
+    judge "DISCRIMINATOR — aggressive unsafe/colliding writes fall from six to zero" {
+      exec "grep -Fqx ST2-RICH-AB-IMPROVEMENT-GREEN-57i1 $RUNS_DIR/integrated-ab.out && jq -e '.summary.armAUnsafeWrites == 6 and .summary.armBUnsafeWrites == 0 and .summary.armACollisions == 6 and .summary.armBCollisions == 0' $CATALOG/integrated-ab-receipt.json >/dev/null"
+    }
+    judge "OWNERSHIP — B uses five guarded idle writes and six exact hook-owned deliveries" {
+      exec "grep -Fqx ST2-RICH-AB-OWNERSHIP-GREEN-57i1 $RUNS_DIR/integrated-ab.out && jq -e '.summary.armBGuardedWrites == 5 and .summary.armBHookOwned == 6' $CATALOG/integrated-ab-receipt.json >/dev/null"
+    }
+    judge "HOLDS/RESTART — DND, stale, hook failure, and real task restart fail closed" {
+      exec "grep -Fqx ST2-RICH-AB-HOLD-RESTART-GREEN-57i1 $RUNS_DIR/integrated-ab.out"
+    }
+    judge "FIFO — the three-message burst preserves exact order without duplicates" {
+      exec "grep -Fqx ST2-RICH-AB-FIFO-GREEN-57i1 $RUNS_DIR/integrated-ab.out"
+    }
+    judge "CLEANUP/MODEL FREE — no provider calls, PTYs, or sidecar processes remain" {
+      exec "grep -Fqx ST2-RICH-AB-CLEANUP-MODEL-FREE-GREEN-57i1 $RUNS_DIR/integrated-ab.out && jq -e '.modelCalls == 0 and .cleanup.sessions == 0 and .cleanup.execProcesses == 0' $CATALOG/integrated-ab-receipt.json >/dev/null"
+    }
+  }
+}

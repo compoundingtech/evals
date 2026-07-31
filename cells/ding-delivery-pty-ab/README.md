@@ -22,7 +22,8 @@ This cell runs against PTY activity base
 `EVALS_PTY_PR133_ROOT` to a clean exact-head checkout after
 `npm ci && npm run build`.
 
-The result proves the PTY-boundary strategy improves over aggressive input. It
-does **not** prove configured DING inside st2: st2#111 still lacks the external
-adapter selection/envelope, timeout/error/DND precedence, hook injection,
-composer evidence, input-origin policy, and decision/receipt schema.
+The result proves the PTY-boundary strategy improves over aggressive input.
+Configured generic-adapter selection, hook ownership, DND precedence, typed
+receipts, and the same matrix through real generated task environments are now
+covered separately by `ding-delivery-st2-rich-ab` against corrected st2 PR
+#123. This cell remains the smaller PTY-boundary reference oracle.

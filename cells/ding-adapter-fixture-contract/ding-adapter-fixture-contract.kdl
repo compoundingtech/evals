@@ -23,10 +23,10 @@ eval {
     judge "PROVENANCE — every ready asset has reviewed metadata and every provider asset is explicitly blocked" {
       exec "grep -Fqx PROVENANCE-INVENTORY-GREEN-57d1 $RUNS_DIR/fixture-contract.out"
     }
-    judge "SEAMS — exact draft PTY surfaces and remaining st2/provider blockers are classified without invention" {
+    judge "SEAMS — exact draft PTY/st2 surfaces and remaining provider blockers are classified without invention" {
       exec "grep -Fqx PRODUCT-BLOCKERS-GREEN-57d1 $RUNS_DIR/fixture-contract.out && grep -Fqx PTY-DRAFT-SEAMS-GREEN-57d1 $RUNS_DIR/fixture-contract.out"
     }
-    judge "MODEL FREE — the scaffold contains no provider payload, launch, network, or product-dependent assertion" {
+    judge "MODEL FREE — the scaffold contains no provider payload, provider launch, network, or model call" {
       exec "grep -Fqx HERMETIC-SKELETON-GREEN-57d1 $RUNS_DIR/fixture-contract.out"
     }
   }

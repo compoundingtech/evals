@@ -251,12 +251,12 @@ while IFS=$'\t' read -r blocker_id owner dependency evidence status; do
   ((blocker_count += 1))
 done <"$blockers"
 [ "$blocker_count" -eq 7 ] || fail "expected seven explicit product/fixture blockers"
-[ "$present_draft_count" -eq 2 ] ||
-  fail "expected exact draft activity and guarded-send PTY surfaces"
+[ "$present_draft_count" -eq 3 ] ||
+  fail "expected exact draft activity, guarded-send, and configured st2 surfaces"
 [ "$partial_draft_count" -eq 1 ] ||
   fail "expected one explicitly partial PTY diagnostic boundary"
-[ "$unresolved_count" -eq 4 ] ||
-  fail "expected four unresolved st2/provider/live seams"
+[ "$unresolved_count" -eq 3 ] ||
+  fail "expected three unresolved provider/live seams"
 
 echo "DIAGNOSTIC-FIXTURES-GREEN-57d1"
 echo "PROVIDER-SLOTS-GREEN-57d1"

@@ -248,6 +248,20 @@ idempotently clears a restored inbox copy. New post-start unread work sends:
 Subject and sender are normalized to one bounded printable line. Delivery is one bracketed-paste PTY send,
 500 ms, then Return. DING does not inspect terminal pixels or classify modal state.
 
+The issue #57 experimental matrix separately pins corrected st2 PR #123 at
+`d7500b0fcad8bb268da9da96c0226d9caddbe305`. In that opt-in path, a compact
+`ding { adapter { argv ... } }` lowers to a generated exec sidecar whose argv is
+expanded only after the complete managed task environment is known. Core
+consumes a provider-neutral activity/input-buffer lease, requires exact PTY
+generation/activity sequence plus I/O revision, and performs one atomic
+guarded send only for fresh `idle` + `empty`. A generic `ding-control
+hook-owned` receipt removes exact unread filenames from PTY work when an
+already-occurring post-turn hook owns their next-context delivery. The
+integrated model-free A/B covers 11 durable messages: the aggressive arm makes
+six non-idle/colliding PTY writes and the configured hook-plus-idle arm makes
+zero. Real-provider fixtures, live-pane acceptance, merge, and release remain
+outside that evidence.
+
 Arrivals remain FIFO. `busy` and `away` do not suppress delivery; only fresh `dnd` does. Non-DND presence is
 refreshed every five minutes, while abandoned DND ages to derived `unknown` after 15 minutes and delivery
 resumes. Failed PTY sends retain the queue head. Startup backlog produces one generic unread-work DING rather

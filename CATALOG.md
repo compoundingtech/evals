@@ -44,6 +44,7 @@ harness-native loader plus canonical hook file.
 | `render-target-safety` | model-free | — | 0 | none | `90s` | 5 | — | **NO STRUCTURED RUN** |
 | `restart-continuity` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — | **NO STRUCTURED RUN** |
 | `security-audit` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 4 | — | **NO STRUCTURED RUN** |
+| `shared-workspace-render-ownership` | model-free | — | 0 | none | `60s` | 5 | — | **NO STRUCTURED RUN** |
 | `signal-rename` | Claude | `claude-sonnet-5` / medium | 4 | high | `1800s` | 5 | — | **NO STRUCTURED RUN** |
 | `signal-rename-codex` | Codex | `gpt-5.6-sol` / medium | 4 | high | `1800s` | 5 | **PASS** 2026-07-26, st2 `9d26245`, 8m07s, [`67b45d2`](https://github.com/compoundingtech/evals/commit/67b45d2694ac40762b09f51bf625d092ab68de74) | **NO STRUCTURED RUN** |
 | `skill-inheritance` | Claude | `claude-sonnet-5` / medium | 1 | low | `420s` | 3 | — | **NO STRUCTURED RUN** |
@@ -93,6 +94,7 @@ while the last-run column makes a recorded failure distinct from a cell with no 
 - `presence-ding-matrix` / `cell` — deterministic native presence and DING probe; no harness seat
 - `reconcile-retire-keep` / `cell` — deterministic native reconcile lifecycle probe; no harness seat
 - `render-target-safety` / `cell` — deterministic native render-policy probe; no harness seat
+- `shared-workspace-render-ownership` / `cell` — deterministic native shared-render admission probe; no harness seat
 - `strict-validation-json` / `cell` — deterministic native validation-diagnostics probe; no harness seat
 - `st2-doctor-structure` / `cell` — deterministic catalog-health probe; no harness seat
 - `st2-network` / `cell` — deterministic catalog/message round-trip probe; no harness seat

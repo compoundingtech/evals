@@ -221,7 +221,7 @@ message_count() {
 
 assert_no_reconcile_action() {
   output="$1"
-  ! grep -Eq '^  (launched|torn down|gc|held|flapping) \(' "$output"
+  ! grep -Eq '^  (launched|restarted|torn down|gc|held|flapping) \(' "$output"
 }
 
 capture_change_event() {
@@ -533,6 +533,7 @@ probe_resource_survivor_event() {
   id="resource-survivor-event" host="fm07" identity="agent" runtime_id="$host.$identity.work"
   initialize_case "$id"
   dir="$(case_dir "$id")"
+  printf 'RESOURCE_SECRET_F102\n' >"$dir/work-a/private.txt"
   spec="$(write_single_exec "$id" "$host" "$identity" worker service "$dir/work-a" work "$runtime_id" resource \
     '  resource "old-work" _tag="issue" uri="issue://field/old"')"
   run_once "$id" "$host" launch

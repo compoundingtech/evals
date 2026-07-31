@@ -1,0 +1,50 @@
+// Matched complex catalog-activation experiment.
+//
+// Present and absent conditions have byte-identical task, model declaration,
+// timeout, blind judges, mutations, persona, and ordinary fixture files.
+
+team "vrscatalog" {
+  agent "dev" {
+    workspace "./repo"
+    env { ST_AGENT "vrscatalog.dev" }
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act on every message, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding
+  }
+}
+
+eval {
+  copy "./fixture"
+  message {
+    from "requester"
+    to "vrscatalog.dev"
+    content "./task.md"
+  }
+  max-timeout "1200s"
+
+  judges {
+    judge "a complete newer candidate activates durably for only its host" {
+      exec "bash ./judges/grade.sh activation"
+    }
+    judge "missing partial invalid and older candidates preserve last-known-good work" {
+      exec "bash ./judges/grade.sh preservation"
+    }
+    judge "partitioned hosts advance independently without remote catalog writes" {
+      exec "bash ./judges/grade.sh partition"
+    }
+    judge "peer loss stays neutral unless the local operation declares a dependency" {
+      exec "bash ./judges/grade.sh reachability"
+    }
+    judge "activation interruption exposes either the old or complete new snapshot never a mix" {
+      exec "bash ./judges/grade.sh crash"
+    }
+    judge "a replacement controller adopts unchanged running service identities" {
+      exec "bash ./judges/grade.sh adoption"
+    }
+    judge "host-local storage and health remain free of global or remote coupling" {
+      exec "bash ./judges/grade.sh coupling"
+    }
+    judge "tests kill storage runtime and orchestration mutations within a clean bounded patch" {
+      exec "bash ./judges/grade.sh regression"
+    }
+  }
+}

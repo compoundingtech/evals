@@ -47,7 +47,8 @@ tracked cell
 ## Current execution
 
 ```text
-preflight → explicit selection → launch → judge → cleanup → receipt
+explicit selection → fresh provider proof → preflight → hard-budget gate → launch
+→ cleanup → durable usage receipt → verdict classification → PASS receipt or STOPPED
 ```
 
 The current corpus runner requires an explicit subset or `--all`, launches
@@ -57,6 +58,16 @@ and continues or stops.
 - **R06–R09:** Runs have explicit budgets and stop conditions, clean up on
   completion or stop, leave durable receipts, and expose model, effort, usage,
   and cost. Resume validates the inputs and prior receipts.
+- Each provider termination must yield exactly one schema-valid normalized
+  usage receipt bound to the cell, provider, model, USD 0.05 budget, token
+  counts, cost, and termination status. The runner persists it before
+  classifying a product result. Missing, malformed, contradictory, or
+  over-budget receipts stop before a subsequent paid cell.
+- A Claude-selected paid run fails closed unless a separately authorized,
+  bounded real-provider turn produced an exact, sanitized proof no more than
+  ten minutes earlier. The proof is bound to the source commit, exact CLI
+  version, and non-secret state/config context. Authentication metadata alone
+  is not evidence that the current OAuth bearer is fresh.
 - This current runner policy is not the permanent KDL execution model. Plans,
   steps, validation loops, schedules, external events, and long-running agents
   remain open for executable design rather than being constrained by this
@@ -72,12 +83,23 @@ and continues or stops.
 - **R11:** Adding a scenario does not require a custom runner path. Its
   declaration, fixture, task, judges, and lifecycle compose through the
   maintained cell contract and preflight.
-- The matched `vrs-scope-drift-present` / `vrs-scope-drift-absent` experiment
-  holds task, model, effort, code fixture, persona, timeout, and judges constant
-  while varying only the synthetic identity requirements and living spec. Its
-  model-free mutation gate proves that scope expansion, protected-requirement
-  edits, missing spec upkeep, escalation-only output, and spec-only output fail
-  the intended judges before either paid condition runs.
+- Complex VRS usefulness is measured through executable architecture outcomes,
+  not requirement citations or document presence. The designed-to-pass
+  `vrs-command-policy-demo` requires structured command decoding, exact opaque
+  identity, bounded subject selection, and inert validation across generator
+  and validator seams.
+- The matched `vrs-catalog-activation-present` /
+  `vrs-catalog-activation-absent` experiment holds task, model, effort,
+  ordinary repository state, persona, timeout, mutations, and blind judges
+  constant while varying only two architecture documents. Its executable gates
+  cover host-local durable activation, last-known-good preservation,
+  partitioned progress, reachability neutrality, crash atomicity, replacement
+  adoption, and coupling. A checked-in SHA-256 manifest freezes the matched
+  surfaces before provider execution.
+- The earlier scope-drift, scope-pressure, cross-file, and
+  definition-of-done VRS pairs are superseded because their prompts or
+  compliance gates did not isolate useful VRS reasoning. Their historical
+  outcomes remain evidence; they are not active cells.
 - **R12:** A normal agent run is the same declared execution unit as an eval
   run, even when its outcome is open-ended rather than a pass/fail grade. The
   current runtime—st2 today—executes that unit; evals supplies scenarios and

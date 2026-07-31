@@ -1,0 +1,51 @@
+// vrs-command-policy-demo.kdl — complex VRS-guided command-policy demonstration.
+//
+// One Claude worker receives a broad product request. The fixture's protected
+// requirements and living specification carry the architectural constraints;
+// held-out executable judges never reward citations or document keywords.
+
+team "vrspolicy" {
+  agent "dev" {
+    workspace "./repo"
+    env { ST_AGENT "vrspolicy.dev" }
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act on every message, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding
+  }
+}
+
+eval {
+  copy "./fixture"
+  message {
+    from "requester"
+    to "vrspolicy.dev"
+    content "./task.md"
+  }
+  max-timeout "1200s"
+
+  judges {
+    judge "generated policy survives shell and JSON round trips for hostile workspace bytes" {
+      exec "bash ./judges/grade.sh generator"
+    }
+    judge "affected launches accept supported policy flags and fail closed on invalid policy" {
+      exec "bash ./judges/grade.sh validation"
+    }
+    judge "validation follows the decoded first command rather than incidental command text" {
+      exec "bash ./judges/grade.sh command-boundary"
+    }
+    judge "unaffected task classes remain outside the policy subject" {
+      exec "bash ./judges/grade.sh exclusions"
+    }
+    judge "the repository suite and operator example exercise the finished behavior" {
+      exec "bash ./judges/grade.sh suite"
+    }
+    judge "new regressions are mutation-valid against both seeded implementation seams" {
+      exec "bash ./judges/grade.sh regression"
+    }
+    judge "the solution parses data without executing commands or reading machine account state" {
+      exec "bash ./judges/grade.sh coupling"
+    }
+    judge "protected requirements and the bounded committed repository surface remain intact" {
+      exec "bash ./judges/grade.sh isolation"
+    }
+  }
+}

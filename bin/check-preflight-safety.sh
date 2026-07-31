@@ -6,6 +6,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
 reachable=(
+  bin/check-claude-auth-proof.sh
   bin/check-corpus.sh
   bin/check-event-first.sh
   bin/check-fixture-reset.sh
@@ -21,12 +22,12 @@ reachable=(
   bin/check-run-history.sh
   bin/check-retired-surfaces.sh
   bin/check-st2-semantic.sh
-  bin/check-vrs-scope-drift.sh
-  bin/check-vrs-variations.sh
+  bin/check-vrs-complex.sh
   bin/check-weird-git-setup.sh
   bin/corpus-inventory.sh
   bin/generate-catalog.sh
   bin/model-seat-inventory.sh
+  bin/validate-claude-auth-proof.sh
 )
 materializers=(
   cells/signal-rename/fixture/materialize.sh
@@ -35,6 +36,7 @@ materializers=(
 )
 dry_run_only=(
   bin/overnight.sh
+  bin/probe-claude-auth.sh
 )
 
 failed=0
@@ -50,12 +52,15 @@ done
 
 grep -Fxq 'bin/overnight.sh --dry-run > "$plan"' bin/check-overnight-policy.sh ||
   fail "overnight policy gate does not invoke the runner in exact --dry-run mode"
+grep -Fq 'bin/probe-claude-auth.sh --dry-run --receipt' bin/check-claude-auth-proof.sh ||
+  fail "Claude auth gate does not invoke the provider-capable probe in exact --dry-run mode"
 
 mapfile -t direct < <(
   awk '$1 ~ /^bin\/[a-z0-9-]+\.sh$/ { print $1 }' bin/check-corpus.sh |
     LC_ALL=C sort -u
 )
 expected_direct=(
+  bin/check-claude-auth-proof.sh
   bin/check-event-first.sh
   bin/check-fixture-reset-terminal.sh
   bin/check-harness-contract.sh
@@ -69,8 +74,7 @@ expected_direct=(
   bin/check-retired-surfaces.sh
   bin/check-run-history.sh
   bin/check-st2-semantic.sh
-  bin/check-vrs-scope-drift.sh
-  bin/check-vrs-variations.sh
+  bin/check-vrs-complex.sh
   bin/check-weird-git-setup.sh
   bin/generate-catalog.sh
   bin/model-seat-inventory.sh
@@ -95,17 +99,23 @@ for file in "${reachable[@]}"; do
     rg -n --no-heading --pcre2 \
       '^[[:space:]]*(?!#).*(^|[;&|()])[[:space:]]*st2[[:space:]]' "$file" || true
   )
-  if rg -n --pcre2 \
-    '^[[:space:]]*(?!#).*(^|[;&|()])[[:space:]]*(exec[[:space:]]+)?(claude|codex)[[:space:]]+-' \
-    "$file"; then
-    fail "$file can launch a model provider"
-  fi
+  while IFS= read -r hit; do
+    line="${hit#*:}"
+    case "$line" in
+      *'claude --version'*) ;;
+      *) fail "$file can launch a model provider: $hit" ;;
+    esac
+  done < <(
+    rg -n --no-heading --pcre2 \
+      '^[[:space:]]*(?!#).*(^|[;&|()])[[:space:]]*(exec[[:space:]]+)?(claude|codex)[[:space:]]+-' \
+      "$file" || true
+  )
 done
 
 for file in \
+  bin/check-claude-auth-proof.sh \
   bin/check-harness-contract.sh \
-  bin/check-vrs-scope-drift.sh \
-  bin/check-vrs-variations.sh \
+  bin/check-vrs-complex.sh \
   bin/check-weird-git-setup.sh; do
   grep -Fxq '  rm -rf -- "$scratch"' "$file" ||
     fail "$file does not clean its Git-object scratch tree noninteractively"

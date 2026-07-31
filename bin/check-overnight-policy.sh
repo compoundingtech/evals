@@ -70,7 +70,10 @@ grep -Eq '^hook-integrity[[:space:]]+model-free[[:space:]]+-[[:space:]]+-[[:spac
 grep -Fq '1 selected cells; explicit CLI order; sequential, no overlap.' "$model_free_plan"
 grep -Fq 'PROVIDER CHECKS: none; this selected subset is entirely model-free.' "$model_free_plan"
 grep -Fq 'DRY RUN ONLY: no preflight command, model, judge, or eval was started.' "$model_free_plan"
-grep -Fq 'PROVIDER CHECKS: Claude Codex binary and auth status before execution.' "$queue_plan"
+grep -Fq \
+  'PROVIDER CHECKS: Claude binary, auth metadata, and a fresh real-provider receipt before execution.' \
+  "$queue_plan"
+grep -Fq 'PROVIDER CHECKS: Codex binary and auth status before execution.' "$queue_plan"
 
 printf '%s\n' \
   '#!/usr/bin/env bash' \
@@ -109,9 +112,15 @@ assert_rejected_before_provider \
   'FAIL: unknown or retired cell: clean-compose' --run --cell clean-compose
 assert_rejected_before_provider \
   'FAIL: --cell requires a name' --run --cell
+assert_rejected_before_provider \
+  'FAIL: Claude-selected --run requires --claude-auth-receipt from the explicit real-provider probe' \
+  --run --cell license-mit
+assert_rejected_before_provider \
+  'FAIL: --claude-auth-receipt applies only to a Claude-selected --run' \
+  --run --cell hook-integrity --claude-auth-receipt .eval-runs/unused.env
 
 dry_exit="$(rg -n -F 'if [ "$mode" = "dry-run" ]' bin/overnight.sh | cut -d: -f1)"
-launch_line="$(rg -n 'setsid .*st2 eval' bin/overnight.sh | cut -d: -f1)"
+launch_line="$(rg -n 'setsid .*eval_bin.* eval' bin/overnight.sh | cut -d: -f1)"
 [ -n "$dry_exit" ] && [ -n "$launch_line" ] && [ "$dry_exit" -lt "$launch_line" ] || {
   echo "FAIL: overnight source does not gate the eval launch behind the dry-run exit" >&2
   exit 1
@@ -133,6 +142,20 @@ if rg -n 'claude auth status|codex login status' "$dry_prefix"; then
 fi
 grep -Fq 'if [ "$requires_claude" -eq 1 ]; then' bin/overnight.sh
 grep -Fq 'if [ "$requires_codex" -eq 1 ]; then' bin/overnight.sh
+first_receipt_gate="$(
+  rg -n -F 'bin/validate-claude-auth-proof.sh "$claude_auth_receipt"' bin/overnight.sh |
+    head -1 | cut -d: -f1
+)"
+preflight_line="$(rg -n -F 'bin/check-corpus.sh' bin/overnight.sh | head -1 | cut -d: -f1)"
+last_receipt_gate="$(
+  rg -n -F 'bin/validate-claude-auth-proof.sh "$claude_auth_receipt"' bin/overnight.sh |
+    tail -1 | cut -d: -f1
+)"
+[ -n "$first_receipt_gate" ] && [ -n "$preflight_line" ] && [ -n "$last_receipt_gate" ] &&
+  [ "$first_receipt_gate" -lt "$preflight_line" ] && [ "$last_receipt_gate" -gt "$preflight_line" ] || {
+  echo "FAIL: fresh Claude receipt is not checked both before and after free preflight" >&2
+  exit 1
+}
 grep -Fq 'claude auth status --json >/dev/null 2>&1' bin/overnight.sh
 grep -Fq 'codex login status >/dev/null 2>&1' bin/overnight.sh
 
@@ -142,6 +165,22 @@ grep -Fq -- '--allow-informational-reset-banner)' bin/overnight.sh
 grep -Fq '[ "$hard_usage_seen" -eq 1 ]; then' bin/overnight.sh
 grep -Fq '[ "$informational_usage_seen" -eq 1 ] &&' bin/overnight.sh
 grep -Fq '[ "$allow_informational_reset_banner" -eq 0 ]; then' bin/overnight.sh
+grep -Fq 'failure_class=product' bin/overnight.sh
+grep -Fq 'paired control remains eligible' bin/overnight.sh
+grep -Fq 'failure_class=infrastructure' bin/overnight.sh
+grep -Fq 'failure_class=auth' bin/overnight.sh
+grep -Fq 'lacks enforced per-cell spend ceiling and structured usage receipt; no provider started' bin/overnight.sh
+grep -Fq 'OVERNIGHT COMPLETE WITH PRODUCT FAILURES' bin/overnight.sh
+grep -Fq 'structured_usage_receipt=$usage_receipt_seen' bin/overnight.sh
+grep -Fq 'usage_receipt_seen=0' bin/overnight.sh
+grep -Fq 'provider_selected=1' bin/overnight.sh
+grep -Fq 'provider cell $cell lacks enforced per-cell spend ceiling and structured usage receipt' bin/overnight.sh
+grep -Fq 'max_cell_cost_usd="0.05"' bin/overnight.sh
+grep -Fq 'persist_provider_usage "$log" "$cell" "$provider" "$usage_receipt"' bin/overnight.sh
+grep -Fq 'usage_failure_class=usage-receipt' bin/overnight.sh
+grep -Fq 'usage_failure_class=usage-budget' bin/overnight.sh
+grep -Fq 'usage_receipt=$usage_receipt' bin/overnight.sh
+grep -Fq 'cost_usd=$usage_cost_usd' bin/overnight.sh
 
 printf 'PASS: dry-run exposes %s-cell inventory, exact six-cell order, and explicit model-free selection; invalid selectors cannot reach providers; conservative usage stops remain enforced\n' \
   "$expected_cells"

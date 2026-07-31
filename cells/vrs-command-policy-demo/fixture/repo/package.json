@@ -1,0 +1,10 @@
+{
+  "name": "orbit-launch-catalog",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "example": "node examples/validate-catalog.js"
+  }
+}

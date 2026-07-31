@@ -7,6 +7,12 @@ cd "$repo_root"
 
 mode="dry-run"
 state_dir=".eval-runs/overnight"
+max_cell_cost_usd="0.05"
+test_watchdog_extra="180"
+if [ "${OVN_TEST_FAKE:-0}" = "1" ]; then
+  test_watchdog_extra="${OVN_TEST_WATCHDOG_EXTRA:-0}"
+fi
+claude_auth_receipt=""
 acknowledge_usage=0
 allow_informational_reset_banner=0
 run_all=0
@@ -15,13 +21,17 @@ selected_cells=()
 usage() {
   cat <<'EOF'
 usage: bin/overnight.sh [--dry-run|--run] [--cell NAME ...|--all] [--state-dir PATH]
-                        [--acknowledge-usage-stop] [--allow-informational-reset-banner]
+                        [--claude-auth-receipt PATH] [--acknowledge-usage-stop]
+                        [--allow-informational-reset-banner]
 
 --dry-run                 Print the complete stable inventory; start nothing (default).
 --run                     Run the free preflight, then execute the explicitly selected cells.
 --cell NAME               Select one maintained cell; repeat to set exact order.
 --all                     Select the complete maintained inventory explicitly.
 --state-dir PATH          Durable logs/receipts root (default: .eval-runs/overnight).
+--claude-auth-receipt PATH
+                          Fresh sanitized receipt from the explicit bounded
+                          real-provider probe. Required for Claude-selected --run.
 --acknowledge-usage-stop  Archive an existing STOPPED guard before an explicitly resumed --run.
 --allow-informational-reset-banner
                           Human-reviewed opt-in: continue after only the Codex
@@ -59,6 +69,14 @@ while [ "$#" -gt 0 ]; do
         exit 2
       }
       state_dir="$2"
+      shift 2
+      ;;
+    --claude-auth-receipt)
+      [ "$#" -ge 2 ] || {
+        usage >&2
+        exit 2
+      }
+      claude_auth_receipt="$2"
       shift 2
       ;;
     --acknowledge-usage-stop)
@@ -156,10 +174,10 @@ fi
 if [ "$requires_claude" -eq 0 ] && [ "$requires_codex" -eq 0 ]; then
   echo 'PROVIDER CHECKS: none; this selected subset is entirely model-free.'
 else
-  providers=()
-  [ "$requires_claude" -eq 0 ] || providers+=(Claude)
-  [ "$requires_codex" -eq 0 ] || providers+=(Codex)
-  printf 'PROVIDER CHECKS: %s binary and auth status before execution.\n' "${providers[*]}"
+  [ "$requires_claude" -eq 0 ] ||
+    echo 'PROVIDER CHECKS: Claude binary, auth metadata, and a fresh real-provider receipt before execution.'
+  [ "$requires_codex" -eq 0 ] ||
+    echo 'PROVIDER CHECKS: Codex binary and auth status before execution.'
 fi
 if [ "$mode" = "dry-run" ]; then
   echo "DRY RUN ONLY: no preflight command, model, judge, or eval was started."
@@ -167,6 +185,15 @@ if [ "$mode" = "dry-run" ]; then
     echo "NO PAID SELECTION: add repeatable --cell NAME or explicit --all together with --run."
   fi
   exit 0
+fi
+
+if [ "$requires_claude" -eq 1 ] && [ -z "$claude_auth_receipt" ]; then
+  echo "FAIL: Claude-selected --run requires --claude-auth-receipt from the explicit real-provider probe" >&2
+  exit 1
+fi
+if [ "$requires_claude" -eq 0 ] && [ -n "$claude_auth_receipt" ]; then
+  echo "FAIL: --claude-auth-receipt applies only to a Claude-selected --run" >&2
+  exit 2
 fi
 
 [ "$(git branch --show-current)" = "main" ] || {
@@ -177,10 +204,18 @@ fi
   echo "FAIL: overnight runs require a clean worktree" >&2
   exit 1
 }
+if [ "$requires_claude" -eq 1 ]; then
+  bin/validate-claude-auth-proof.sh "$claude_auth_receipt"
+fi
 
 echo
 echo "== free preflight (no model seats) =="
 bin/check-corpus.sh
+
+eval_bin=st2
+if [ "${OVN_TEST_FAKE:-0}" = "1" ] && [ -n "${OVN_TEST_FAKE_COMMAND:-}" ]; then
+  eval_bin="$OVN_TEST_FAKE_COMMAND"
+fi
 
 if [ "$requires_claude" -eq 1 ]; then
   command -v claude >/dev/null || {
@@ -191,6 +226,9 @@ if [ "$requires_claude" -eq 1 ]; then
     echo "FAIL: selected cells require Claude, but claude auth status failed" >&2
     exit 1
   }
+  # Re-check after the free preflight so a receipt that aged out while the
+  # corpus was being validated can never authorize the first paid launch.
+  bin/validate-claude-auth-proof.sh "$claude_auth_receipt"
 fi
 if [ "$requires_codex" -eq 1 ]; then
   command -v codex >/dev/null || {
@@ -203,7 +241,33 @@ if [ "$requires_codex" -eq 1 ]; then
   }
 fi
 
-mkdir -p "$state_dir/logs" "$state_dir/receipts" "$state_dir/failures" "$state_dir/history"
+# Provider cells are fail-closed until every provider command exposes both a
+# hard per-cell budget and a structured usage/cost receipt. Never spend a paid
+# seat when the selected KDL cannot prove that contract.
+while IFS=$'\t' read -r cell _harness models _effort seats _cost _timeout _judges; do
+  if [[ "$models" == *claude-sonnet-5* || "$models" == *gpt-5.6-sol* ]]; then
+    mapfile -t provider_commands < <(
+      rg -N 'command #".*exec (claude|codex)([[:space:]]|$)' "cells/$cell/$cell.kdl" || true
+    )
+    if [ "${#provider_commands[@]}" -ne "$seats" ]; then
+      echo "FAIL: provider cell $cell has ${#provider_commands[@]} guarded provider commands for $seats seats; no provider started" >&2
+      exit 1
+    fi
+    for command_text in "${provider_commands[@]}"; do
+      if [[ "$command_text" != *"--max-budget-usd $max_cell_cost_usd"* ||
+        "$command_text" != *"--output-format json"* ]]; then
+        echo "FAIL: provider cell $cell lacks enforced per-cell spend ceiling and structured usage receipt; no provider started" >&2
+        exit 1
+      fi
+    done
+    if [ "${#provider_commands[@]}" -eq 0 ]; then
+      echo "FAIL: provider cell $cell lacks enforced per-cell spend ceiling and structured usage receipt; no provider started" >&2
+      exit 1
+    fi
+  fi
+done < "$inventory"
+
+mkdir -p "$state_dir/logs" "$state_dir/receipts" "$state_dir/failures" "$state_dir/history" "$state_dir/usage"
 stop_guard="$state_dir/STOPPED"
 if [ -f "$stop_guard" ]; then
   if [ "$acknowledge_usage" -eq 0 ]; then
@@ -222,6 +286,7 @@ fi
 
 source_commit="$(git rev-parse HEAD)"
 st2_version="$(st2 --version)"
+run_failed=0
 hard_usage_pattern='usage[ -]?limit[[:space:]].*(reached|exceeded|exhausted)|rate[ -]?limit|too many requests|quota[[:space:]].*(exceeded|exhausted)|capacity[ -]?limit|(^|[^0-9])429([^0-9]|$)'
 informational_usage_pattern='[0-9]+ usage limit resets available'
 
@@ -260,6 +325,44 @@ write_record() {
   mv -- "$temporary" "$destination"
 }
 
+persist_provider_usage() {
+  local log="$1" cell="$2" provider="$3" destination="$4"
+  local line normalized invalid_destination
+  local -a lines=()
+  mapfile -t lines < <(sed -n 's/^USAGE_JSON=//p' "$log")
+  if [ "${#lines[@]}" -ne 1 ]; then
+    usage_parse_error="expected exactly one USAGE_JSON line, found ${#lines[@]}"
+    return 1
+  fi
+  line="${lines[0]}"
+  if ! normalized="$(
+    jq -ceS \
+      --arg cell "$cell" \
+      --arg provider "$provider" \
+      --argjson budget "$max_cell_cost_usd" \
+      'select(
+        type == "object" and
+        .schema_version == 1 and
+        .cell == $cell and
+        .provider == $provider and
+        (.model | type == "string" and length > 0) and
+        (.input_tokens | type == "number" and . >= 0 and floor == .) and
+        (.output_tokens | type == "number" and . >= 0 and floor == .) and
+        (.cost_usd | type == "number" and . >= 0) and
+        .budget_usd == $budget and
+        (.status == "pass" or .status == "fail" or .status == "timeout" or .status == "error")
+      )' <<<"$line" 2>/dev/null
+  )"; then
+    invalid_destination="${destination%.json}.invalid"
+    write_record "$invalid_destination" "$line"
+    usage_parse_error="USAGE_JSON does not satisfy the normalized provider receipt schema"
+    return 1
+  fi
+  write_record "$destination" "$normalized"
+  usage_cost_usd="$(jq -r '.cost_usd' "$destination")"
+  usage_status="$(jq -r '.status' "$destination")"
+}
+
 cleanup_timed_out_catalog() {
   local catalog="$1" ref pid_file task_pid
   st2 down --catalog "$catalog" >/dev/null 2>&1 || true
@@ -282,6 +385,8 @@ cleanup_timed_out_catalog() {
 }
 
 while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _judges; do
+  provider_selected=0
+  [[ "$models" == *claude-sonnet-5* || "$models" == *gpt-5.6-sol* ]] && provider_selected=1
   hash="$(cell_hash "$cell")"
   receipt="$state_dir/receipts/$cell.env"
   if [ -f "$receipt" ] &&
@@ -294,16 +399,20 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
 
   stamp="$(date -u +%Y%m%dT%H%M%SZ)"
   log="$state_dir/logs/$cell.$stamp.log"
-  watchdog_seconds=$(($(duration_seconds "$declared_timeout") + 180))
+  watchdog_seconds=$(($(duration_seconds "$declared_timeout") + test_watchdog_extra))
+  if [ "${OVN_TEST_FAKE:-0}" = "1" ] && [ -n "${OVN_TEST_WATCHDOG_SECONDS:-}" ]; then
+    watchdog_seconds="$OVN_TEST_WATCHDOG_SECONDS"
+  fi
   printf '\n== %s: %s, %s, %s seat(s), %s cost, timeout %s (+180s watchdog) ==\n' \
     "$cell" "$harness" "$models" "$seats" "$cost" "$declared_timeout"
 
-  setsid stdbuf -oL -eL st2 eval "./cells/$cell/" --keep > "$log" 2>&1 &
+  setsid stdbuf -oL -eL "$eval_bin" eval "./cells/$cell/" --keep > "$log" 2>&1 &
   eval_pid=$!
   catalog="/tmp/st2e-$eval_pid"
   started=$SECONDS
   hard_usage_seen=0
   informational_usage_seen=0
+  usage_receipt_seen=0
   timed_out=0
 
   while kill -0 "$eval_pid" 2>/dev/null; do
@@ -351,18 +460,103 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
     rg -q -i "$informational_usage_pattern" "$log" 2>/dev/null; then
     informational_usage_seen=1
   fi
-
   sed -n '1,240p' "$log"
   completed="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  if [ "$rc" -ne 0 ] || ! grep -Fxq 'VERDICT: PASS' "$log"; then
+
+  # This boundary runs after every provider termination and before any product
+  # verdict classification. A valid normalized receipt is persisted first,
+  # including on failure and watchdog timeout.
+  usage_receipt_seen=0
+  usage_receipt=""
+  usage_cost_usd=""
+  usage_status=""
+  usage_parse_error=""
+  usage_failure_class=""
+  if [ "$provider_selected" -eq 1 ]; then
+    provider=codex
+    [[ "$models" != *claude-sonnet-5* ]] || provider=claude
+    usage_receipt="$state_dir/usage/$cell.$stamp.json"
+    if persist_provider_usage "$log" "$cell" "$provider" "$usage_receipt"; then
+      usage_receipt_seen=1
+      if ! jq -e --argjson budget "$max_cell_cost_usd" '.cost_usd <= $budget' \
+        "$usage_receipt" >/dev/null; then
+        usage_failure_class=usage-budget
+        usage_parse_error="provider cost $usage_cost_usd exceeds hard per-cell budget $max_cell_cost_usd"
+      elif [ "$timed_out" -eq 1 ] && [ "$usage_status" != timeout ]; then
+        usage_failure_class=usage-receipt
+        usage_parse_error="timed-out provider receipt has status $usage_status, expected timeout"
+      elif [ "$timed_out" -eq 0 ] && [ "$rc" -eq 0 ] && grep -Fxq 'VERDICT: PASS' "$log" &&
+        [ "$usage_status" != pass ]; then
+        usage_failure_class=usage-receipt
+        usage_parse_error="passing provider result has receipt status $usage_status, expected pass"
+      elif [ "$timed_out" -eq 0 ] &&
+        { [ "$rc" -ne 0 ] || ! grep -Fxq 'VERDICT: PASS' "$log"; } &&
+        [ "$usage_status" != fail ] && [ "$usage_status" != error ]; then
+        usage_failure_class=usage-receipt
+        usage_parse_error="failed provider result has receipt status $usage_status, expected fail or error"
+      fi
+    else
+      usage_failure_class=usage-receipt
+    fi
+  fi
+
+  if [ "$provider_selected" -eq 1 ] && [ -n "$usage_failure_class" ]; then
     failure="$state_dir/failures/$cell.$stamp.env"
     write_record "$failure" \
       "cell=$cell" \
       "result=FAIL" \
+      "failure_class=$usage_failure_class" \
+      "failure_detail=$usage_parse_error" \
       "exit_code=$rc" \
       "timed_out=$timed_out" \
       "hard_usage_warning=$hard_usage_seen" \
       "informational_usage_banner=$informational_usage_seen" \
+      "structured_usage_receipt=$usage_receipt_seen" \
+      "usage_receipt=$usage_receipt" \
+      "cost_usd=$usage_cost_usd" \
+      "max_cell_cost_usd=$max_cell_cost_usd" \
+      "allow_informational_reset_banner=$allow_informational_reset_banner" \
+      "source_commit=$source_commit" \
+      "cell_hash=$hash" \
+      "st2_version=$st2_version" \
+      "catalog=$catalog" \
+      "log=$log" \
+      "completed_at=$completed"
+    write_record "$stop_guard" \
+      "reason=$usage_failure_class" \
+      "cell=$cell" \
+      "log=$log" \
+      "record=$failure" \
+      "usage_receipt=$usage_receipt" \
+      "stopped_at=$completed"
+    echo "STOPPED: $cell $usage_failure_class failure: $usage_parse_error" >&2
+    exit 1
+  fi
+
+  if [ "$rc" -ne 0 ] || ! grep -Fxq 'VERDICT: PASS' "$log"; then
+    failure_class=product
+    if { [ "$timed_out" -eq 1 ] && [ "$provider_selected" -eq 0 ]; } || [ ! -s "$log" ]; then
+      failure_class=infrastructure
+    elif rg -q -i '(^|[^[:alpha:]])(401|403|oauth|expired|authentication failed|not logged in|invalid token|api key)([^[:alpha:]]|$)' "$log" 2>/dev/null; then
+      failure_class=auth
+    elif [ "$(cell_hash "$cell")" != "$hash" ]; then
+      failure_class=integrity
+    elif rg -q -i 'corpus integrity|hash mismatch|source commit mismatch|catalog integrity|infrastructure error|daemon.*(crash|exit)|failed to launch st2' "$log" 2>/dev/null; then
+      failure_class=infrastructure
+    fi
+    failure="$state_dir/failures/$cell.$stamp.env"
+    write_record "$failure" \
+      "cell=$cell" \
+      "result=FAIL" \
+      "failure_class=$failure_class" \
+      "exit_code=$rc" \
+      "timed_out=$timed_out" \
+      "hard_usage_warning=$hard_usage_seen" \
+      "informational_usage_banner=$informational_usage_seen" \
+      "structured_usage_receipt=$usage_receipt_seen" \
+      "usage_receipt=$usage_receipt" \
+      "cost_usd=$usage_cost_usd" \
+      "max_cell_cost_usd=$max_cell_cost_usd" \
       "allow_informational_reset_banner=$allow_informational_reset_banner" \
       "source_commit=$source_commit" \
       "cell_hash=$hash" \
@@ -391,8 +585,19 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
       echo "STOPPED: informational reset-available banner under conservative default; guard written to $stop_guard" >&2
       exit 75
     fi
-    echo "STOPPED: $cell failed; durable record: $failure" >&2
-    exit 1
+    if [ "$failure_class" != product ]; then
+      write_record "$stop_guard" \
+        "reason=$failure_class" \
+        "cell=$cell" \
+        "log=$log" \
+        "record=$failure" \
+        "stopped_at=$completed"
+      echo "STOPPED: $cell $failure_class failure; guard written to $stop_guard" >&2
+      exit 1
+    fi
+    run_failed=1
+    echo "CONTINUE: $cell product result recorded; paired control remains eligible: $failure" >&2
+    continue
   fi
 
   write_record "$receipt" \
@@ -409,6 +614,10 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
     "declared_timeout=$declared_timeout" \
     "hard_usage_warning=$hard_usage_seen" \
     "informational_usage_banner=$informational_usage_seen" \
+    "structured_usage_receipt=$usage_receipt_seen" \
+    "usage_receipt=$usage_receipt" \
+    "cost_usd=$usage_cost_usd" \
+    "max_cell_cost_usd=$max_cell_cost_usd" \
     "allow_informational_reset_banner=$allow_informational_reset_banner" \
     "catalog=$catalog" \
     "log=$log" \
@@ -439,4 +648,8 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
 done < "$inventory"
 
 echo
+if [ "$run_failed" -eq 1 ]; then
+  echo "OVERNIGHT COMPLETE WITH PRODUCT FAILURES: all eligible cells ran; failures are preserved." >&2
+  exit 1
+fi
 echo "OVERNIGHT COMPLETE: every included cell has a matching PASS receipt."

@@ -48,26 +48,43 @@ bin/overnight.sh --dry-run --cell ghost-bug --cell ghost-bug-codex
 ```
 
 Paid execution requires `--run`, a clean `main` worktree, and either one or more explicit `--cell` selections
-or separately reviewed `--all`. Repeated selectors preserve CLI order. With no selector, the default dry run
-is inventory-only and can never imply a 28-cell paid launch. The conservative default stops before the next
-cell on either a hard usage error or an informational reset-available banner:
+or separately reviewed `--all`. Repeated selectors preserve CLI order. A Claude-selected run also requires a
+fresh, sanitized receipt from one exact real-provider turn: `claude auth status` metadata alone is not bearer
+proof. After an explicitly authorized human OAuth refresh, create the short-lived proof:
+
+```sh
+env -u ANTHROPIC_API_KEY -u CLAUDE_CODE_OAUTH_TOKEN \
+  bin/probe-claude-auth.sh --run \
+  --receipt .eval-runs/overnight/claude-real-auth.env
+```
+
+The probe is dry-run-only unless `--run` is explicit, pins Claude Sonnet 5 at medium effort, disables tools and
+session persistence, requires the exact response `AUTH_OK`, caps the turn at USD 0.05, and never records secret
+values. The resulting receipt is bound to the CLI version, source commit, non-secret state/config context, and
+a maximum age of ten minutes.
+
+With no selector, the default dry run is inventory-only and can never imply a full paid launch. The
+conservative default stops before the next cell on either a hard usage error or an informational
+reset-available banner:
 
 ```sh
 bin/overnight.sh --run \
+  --claude-auth-receipt .eval-runs/overnight/claude-real-auth.env \
   --cell ghost-bug \
   --cell ghost-bug-codex \
   --state-dir .eval-runs/overnight
 ```
 
 An explicit selection may include maintained model-free cells; they still execute through st2 and receive the
-same cleanup and durable receipts. Claude/Codex binary and authentication checks run only when the selected
-subset actually contains work for that provider.
+same cleanup and durable receipts. Claude/Codex checks run only when the selected subset actually contains
+work for that provider. Claude additionally fails closed without the fresh real-provider proof above.
 
 The exact future full-run command must be separately reviewed because it may spend more model quota after an
 informational Codex banner:
 
 ```sh
 bin/overnight.sh --run --all \
+  --claude-auth-receipt .eval-runs/overnight/claude-real-auth.env \
   --allow-informational-reset-banner \
   --state-dir .eval-runs/overnight
 ```
@@ -77,6 +94,17 @@ receipt. A resumed run skips only matching completed receipts. Hard quota/rate-l
 `STOPPED` guard. An informational Codex “N usage limit resets available” banner lets that active cell tear down
 and record its result first, then stops by default; only the explicit informational-banner opt-in permits the
 next paid cell to start.
+
+Provider execution additionally fails closed unless every declared seat has an exact USD 0.05 hard ceiling and
+JSON-output contract. After every provider termination—including a failed or watchdog-timed-out cell—the runner
+parses and atomically persists one normalized usage/cost receipt before classifying the product verdict. A valid
+under-budget product failure or timeout leaves the paired control eligible; a missing, malformed, contradictory,
+or over-budget receipt writes `STOPPED` before another paid cell can start. Exercise that boundary without a
+provider call with:
+
+```sh
+bin/check-overnight-receipt-boundary.sh
+```
 
 ## Run one cell
 

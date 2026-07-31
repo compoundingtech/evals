@@ -33,6 +33,7 @@ bash -n "${shell_files[@]}"
 echo "PASS: ${#shell_files[@]} shell files parse"
 
 bin/check-preflight-safety.sh
+bin/check-claude-auth-proof.sh
 bin/check-model-policy.sh
 bin/check-model-policy-mutations.sh
 bin/check-run-history.sh
@@ -43,8 +44,7 @@ bin/check-kdl-parse.sh
 bin/check-st2-semantic.sh
 bin/check-fixture-reset-terminal.sh
 bin/check-harness-contract.sh
-bin/check-vrs-scope-drift.sh
-bin/check-vrs-variations.sh
+bin/check-vrs-complex.sh
 bin/check-weird-git-setup.sh
 bin/check-overnight-policy.sh
 bin/check-no-pii.sh

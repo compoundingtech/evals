@@ -1,0 +1,20 @@
+agent "alpha" {
+  identity "alpha"
+  host "ap"
+  role "worker"
+  name "Shared Worker"
+  description "Owns alpha acceptance"
+  workspace "$CATALOG/workspace"
+  env {
+    ST_AGENT "ap.alpha"
+  }
+  command "exec bash \"$CATALOG/../task.sh\" alpha"
+  pty "helper" {
+    id "ap.alpha.helper"
+    command "exec sleep 300"
+    tags purpose="secondary"
+    env {
+      ST_AGENT "ap.alpha"
+    }
+  }
+}

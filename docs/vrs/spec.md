@@ -81,6 +81,12 @@ and continues or stops.
   A speculative claim cannot become normative merely by editing the spec. A
   proposed behavior change updates both the canonical contract and its
   maintained proof cells before any implementation claims conformance.
+- The model-free `agent-presentation-contract` and
+  `agent-presentation-continuity` cells prove the stable-identity/presentation
+  split, constrained authoring, exact-ID routing, atomic PTY projection,
+  no-restart reconciliation, durable-state continuity, and lifecycle controls.
+  Their accepted evidence is extracted into the stable identity and
+  presentation section of `AGENT-SPEC.md`.
 - Harness differences are recorded when the same contract needs different
   Claude and Codex mechanisms. They do not silently change the contract.
 - **R11:** Adding a scenario does not require a custom runner path. Its

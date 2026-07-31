@@ -2,7 +2,7 @@
 
 Held-out, model-free black-box coverage for the selected live-daemon recovery
 protocol in [PTY PR #128](https://github.com/compoundingtech/pty/pull/128) at
-exact head `f70f85baa89145136a63cc9909fc2423bd3d1e7d`.
+exact head `9ad3a4368027d8a9e78a22319615a3ab837347e1`.
 
 Set `EVALS_PTY_PR128_ROOT` to a clean exact-head checkout after
 `npm ci && npm run build`. The cell rejects any other Git head, package lock,

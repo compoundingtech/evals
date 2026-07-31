@@ -2,6 +2,9 @@
 # Model-free matched-condition and mutation-validity gate for the VRS scope-drift pair.
 set -euo pipefail
 
+export GIT_CONFIG_GLOBAL=/dev/null
+export GIT_CONFIG_NOSYSTEM=1
+
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 

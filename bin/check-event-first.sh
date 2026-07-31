@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Enforce one cold-start drain followed by native DING wakeups for every maintained model seat.
+# Enforce one cold-start drain followed by native DING wakeups for every maintained model agent.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -12,7 +12,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-bin/model-seat-inventory.sh --no-header > "$inventory"
+bin/model-agent-inventory.sh --no-header > "$inventory"
 
 failed=0
 fail() {
@@ -29,12 +29,26 @@ required=(
   "report completion or blockers over the st2 bus"
 )
 
-while IFS=$'\t' read -r cell agent _harness _workspace _st_agent command_line; do
-  kdl="cells/$cell/$cell.kdl"
-  command_text="$(sed -n "${command_line}p" "$kdl")"
+while IFS=$'\t' read -r cell agent _harness _workspace _st_agent source_kind source_path source_line; do
+  command_text="$(sed -n "${source_line}p" "$source_path")"
+  if [ "$source_kind" = "canonical-template" ]; then
+    grep -Fq '"--mode" "managed-unattended"' <<< "$command_text" ||
+      fail "$source_path:$source_line agent $agent canonical launch omits managed-unattended mode"
+    grep -Fq '"--boot" "managed-v1"' <<< "$command_text" ||
+      fail "$source_path:$source_line agent $agent canonical launch omits managed-v1 event-first boot contract"
+    continue
+  fi
+  kdl="$source_path"
+  if grep -Fq 'exec axe agent launch ' <<< "$command_text"; then
+    grep -Fq -- '--mode managed-unattended' <<< "$command_text" ||
+      fail "$kdl:$source_line agent $agent Axe launch omits managed-unattended mode"
+    grep -Fq -- '--boot managed-v1' <<< "$command_text" ||
+      fail "$kdl:$source_line agent $agent Axe launch omits managed-v1 event-first boot contract"
+    continue
+  fi
   for phrase in "${required[@]}"; do
     grep -Fiq "$phrase" <<< "$command_text" ||
-      fail "$kdl:$command_line agent $agent does not teach '$phrase'"
+      fail "$kdl:$source_line agent $agent does not teach '$phrase'"
   done
 done < "$inventory"
 
@@ -55,7 +69,7 @@ if rg -n --pcre2 \
 fi
 
 if [ "$failed" -eq 0 ]; then
-  printf 'PASS: %s model seats use one cold-start drain and event-first native DING wakeups\n' \
+  printf 'PASS: %s model agents use one cold-start drain and event-first native DING wakeups\n' \
     "$(wc -l < "$inventory" | tr -d ' ')"
 fi
 exit "$failed"

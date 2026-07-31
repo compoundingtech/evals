@@ -1,0 +1,31 @@
+eval {
+  copy "../agent-new-interview/fixture"
+  run "prepare-interviewer-worktree" {
+    command "bash ./prepare-interviewer-worktree.sh"
+  }
+  run "publish-canonical-interviewer" {
+    command "bash ./publish-interviewer.sh investigation"
+  }
+  canonical-agents
+  message {
+    from "requester"
+    to "evalhost.global.coding-agents.session-creation.interview-eval"
+    content "./cases/investigation/task.md"
+  }
+  max-timeout "300s"
+
+  judges {
+    judge "STRUCTURE — output is closed, account-neutral, and preserves every hard constraint" {
+      exec "bash ../agent-new-interview/judges/grade-case.sh investigation structural"
+    }
+    judge "SEMANTICS — read-only investigation scope and reference survive selection" {
+      exec "bash ../agent-new-interview/judges/grade-case.sh investigation semantic"
+    }
+    judge "BUNDLE — deterministic lowering owns canonical KDL and initial context" {
+      exec "bash ../agent-new-interview/judges/grade-case.sh investigation bundle && bash ../agent-new-interview/judges/grade-case.sh investigation inbox"
+    }
+    judge "BOUNDARY — no model-authored KDL, provider argv, or account pin escapes" {
+      exec "bash ../agent-new-interview/judges/grade-case.sh investigation boundary"
+    }
+  }
+}

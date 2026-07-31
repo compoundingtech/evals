@@ -1,0 +1,8 @@
+agent "remote" {
+  identity "remote"
+  host "remotehost"
+  pty "work" {
+    id "canonical-remote-work"
+    command #"touch "$CATALOG/REMOTE-SPAWNED"; exec sleep 60"#
+  }
+}

@@ -1,0 +1,23 @@
+agent "probe" {
+  identity "probe"
+  host "evalhost"
+  workspace "$CATALOG/interviewer"
+  env {
+    ST_AGENT "evalhost.probe"
+  }
+
+  pty "work" {
+    id "canonical-probe-work"
+    argv "bash" "$CATALOG/probe.sh"
+  }
+  exec "guard" {
+    id "canonical-probe-guard"
+    command #"mkdir -p "$CATALOG/probe"; printf '%s\n' "$$$$" > "$CATALOG/probe/guard.pid"; exec sleep 60"#
+  }
+
+  render {
+    copy "_templates/generalist.md" ".st2/PERSONA.md"
+    copy "_templates/bus.st2.md" ".st2/bus.md"
+    git-exclude ".st2/"
+  }
+}

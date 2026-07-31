@@ -59,3 +59,53 @@ grep -Fq 'selects Opus' "$opus_output" || {
 }
 
 echo "PASS: nested provider launches are counted independently; unpinned and Opus mutations fail"
+
+mkdir -p "$scratch/axe-valid" "$scratch/axe-pinned"
+printf '%s\n' \
+  'team "x" { agent "i" { workspace "./i"; env { ST_AGENT "x.i" }; command #"exec axe agent launch --harness claude --persona generalist --model claude-sonnet-5 --effort medium --mode managed-unattended --boot managed-v1"#; ding } }' \
+  >"$scratch/axe-valid/axe.kdl"
+printf '%s\n' \
+  'team "x" { agent "i" { workspace "./i"; env { ST_AGENT "x.i" }; command #"exec axe agent launch --harness claude --persona generalist --model claude-sonnet-5 --effort medium --mode managed-unattended --boot managed-v1 --account claude/example"#; ding } }' \
+  >"$scratch/axe-pinned/axe.kdl"
+
+bash "$checker" "$scratch/axe-valid" >/dev/null || {
+  echo "FAIL: model policy rejected a fully typed, account-neutral Axe launch" >&2
+  exit 1
+}
+axe_pinned_output="$scratch/axe-pinned.out"
+if bash "$checker" "$scratch/axe-pinned" >"$axe_pinned_output" 2>&1; then
+  echo "FAIL: model policy accepted a durable Axe account pin" >&2
+  exit 1
+fi
+grep -Fq 'durably pins an account' "$axe_pinned_output" || {
+  echo "FAIL: pinned Axe account mutation lacked the expected diagnostic" >&2
+  cat "$axe_pinned_output" >&2
+  exit 1
+}
+
+echo "PASS: typed Axe launches are counted and durable account pins fail"
+
+mkdir -p "$scratch/canonical-valid" "$scratch/canonical-pinned"
+printf '%s\n' \
+  'agent "i" { argv "@ADAPTER@" "agent" "launch" "--harness" "claude" "--persona" "generalist" "--model" "claude-sonnet-5" "--effort" "medium" "--mode" "managed-unattended" "--boot" "managed-v1" }' \
+  >"$scratch/canonical-valid/agent.kdl.template"
+printf '%s\n' \
+  'agent "i" { argv "@ADAPTER@" "agent" "launch" "--harness" "claude" "--persona" "generalist" "--model" "claude-sonnet-5" "--effort" "medium" "--mode" "managed-unattended" "--boot" "managed-v1" "--account" "claude/example" }' \
+  >"$scratch/canonical-pinned/agent.kdl.template"
+
+bash "$checker" "$scratch/canonical-valid" >/dev/null || {
+  echo "FAIL: model policy rejected a canonical managed-launch template" >&2
+  exit 1
+}
+canonical_pinned_output="$scratch/canonical-pinned.out"
+if bash "$checker" "$scratch/canonical-pinned" >"$canonical_pinned_output" 2>&1; then
+  echo "FAIL: model policy accepted an account pin in a canonical managed-launch template" >&2
+  exit 1
+fi
+grep -Fq 'durably pins an account' "$canonical_pinned_output" || {
+  echo "FAIL: canonical template account pin lacked the expected diagnostic" >&2
+  cat "$canonical_pinned_output" >&2
+  exit 1
+}
+
+echo "PASS: canonical managed-launch templates are counted and durable account pins fail"

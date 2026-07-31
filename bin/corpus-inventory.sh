@@ -13,8 +13,15 @@ elif [ "$#" -ne 0 ]; then
   exit 2
 fi
 
+agent_inventory="$(mktemp)"
+cleanup() {
+  rm -f -- "$agent_inventory"
+}
+trap cleanup EXIT
+bin/model-agent-inventory.sh --no-header > "$agent_inventory"
+
 if [ "$include_header" -eq 1 ]; then
-  printf 'cell\tharness\tmodels\teffort\tmodel_seats\tcost_band\ttimeout\theld_out_judges\n'
+  printf 'cell\tharness\tmodels\teffort\tmodel_agents\tcost_band\ttimeout\theld_out_judges\n'
 fi
 
 mapfile -t cells < <(find cells -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | LC_ALL=C sort)
@@ -45,31 +52,10 @@ for cell in "${cells[@]}"; do
   }
   timeout="${timeouts[0]}"
 
-  claude=0
-  codex=0
-  while IFS=: read -r file line text; do
-    trimmed="${text#"${text%%[![:space:]]*}"}"
-    if [[ "$trimmed" == \#* || "$trimmed" == //* ]]; then
-      continue
-    fi
-    code="$text"
-    if [[ "$file" == *.kdl ]]; then
-      code="${code%%//*}"
-    fi
-    if [[ "$code" =~ exec[[:space:]]+claude([[:space:]]|$) ]] ||
-      [[ "$code" =~ (^|[^[:alnum:]_-])claude[[:space:]]+- ]]; then
-      ((claude += 1))
-    elif [[ "$code" =~ exec[[:space:]]+codex([[:space:]]|$) ]] ||
-      [[ "$code" =~ (^|[^[:alnum:]_-])codex[[:space:]]+- ]]; then
-      ((codex += 1))
-    fi
-  done < <(
-    rg -n --no-heading \
-      'exec[[:space:]]+(claude|codex)|(^|[^[:alnum:]_-])(claude|codex)[[:space:]]+-' \
-      "$cell_dir" -g '*.kdl' -g '*.sh' -g '!**/_git/**' || true
-  )
+  claude="$(awk -F '\t' -v cell="$cell" '$1 == cell && $3 == "Claude" { count += 1 } END { print count + 0 }' "$agent_inventory")"
+  codex="$(awk -F '\t' -v cell="$cell" '$1 == cell && $3 == "Codex" { count += 1 } END { print count + 0 }' "$agent_inventory")"
 
-  seats=$((claude + codex))
+  agents=$((claude + codex))
   if [ "$claude" -gt 0 ] && [ "$codex" -gt 0 ]; then
     harness="mixed"
     models="claude-sonnet-5+gpt-5.6-sol"
@@ -84,13 +70,13 @@ for cell in "${cells[@]}"; do
     models="-"
   fi
 
-  if [ "$seats" -eq 0 ]; then
+  if [ "$agents" -eq 0 ]; then
     effort="-"
     cost="none"
-  elif [ "$seats" -eq 1 ]; then
+  elif [ "$agents" -eq 1 ]; then
     effort="medium"
     cost="low"
-  elif [ "$seats" -eq 2 ]; then
+  elif [ "$agents" -eq 2 ]; then
     effort="medium"
     cost="medium"
   else
@@ -101,5 +87,5 @@ for cell in "${cells[@]}"; do
   judges="$(rg -c '^[[:space:]]*judge[[:space:]]+"' "$kdl" || true)"
   judges="${judges:-0}"
   printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-    "$cell" "$harness" "$models" "$effort" "$seats" "$cost" "$timeout" "$judges"
+    "$cell" "$harness" "$models" "$effort" "$agents" "$cost" "$timeout" "$judges"
 done

@@ -7,6 +7,13 @@ cd "$repo_root"
 
 reachable=(
   bin/check-corpus.sh
+  bin/check-append-only-file.sh
+  bin/check-agent-new-behavior-cases.sh
+  bin/check-agent-new-interview-attempts-mutations.sh
+  bin/check-agent-new-renderer-security.sh
+  bin/check-agent-new-interview-attempts.sh
+  bin/check-canonical-agent-template-mutations.sh
+  bin/check-canonical-agent-template.sh
   bin/check-event-first.sh
   bin/check-fixture-reset.sh
   bin/check-fixture-reset-terminal.sh
@@ -20,15 +27,23 @@ reachable=(
   bin/check-preflight-safety.sh
   bin/check-run-history.sh
   bin/check-retired-surfaces.sh
+  bin/check-st2-package-provenance-mutations.sh
+  bin/check-st2-package-provenance.sh
+  bin/check-st2-pin-consistency.sh
   bin/check-st2-semantic.sh
   bin/check-vrs-scope-drift.sh
   bin/check-vrs-variations.sh
   bin/check-weird-git-setup.sh
   bin/corpus-inventory.sh
   bin/generate-catalog.sh
-  bin/model-seat-inventory.sh
+  bin/model-agent-inventory.sh
+  bin/st2-pin.sh
 )
 materializers=(
+  cells/agent-new-interview/fixture/prepare-interviewer-worktree.sh
+  cells/agent-new-bundle-contract/fixture/render-intent.sh
+  cells/agent-new-interview/fixture/interviewer/render-intent.sh
+  cells/canonical-agent-runtime-smoke/fixture/prepare-interviewer-worktree.sh
   cells/signal-rename/fixture/materialize.sh
   cells/signal-rename-codex/fixture/materialize.sh
   cells/weird-git-setup/fixture/setup-megarepo.sh
@@ -56,6 +71,11 @@ mapfile -t direct < <(
     LC_ALL=C sort -u
 )
 expected_direct=(
+  bin/check-agent-new-behavior-cases.sh
+  bin/check-agent-new-interview-attempts-mutations.sh
+  bin/check-agent-new-interview-attempts.sh
+  bin/check-agent-new-renderer-security.sh
+  bin/check-canonical-agent-template-mutations.sh
   bin/check-event-first.sh
   bin/check-fixture-reset-terminal.sh
   bin/check-harness-contract.sh
@@ -68,12 +88,15 @@ expected_direct=(
   bin/check-preflight-safety.sh
   bin/check-retired-surfaces.sh
   bin/check-run-history.sh
+  bin/check-st2-package-provenance-mutations.sh
+  bin/check-st2-package-provenance.sh
+  bin/check-st2-pin-consistency.sh
   bin/check-st2-semantic.sh
   bin/check-vrs-scope-drift.sh
   bin/check-vrs-variations.sh
   bin/check-weird-git-setup.sh
   bin/generate-catalog.sh
-  bin/model-seat-inventory.sh
+  bin/model-agent-inventory.sh
 )
 if [ "${direct[*]}" != "${expected_direct[*]}" ]; then
   fail "check-corpus.sh direct command set differs from the reviewed allowlist"
@@ -85,7 +108,6 @@ for file in "${reachable[@]}"; do
   while IFS= read -r hit; do
     line="${hit#*:}"
     case "$line" in
-      *'st2 --version'*) ;;
       *'st2 ls '*) ;;
       *'st2 validate '*) ;;
       *'st2 up '*'--materialize-only'*) ;;

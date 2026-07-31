@@ -1,8 +1,8 @@
 # Canonical st2 agent specification
 
 This is the sole agent-authoring specification for this repository. It is pinned to st2
-[`9887b2842222def0838c2cd82e6c24c218f7efa6`](https://github.com/compoundingtech/st2/commit/9887b2842222def0838c2cd82e6c24c218f7efa6)
-(`0.1.0`, source `9887b28`). It documents the hand-authored KDL accepted at that commit. Do not infer
+[`c6846f6239329f0803142afc06c15a07b93937c1`](https://github.com/compoundingtech/st2/commit/c6846f6239329f0803142afc06c15a07b93937c1)
+(`0.1.0`, source `c6846f6`). It documents the hand-authored KDL accepted at that commit. Do not infer
 additional fields or commands from older corpus fixtures.
 
 st2 runs long-lived `service` agents made of interactive `pty` tasks and terminal-free `exec` tasks.
@@ -45,6 +45,7 @@ agent "<identity>" {
   supervisor "<host>.<supervisor-identity>"
   retired #false
   keep #false
+  lifecycle "service"
 
   restart {
     attempts 3
@@ -57,7 +58,7 @@ agent "<identity>" {
     ST_AGENT "<host>.<identity>"
   }
 
-  command #"<interactive harness command>"#
+  argv "<interactive-harness>" "<argument>"
   ding
 
   render {
@@ -82,9 +83,11 @@ Supported agent children are:
 | `supervisor "…"` | Optional bare identity or full bus id for crash-loop routing. |
 | `retired #true` | Decommission the declaration on the next reconciliation. Edit this flag; do not delete a live declaration to retire it. |
 | `keep #true` | Freeze dead evidence and suppress collection/restart for every task; retirement still stops live tasks. |
+| `lifecycle "service"|"adopt-only"` | Reconciliation policy for the compact task. Explicit tasks declare their own policy. |
 | `restart { … }` | Optional service restart policy. |
 | `env { KEY "value" }` | Environment inherited by the compact agent task and sidecars. |
-| `command "…"` | Compact interactive task named `agent`. |
+| `argv "program" "arg"…` | Preferred compact interactive task named `agent`; direct program invocation with preserved argument boundaries. |
+| `command "…"` | Compact interactive shell task named `agent`; use only when shell syntax is intentional. |
 | `ding` | Compact native DING sidecar named `ding`. |
 | `pty "name" { … }` | Explicit interactive task. |
 | `exec "name" { … }` | Explicit non-interactive task. |
@@ -102,20 +105,22 @@ rely on that permissiveness.
 
 ## Compact and explicit tasks
 
-The canonical compact pair:
+The canonical compact pair uses direct argv:
 
 ```kdl
-command #"<harness command>"#
+argv "<harness>" "<argument>"
 ding
 ```
 
 lowers to an interactive `pty "agent"` and a non-interactive `exec "ding"` sidecar. Do not declare
-both `command` and `pty "agent"`, or both `ding` and `exec "ding"`.
+both compact `argv` and compact `command`; do not combine either compact launch with `pty "agent"`;
+and do not declare both `ding` and `exec "ding"`.
 
 The compact task has id equal to the agent bus id, tag `role=agent`, and inherited agent environment. The
 derived DING task has id `<bus-id>.ding` and inherited environment. A service is runnable only when at least
-one authored task has a command; the derived sidecar alone is insufficient, including on a retired
-declaration. Task names are sorted lexically after lowering.
+one authored task has exactly one `argv` or `command`; `argv` must have a non-empty program element. The
+derived sidecar alone is insufficient, including on a retired declaration. Task names are sorted lexically
+after lowering.
 
 Use explicit tasks only when the agent needs an additional managed process or task-specific
 configuration:
@@ -123,9 +128,10 @@ configuration:
 ```kdl
 pty "agent" {
   id "<host>.<identity>"
-  command #"<interactive harness command>"#
+  argv "<interactive-harness>" "<argument>"
   cwd "/absolute/workspace/or/$CATALOG/path"
   keep #false
+  lifecycle "service"
   tags role="agent" purpose="subject"
   env {
     ST_AGENT "<host>.<identity>"
@@ -137,6 +143,7 @@ exec "helper" {
   command #"exec ./long-running-helper"#
   cwd "/absolute/workspace/or/$CATALOG/path"
   keep #false
+  lifecycle "adopt-only"
   tags purpose="fixture"
   env {
     EXAMPLE "value"
@@ -144,11 +151,17 @@ exec "helper" {
 }
 ```
 
-Each explicit task supports only `id`, `command`, `cwd`, `keep`, `tags`, and `env`. A nameless task is a
-validation error. Agent-level environment is parsed before tasks and inherited independent of declaration
-order; task-level values override it. A missing `cwd` falls back to agent workspace, then the spec directory.
-Commands run through `sh -c`. Interactive harnesses belong in `pty`; terminal-free daemons and helpers belong
-in `exec`.
+Each explicit task supports only `id`, `argv`, `command`, `cwd`, `keep`, `lifecycle`, `tags`, and `env`.
+A nameless task, empty `argv`, or task carrying both `argv` and `command` is a validation error. Agent-level
+environment is parsed before tasks and inherited independent of declaration order; task-level values override
+it. A missing `cwd` falls back to agent workspace, then the spec directory.
+
+`argv` resolves a bare element zero through the task environment's `PATH`, expands st2 environment references
+in each element, preserves argument boundaries, and launches the program directly without a shell. `command`
+is opaque shell source run verbatim under `sh -c`; use it only for intentional shell behavior such as pipes,
+redirections, compound commands, or shell expansion. Writing `exec` inside `command` can remove the inner
+shell after it interprets that source, but it does not turn the declaration into direct argv. Interactive
+harnesses belong in `pty`; terminal-free daemons and helpers belong in `exec`.
 
 Interactive tasks run detached through the PTY runtime with stable lifecycle ids. Exec tasks allocate no
 terminal, run in their own detached process group, append diagnostics below `<catalog>/logs/`, and retain one
@@ -159,7 +172,8 @@ what stops them.
 ## Environment and expansion
 
 Expansion recognizes `$VAR`, `${VAR}`, and `$$` for a literal dollar. Unset variables remain literal. Task
-environment values, tags, and cwd expand before spawn; the command remains opaque for its `sh -c`.
+environment values, tags, cwd, and each direct argv element expand before spawn; command remains opaque for
+its `sh -c`.
 
 st2 defaults `CATALOG` and `ST_ROOT` to the catalog. Effective `PTY_ROOT` is a non-empty ambient value or
 `<catalog>/pty`; authored task environment cannot override it. st2 supplies `ST_HOOKS` only when an installed
@@ -225,12 +239,20 @@ misclassified as an empty registry.
 Reconciliation is per task:
 
 - active and alive: adopt;
-- missing: launch only that task;
-- dead non-keep: preserve bounded diagnostics, collect, and restart according to policy;
+- missing service task: launch only that task;
+- dead non-keep service task: preserve bounded diagnostics, collect, and restart according to policy;
 - dead keep: freeze evidence without collection or restart;
+- missing or dead `adopt-only` task: report `held` without collection, replacement, or launch;
 - retired and live: stop even when keep is set;
 - retired and dead non-keep: final collection;
 - unrendered or unrunnable: do not launch.
+
+`lifecycle "adopt-only"` is a migration fence, not a restart policy. st2 may adopt an already-live generation
+but may not create a missing generation or reap and replace a dead one. Declare it at agent level for the
+compact task or inside each applicable explicit task. Explicit tasks that omit it independently default to
+`service`; they do not inherit the compact-task policy. Deliberately restore `service` (or remove the field)
+to authorize normal launch/replacement. `retired #true` is the separate teardown authority and takes
+precedence.
 
 `role` has no branch in lifecycle behavior. `supervisor` is used for `ST_SUPERVISOR` and best-effort crash-loop
 routing. New exact Codex launches require verified installed hooks and workspace pretrust; already live/adopted
@@ -267,7 +289,7 @@ agent "<identity>" {
     ST_AGENT "<host>.<identity>"
   }
 
-  command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions '<boot prompt>'"#
+  argv "claude" "--model" "claude-sonnet-5" "--effort" "medium" "--permission-mode" "bypassPermissions" "<boot prompt>"
   ding
 
   render {
@@ -334,7 +356,7 @@ agent "<identity>" {
     ST_AGENT "<host>.<identity>"
   }
 
-  command #"exec codex --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust '<boot prompt>'"#
+  argv "codex" "--model" "gpt-5.6-sol" "-c" "model_reasoning_effort=\"medium\"" "--dangerously-bypass-approvals-and-sandbox" "--dangerously-bypass-hook-trust" "<boot prompt>"
   ding
 
   render {
@@ -409,7 +431,7 @@ native DING wakeups. Structured exceptions are in `evidence/harness-exclusions.t
 At `agents/example/worker/agent.kdl`, path-derived identity and host make this the smallest valid service:
 
 ```kdl
-agent { command "true" }
+agent { argv "true" }
 ```
 
 At the pinned source it validates as one agent with zero errors and warnings. Production declarations should
@@ -421,7 +443,7 @@ example, create every `$CATALOG`-rooted workspace it names.
 
 ## Free authoring gate
 
-These commands parse and materialize without starting a model seat:
+These commands parse and materialize without starting a model agent:
 
 ```sh
 st2 validate --catalog "$CATALOG" --host <host> --strict
@@ -432,8 +454,17 @@ Inspect the declaration, every referenced template, and every workspace destinat
 materialization command. Materialization is byte-idempotent and does not imply hook installation. Starting
 the network is a separate, explicitly authorized action.
 
-For source `9887b28`, the accepted Linux executable has SHA256
-`d49d44fd4f3f6f655455c212353a469fefa956082bedf22163deb767d8a36a0d`; its published archive has SHA256
-`32ee103bd17ccb3e155ac63d816a3906c2470a3c98e3cc04b56e5a67138b9927`. `bin/check-corpus.sh` verifies
-the variable-age version contract, exact installed binary, embedded full source commit, strict semantic
-validation, fixture resets, and the rest of the model-free corpus gate before an eval may run.
+For source `c6846f6239329f0803142afc06c15a07b93937c1`, the accepted artifact is the immutable Nix package:
+
+- source `flake.lock` byte SHA256
+  `aa547f85b21a8a8787adaa9f2a3ad37d55246d355248388e2ec38bd85a830141`;
+- derivation `/nix/store/nrhfzsarya6ny7wdmy64i9vwgax965a8-st2-0.1.0.drv`;
+- output `/nix/store/z4wj1y20wq00n02gpknnz45fdi2kyc7h-st2-0.1.0`, NAR
+  `sha256-w3OSHKt96U0aWMzW2FHom6Ii1NvikdXqmJ6wJ1xGJNA=` (5,147,208 bytes);
+- version prefix `st2 0.1.0+c6846f6` and packaged executable SHA256
+  `25276f30a9cfb287e1a9f72318fada2936402343e958160d46a0a7270ab2db2b`.
+
+`bin/check-st2-package-provenance.sh` verifies the whole chain and selects that exact binary rather than an
+ambient `st2`. Its mutation gate rejects a same-version substitute. `bin/check-st2-pin-consistency.sh` keeps
+this active spec, the README, and executable preflight aligned. `bin/check-corpus.sh` runs semantic validation
+and every model-free gate with the pinned package before an eval may run.

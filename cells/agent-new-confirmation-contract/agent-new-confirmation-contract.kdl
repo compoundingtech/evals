@@ -1,0 +1,42 @@
+// Safe pre-threshold DQ1 fallback: explicit human confirmation is commit authority.
+eval {
+  copy "./fixture"
+  max-timeout "30s"
+
+  run "confirmed" {
+    command "bash ./apply-confirmation.sh confirm ./out/confirmed"
+  }
+  run "pending" {
+    command "bash ./apply-confirmation.sh pending ./out/pending"
+  }
+  run "rejected" {
+    command "bash ./apply-confirmation.sh reject ./out/rejected"
+  }
+  run "eof" {
+    command "bash ./apply-confirmation.sh eof ./out/eof"
+  }
+  run "clean-detach" {
+    command "bash ./apply-confirmation.sh clean-detach ./out/clean-detach"
+  }
+  run "external-sigint" {
+    command "bash ./apply-confirmation.sh external-sigint ./out/external-sigint"
+  }
+  run "terminal-ctrl-c" {
+    command "bash ./apply-confirmation.sh terminal-ctrl-c ./out/terminal-ctrl-c"
+  }
+
+  judges {
+    judge "CONFIRM — only explicit confirmation publishes the exact staged final bundle" {
+      exec "bash ./judges/grade.sh confirmed"
+    }
+    judge "PENDING — a valid intent and rendered summary alone publish nothing" {
+      exec "bash ./judges/grade.sh pending"
+    }
+    judge "CANCEL — reject, EOF, clean detach, and external SIGINT retire without publication" {
+      exec "bash ./judges/grade.sh cancelled"
+    }
+    judge "NEGATIVE CONTROLS — terminal Ctrl-C stays forwarded; missing confirmation, tombstone, and false cancellation fail" {
+      exec "bash ./judges/mutation-check.sh"
+    }
+  }
+}

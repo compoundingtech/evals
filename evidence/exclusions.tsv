@@ -2,4 +2,4 @@ cell	reason
 clean-compose	retired composition-overlay discriminator
 compose-config-load	retired composition/config-loader discriminator
 compose-global-skill	retired composition/global-skill discriminator
-team-standup	retired runtime seat-generation discriminator
+team-standup	retired runtime agent-generation discriminator

@@ -1,0 +1,39 @@
+host "evalhost"
+
+eval {
+  copy "./fixture"
+  run "prepare-interviewer-worktree" {
+    command "bash ./prepare-interviewer-worktree.sh"
+  }
+  canonical-agents
+  message {
+    from "requester"
+    to "evalhost.probe"
+    content "./task.md"
+  }
+  max-timeout "30s"
+
+  judges {
+    judge "CANONICAL ROOTS — the shell agent receives only the eval-owned catalog, bus, and PTY roots" {
+      exec "test -f $CATALOG/probe/roots-ok"
+    }
+    judge "CANONICAL KICKOFF — the request arrives in the admitted Agent Spec inbox before reply" {
+      exec "test -f $CATALOG/probe/kickoff-seen"
+    }
+    judge "STRICT MATERIALIZATION — canonical persona and bus overlays materialize into a clean Git worktree" {
+      exec #"test -s "$CATALOG/interviewer/.st2/PERSONA.md" && test -s "$CATALOG/interviewer/.st2/bus.md" && grep -Fxq ".st2/" "$CATALOG/interviewer/.git/info/exclude" && test -z "$(git -C "$CATALOG/interviewer" status --porcelain=v1)""#
+    }
+    judge "PATH-INDEPENDENT ROUTING — the explicit local identity owns its declaration-parent inbox" {
+      exec #"test -d "$CATALOG/organization/.managed/arbitrary/declaration/resources/inbox""#
+    }
+    judge "GENERIC TASK VECTOR — custom PTY and exec task IDs were both admitted and launched" {
+      exec #"test -s "$CATALOG/logs/canonical-probe-work.log" && test -s "$CATALOG/probe/guard.pid" && kill -0 "$(cat "$CATALOG/probe/guard.pid")""#
+    }
+    judge "REMOTE PROJECTION — a valid remote-host declaration remains inert" {
+      exec #"test ! -e "$CATALOG/REMOTE-SPAWNED""#
+    }
+    judge "MODEL FREE — neither admitted declaration contains a provider, account, or Axe launch" {
+      exec #"! grep -ERq '(^|[^[:alnum:]_-])(axe|claude|codex|opencode|pi)([^[:alnum:]_-]|$)|--account' "$CATALOG/organization" "$CATALOG/fleet""#
+    }
+  }
+}

@@ -1,30 +1,15 @@
 #!/usr/bin/env bash
-# Complete free preflight for the current overnight corpus. Never starts a model seat.
+# Complete free preflight for the current overnight corpus. Never starts a model agent.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
-expected_source="9887b28"
-expected_source_full="9887b2842222def0838c2cd82e6c24c218f7efa6"
-expected_binary_sha256="d49d44fd4f3f6f655455c212353a469fefa956082bedf22163deb767d8a36a0d"
-expected_version_regex='^st2 0\.1\.0 — running from local source \(9887b28, .+ ago\)$'
-st2_path="$(command -v st2)"
-actual_version="$(st2 --version)"
-[[ "$actual_version" =~ $expected_version_regex ]] || {
-  echo "FAIL: expected st2 0.1.0 from pinned source $expected_source, found $actual_version" >&2
-  exit 1
-}
-actual_binary_sha256="$(sha256sum "$st2_path" | awk '{ print $1 }')"
-[ "$actual_binary_sha256" = "$expected_binary_sha256" ] || {
-  echo "FAIL: expected st2 binary sha256 $expected_binary_sha256, found $actual_binary_sha256 at $st2_path" >&2
-  exit 1
-}
-LC_ALL=C grep -aFq "$expected_source_full" "$st2_path" || {
-  echo "FAIL: st2 binary at $st2_path does not embed full pinned source $expected_source_full" >&2
-  exit 1
-}
-echo "PASS: pinned runner source $expected_source ($actual_version; sha256 $actual_binary_sha256)"
+source bin/st2-pin.sh
+bin/check-st2-pin-consistency.sh
+bin/check-st2-package-provenance.sh
+bin/check-st2-package-provenance-mutations.sh
+export PATH="$ST2_OUTPUT_PATH/bin:$PATH"
 
 mapfile -d '' shell_files < <(
   find bin cells -type f -name '*.sh' -not -path '*/_git/*' -print0 | sort -z
@@ -33,11 +18,29 @@ bash -n "${shell_files[@]}"
 echo "PASS: ${#shell_files[@]} shell files parse"
 
 bin/check-preflight-safety.sh
+bin/check-agent-new-behavior-cases.sh
+bin/check-agent-new-renderer-security.sh
 bin/check-model-policy.sh
 bin/check-model-policy-mutations.sh
+bin/check-canonical-agent-template-mutations.sh
 bin/check-run-history.sh
+attempt_baseline="${EVALS_EVIDENCE_BASELINE_REF:-}"
+if [ -z "$attempt_baseline" ] && git rev-parse --verify origin/main^{commit} >/dev/null 2>&1; then
+  candidate_baseline="$(git merge-base HEAD origin/main)"
+  current_commit="$(git rev-parse HEAD)"
+  if [ "$candidate_baseline" != "$current_commit" ] &&
+    git cat-file -e "$candidate_baseline:evidence/agent-new-interview-attempts.tsv" 2>/dev/null; then
+    attempt_baseline="$candidate_baseline"
+  fi
+fi
+if [ -n "$attempt_baseline" ]; then
+  bin/check-agent-new-interview-attempts.sh --baseline "$attempt_baseline"
+else
+  bin/check-agent-new-interview-attempts.sh
+fi
+bin/check-agent-new-interview-attempts-mutations.sh
 bin/check-retired-surfaces.sh
-bin/model-seat-inventory.sh >/dev/null
+bin/model-agent-inventory.sh >/dev/null
 bin/check-event-first.sh
 bin/check-kdl-parse.sh
 bin/check-st2-semantic.sh

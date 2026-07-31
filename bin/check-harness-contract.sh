@@ -6,14 +6,19 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
 selected="all"
+selected_cell=""
 if [ "$#" -eq 2 ] && [ "$1" = "--harness" ]; then
   selected="$2"
   case "$selected" in
     Claude|Codex) ;;
     *) echo "usage: bin/check-harness-contract.sh [--harness Claude|Codex]" >&2; exit 2 ;;
   esac
+elif [ "$#" -eq 2 ] && [ "$1" = "--cell" ]; then
+  selected_cell="$2"
+  [ -d "cells/$selected_cell" ] ||
+    { echo "FAIL: unknown cell $selected_cell" >&2; exit 2; }
 elif [ "$#" -ne 0 ]; then
-  echo "usage: bin/check-harness-contract.sh [--harness Claude|Codex]" >&2
+  echo "usage: bin/check-harness-contract.sh [--harness Claude|Codex] | [--cell CELL]" >&2
   exit 2
 fi
 
@@ -25,7 +30,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-bin/model-seat-inventory.sh --no-header > "$inventory"
+bin/model-agent-inventory.sh --no-header > "$inventory"
 
 hydrate_gitdirs() {
   local root="$1" gitdir target
@@ -45,12 +50,20 @@ hydrate_gitdirs() {
 
 prepare_cell() {
   local cell="$1" root="$2" fixture="cells/$cell/fixture" script
+  case "$cell" in
+    agent-new-interview-hard-constraint|agent-new-interview-investigation|agent-new-interview-small-fix)
+      fixture="cells/agent-new-interview/fixture"
+      ;;
+  esac
   [ -d "$fixture" ] || {
     echo "FAIL: model-backed cell $cell has no fixture" >&2
     return 1
   }
   cp -a "$fixture"/. "$root"/
   case "$cell" in
+    agent-new-interview|agent-new-interview-hard-constraint|agent-new-interview-investigation|agent-new-interview-small-fix)
+      script="$root/prepare-interviewer-worktree.sh"
+      ;;
     signal-rename|signal-rename-codex)
       script="$root/materialize.sh"
       ;;
@@ -73,13 +86,20 @@ prepare_cell() {
     echo "FAIL: $cell materializer contains a provider/reconcile/network command" >&2
     return 1
   fi
-  CATALOG="$root" bash "$script" >/dev/null
+  if [[ "$cell" == agent-new-interview* ]]; then
+    CATALOG="$root" bash "$script" "$root/interviewer" >/dev/null
+  else
+    CATALOG="$root" bash "$script" >/dev/null
+  fi
 }
 
 declare -A roots=()
 failed=0
 checked=0
-while IFS=$'\t' read -r cell agent harness workspace st_agent command_line; do
+while IFS=$'\t' read -r cell agent harness workspace st_agent source_kind source_path source_line; do
+  if [ -n "$selected_cell" ] && [ "$cell" != "$selected_cell" ]; then
+    continue
+  fi
   if [ "$selected" != "all" ] && [ "$harness" != "$selected" ]; then
     continue
   fi
@@ -92,7 +112,11 @@ while IFS=$'\t' read -r cell agent harness workspace st_agent command_line; do
     }
   fi
 
-  relative="${workspace#./}"
+  if [[ "$workspace" == "\$CATALOG/"* ]]; then
+    relative="${workspace#\$CATALOG/}"
+  else
+    relative="${workspace#./}"
+  fi
   target="${roots[$cell]}/$relative"
   [ -n "$relative" ] || target="${roots[$cell]}"
   if [ ! -d "$target" ]; then
@@ -101,8 +125,28 @@ while IFS=$'\t' read -r cell agent harness workspace st_agent command_line; do
     continue
   fi
 
-  kdl="cells/$cell/$cell.kdl"
-  command_text="$(sed -n "${command_line}p" "$kdl")"
+  command_text="$(sed -n "${source_line}p" "$source_path")"
+  axe_launch=0
+  if [ "$source_kind" = "canonical-template" ]; then
+    publisher="$(dirname "$source_path")/publish-interviewer.sh"
+    bin/check-canonical-agent-template.sh "$source_path" "$publisher" >/dev/null || {
+      failed=1
+      continue
+    }
+    [ -s "$(dirname "$source_path")/_templates/bus.st2.md" ] ||
+      { echo "FAIL: $cell/$agent canonical bus overlay source is missing" >&2; failed=1; }
+    git -C "$target" rev-parse --is-inside-work-tree | grep -Fxq true ||
+      { echo "FAIL: $cell/$agent canonical workspace is not a Git worktree" >&2; failed=1; }
+    axe_launch=1
+  elif grep -Fq 'exec axe agent launch ' <<< "$command_text"; then
+    axe_launch=1
+    grep -Fq -- '--mode managed-unattended' <<< "$command_text" ||
+      { echo "FAIL: $cell/$agent Axe launch omits managed-unattended mode" >&2; failed=1; }
+    grep -Fq -- '--boot managed-v1' <<< "$command_text" ||
+      { echo "FAIL: $cell/$agent Axe launch omits managed-v1 boot contract" >&2; failed=1; }
+    ! grep -Fq -- '--account ' <<< "$command_text" ||
+      { echo "FAIL: $cell/$agent durably pins an account instead of using Axe selection" >&2; failed=1; }
+  fi
   if [ "$harness" = "Claude" ]; then
     [ -s "$target/CLAUDE.md" ] ||
       { echo "FAIL: $cell/$agent has no non-empty CLAUDE.md" >&2; failed=1; continue; }
@@ -112,8 +156,10 @@ while IFS=$'\t' read -r cell agent harness workspace st_agent command_line; do
       { echo "FAIL: $cell/$agent has no non-empty PERSONA.md" >&2; failed=1; }
     cmp -s harness/claude-settings.local.json "$target/.claude/settings.local.json" ||
       { echo "FAIL: $cell/$agent does not materialize the canonical Claude hooks" >&2; failed=1; }
-    grep -Fq 'Read CLAUDE.md.' <<< "$command_text" ||
-      { echo "FAIL: $cell/$agent launch does not use its Claude loader" >&2; failed=1; }
+    if [ "$axe_launch" -eq 0 ]; then
+      grep -Fq 'Read CLAUDE.md.' <<< "$command_text" ||
+        { echo "FAIL: $cell/$agent launch does not use its Claude loader" >&2; failed=1; }
+    fi
     [ ! -e "$target/.codex/hooks.json" ] ||
       { echo "FAIL: $cell/$agent Claude workspace mixes in Codex hooks" >&2; failed=1; }
   else
@@ -121,10 +167,12 @@ while IFS=$'\t' read -r cell agent harness workspace st_agent command_line; do
       { echo "FAIL: $cell/$agent has no non-empty AGENTS.md" >&2; failed=1; continue; }
     cmp -s harness/codex-hooks.json "$target/.codex/hooks.json" ||
       { echo "FAIL: $cell/$agent does not materialize the canonical Codex hooks" >&2; failed=1; }
-    grep -Fq 'Read AGENTS.md.' <<< "$command_text" ||
-      { echo "FAIL: $cell/$agent launch does not use its Codex loader" >&2; failed=1; }
-    grep -Fq -- '--dangerously-bypass-hook-trust' <<< "$command_text" ||
-      { echo "FAIL: $cell/$agent launch does not trust the declared Codex hooks" >&2; failed=1; }
+    if [ "$axe_launch" -eq 0 ]; then
+      grep -Fq 'Read AGENTS.md.' <<< "$command_text" ||
+        { echo "FAIL: $cell/$agent launch does not use its Codex loader" >&2; failed=1; }
+      grep -Fq -- '--dangerously-bypass-hook-trust' <<< "$command_text" ||
+        { echo "FAIL: $cell/$agent launch does not trust the declared Codex hooks" >&2; failed=1; }
+    fi
     [ ! -e "$target/.claude/settings.local.json" ] ||
       { echo "FAIL: $cell/$agent Codex workspace mixes in Claude hooks" >&2; failed=1; }
   fi
@@ -139,7 +187,7 @@ while IFS=$'\t' read -r cell agent harness workspace st_agent command_line; do
 done < "$inventory"
 
 [ "$checked" -gt 0 ] || {
-  echo "FAIL: no $selected model seats were checked" >&2
+  echo "FAIL: no $selected model agents were checked" >&2
   exit 1
 }
 
@@ -166,7 +214,7 @@ grep -Fxq $'docs\tjudge:cold-reader\tone-shot offline Claude print grader; no bu
   }
 
 if [ "$failed" -eq 0 ]; then
-  printf 'PASS: %d %s model seats materialize and use the canonical harness overlay and hooks\n' \
+  printf 'PASS: %d %s model agents materialize and use the canonical harness overlay and hooks\n' \
     "$checked" "$selected"
   printf 'PASS: %d derived model-free cells have explicit harness-hook exclusions\n' \
     "${#expected[@]}"

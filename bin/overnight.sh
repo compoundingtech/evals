@@ -128,16 +128,16 @@ fi
 
 requires_claude=0
 requires_codex=0
-while IFS=$'\t' read -r _cell _harness models _effort _seats _cost _timeout _judges; do
+while IFS=$'\t' read -r _cell _harness models _effort _agents _cost _timeout _judges; do
   [[ "$models" != *claude-sonnet-5* ]] || requires_claude=1
   [[ "$models" != *gpt-5.6-sol* ]] || requires_codex=1
 done < "$inventory"
 
 printf '%-30s %-10s %-35s %-7s %-5s %-8s %s\n' \
-  CELL HARNESS MODEL EFFORT SEATS COST TIMEOUT
-while IFS=$'\t' read -r cell harness models effort seats cost timeout _judges; do
+  CELL HARNESS MODEL EFFORT AGENTS COST TIMEOUT
+while IFS=$'\t' read -r cell harness models effort agents cost timeout _judges; do
   printf '%-30s %-10s %-35s %-7s %-5s %-8s %s\n' \
-    "$cell" "$harness" "$models" "$effort" "$seats" "$cost" "$timeout"
+    "$cell" "$harness" "$models" "$effort" "$agents" "$cost" "$timeout"
 done < "$inventory"
 
 cells="$(wc -l < "$inventory" | tr -d ' ')"
@@ -179,7 +179,7 @@ fi
 }
 
 echo
-echo "== free preflight (no model seats) =="
+echo "== free preflight (no model agents) =="
 bin/check-corpus.sh
 
 if [ "$requires_claude" -eq 1 ]; then
@@ -281,7 +281,7 @@ cleanup_timed_out_catalog() {
   fi
 }
 
-while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _judges; do
+while IFS=$'\t' read -r cell harness models effort agents cost declared_timeout _judges; do
   hash="$(cell_hash "$cell")"
   receipt="$state_dir/receipts/$cell.env"
   if [ -f "$receipt" ] &&
@@ -295,8 +295,8 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
   stamp="$(date -u +%Y%m%dT%H%M%SZ)"
   log="$state_dir/logs/$cell.$stamp.log"
   watchdog_seconds=$(($(duration_seconds "$declared_timeout") + 180))
-  printf '\n== %s: %s, %s, %s seat(s), %s cost, timeout %s (+180s watchdog) ==\n' \
-    "$cell" "$harness" "$models" "$seats" "$cost" "$declared_timeout"
+  printf '\n== %s: %s, %s, %s agent(s), %s cost, timeout %s (+180s watchdog) ==\n' \
+    "$cell" "$harness" "$models" "$agents" "$cost" "$declared_timeout"
 
   setsid stdbuf -oL -eL st2 eval "./cells/$cell/" --keep > "$log" 2>&1 &
   eval_pid=$!
@@ -404,7 +404,7 @@ while IFS=$'\t' read -r cell harness models effort seats cost declared_timeout _
     "harness=$harness" \
     "models=$models" \
     "effort=$effort" \
-    "model_seats=$seats" \
+    "model_agents=$agents" \
     "cost_band=$cost" \
     "declared_timeout=$declared_timeout" \
     "hard_usage_warning=$hard_usage_seen" \

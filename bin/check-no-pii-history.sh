@@ -2,6 +2,9 @@
 # Mutation-check check-no-pii.sh against a path committed and then deleted from a published _git fixture.
 set -euo pipefail
 
+export GIT_CONFIG_GLOBAL=/dev/null
+export GIT_CONFIG_NOSYSTEM=1
+
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 checker="${1:-$repo_root/bin/check-no-pii.sh}"
 scratch="$(mktemp -d)"

@@ -7,6 +7,10 @@
 # integration resolve with ZERO node_modules) but commits only its lane. Clones carry absolute origin URLs, so
 # this must run at eval time (a static fixture can't).
 set -euo pipefail
+# Keep synthetic fixture Git operations independent of the invoking agent's
+# identity, hooks, and system/user configuration.
+export GIT_CONFIG_GLOBAL=/dev/null
+export GIT_CONFIG_NOSYSTEM=1
 SB="${CATALOG:?CATALOG must be set — st2 eval provides it to run steps}"
 cd "$SB"
 GRAPH="$SB/seed-graph"           # copied in from the fixture

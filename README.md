@@ -81,7 +81,7 @@ next paid cell to start.
 ## Run one cell
 
 `st2 eval` creates a hermetic temporary catalog, copies the fixture, boots declared agents and model judges,
-delivers the kickoff, waits for completion or the cell timeout, tears seats down, and runs the held-out judges:
+delivers the kickoff, waits for completion or the cell timeout, tears agents down, and runs the held-out judges:
 
 ```sh
 st2 eval ./cells/ghost-bug/
@@ -95,10 +95,16 @@ SCORE: N PASS / 0 FAIL / K gating judges
 VERDICT: PASS
 ```
 
-Requirements are `st2 0.1.0` from source
-[`9887b28`](https://github.com/compoundingtech/st2/commit/9887b2842222def0838c2cd82e6c24c218f7efa6),
-`pty`, Bash, Git, `jq`, Rust/Cargo for the pinned KDL parser gate, and Node for JavaScript fixtures. A paid cell
-also needs every harness named by its dry-run row.
+Requirements are the immutable `st2 0.1.0+c6846f6` Nix package for source
+[`c6846f6239329f0803142afc06c15a07b93937c1`](https://github.com/compoundingtech/st2/commit/c6846f6239329f0803142afc06c15a07b93937c1):
+source `flake.lock` byte SHA256
+`aa547f85b21a8a8787adaa9f2a3ad37d55246d355248388e2ec38bd85a830141`, output
+`/nix/store/z4wj1y20wq00n02gpknnz45fdi2kyc7h-st2-0.1.0`, NAR
+`sha256-w3OSHKt96U0aWMzW2FHom6Ii1NvikdXqmJ6wJ1xGJNA=`, and executable SHA256
+`25276f30a9cfb287e1a9f72318fada2936402343e958160d46a0a7270ab2db2b`.
+The preflight ignores ambient `st2` selection and verifies this full provenance chain before using the
+packaged binary. It also requires Nix, `pty`, Bash, Git, `jq`, Rust/Cargo for the pinned KDL parser gate, and
+Node for JavaScript fixtures. A paid cell also needs every harness named by its dry-run row.
 
 ## Cell layout
 

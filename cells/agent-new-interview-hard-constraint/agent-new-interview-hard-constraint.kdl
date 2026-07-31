@@ -1,0 +1,31 @@
+eval {
+  copy "../agent-new-interview/fixture"
+  run "prepare-interviewer-worktree" {
+    command "bash ./prepare-interviewer-worktree.sh"
+  }
+  run "publish-canonical-interviewer" {
+    command "bash ./publish-interviewer.sh hard-constraint"
+  }
+  canonical-agents
+  message {
+    from "requester"
+    to "evalhost.global.coding-agents.session-creation.interview-eval"
+    content "./cases/hard-constraint/task.md"
+  }
+  max-timeout "300s"
+
+  judges {
+    judge "STRUCTURE — every explicit trajectory and supervisor constraint is exact" {
+      exec "bash ../agent-new-interview/judges/grade-case.sh hard-constraint structural"
+    }
+    judge "SEMANTICS — review scope, hierarchy, and reference match held-out expectations" {
+      exec "bash ../agent-new-interview/judges/grade-case.sh hard-constraint semantic"
+    }
+    judge "BUNDLE — deterministic lowering preserves the constrained trajectory" {
+      exec "bash ../agent-new-interview/judges/grade-case.sh hard-constraint bundle && bash ../agent-new-interview/judges/grade-case.sh hard-constraint inbox"
+    }
+    judge "BOUNDARY — no model-authored KDL, provider argv, or account pin escapes" {
+      exec "bash ../agent-new-interview/judges/grade-case.sh hard-constraint boundary"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+eval {
+  copy "../agent-new-interview/fixture"
+  run "prepare-interviewer-worktree" {
+    command "bash ./prepare-interviewer-worktree.sh"
+  }
+  run "publish-canonical-interviewer" {
+    command "bash ./publish-interviewer.sh small-fix"
+  }
+  canonical-agents
+  message {
+    from "requester"
+    to "evalhost.global.coding-agents.session-creation.interview-eval"
+    content "./cases/small-fix/task.md"
+  }
+  max-timeout "300s"
+
+  judges {
+    judge "STRUCTURE — output is closed, account-neutral, and preserves every hard constraint" {
+      exec "bash ../agent-new-interview/judges/grade-case.sh small-fix structural"
+    }
+    judge "SEMANTICS — the small fix receives the held-out identity, goal, and trajectory" {
+      exec "bash ../agent-new-interview/judges/grade-case.sh small-fix semantic"
+    }
+    judge "BUNDLE — deterministic lowering owns canonical KDL and initial context" {
+      exec "bash ../agent-new-interview/judges/grade-case.sh small-fix bundle && bash ../agent-new-interview/judges/grade-case.sh small-fix inbox"
+    }
+    judge "BOUNDARY — no model-authored KDL, provider argv, or account pin escapes" {
+      exec "bash ../agent-new-interview/judges/grade-case.sh small-fix boundary"
+    }
+  }
+}

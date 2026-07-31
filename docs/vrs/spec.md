@@ -67,6 +67,12 @@ and continues or stops.
 - **R10:** A proposed capability begins as an executable scenario. Accepted
   evidence updates `AGENT-SPEC.md`; the prose links back to maintained cells.
   A speculative claim cannot become normative merely by editing the spec.
+- The model-free `agent-presentation-contract` and
+  `agent-presentation-continuity` cells prove the stable-identity/presentation
+  split, constrained authoring, exact-ID routing, atomic PTY projection,
+  no-restart reconciliation, durable-state continuity, and lifecycle controls.
+  Their accepted evidence is extracted into the stable identity and
+  presentation section of `AGENT-SPEC.md`.
 - Harness differences are recorded when the same contract needs different
   Claude and Codex mechanisms. They do not silently change the contract.
 - **R11:** Adding a scenario does not require a custom runner path. Its

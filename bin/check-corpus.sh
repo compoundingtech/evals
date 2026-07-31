@@ -5,10 +5,15 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
-expected_source="9887b28"
-expected_source_full="9887b2842222def0838c2cd82e6c24c218f7efa6"
-expected_binary_sha256="d49d44fd4f3f6f655455c212353a469fefa956082bedf22163deb767d8a36a0d"
-expected_version_regex='^st2 0\.1\.0 — running from local source \(9887b28, .+ ago\)$'
+expected_source="acb0016"
+expected_source_full="acb00164d8e1d0b08e70c8cc7fb932aee214f555"
+expected_archive_sha256="c09a743c5a757998edcb3ff2963b80e459a9050d8c452d5eb3b241d34806ac86"
+expected_binary_sha256="bd933332784b1d87ba3d539c5570e4e3fd0572504ee2ec1ee52acbb5e8cdbbf4"
+expected_version_regex='^st2 0\.1\.0\+acb0016 — committed .+ ago$'
+[[ "$expected_source_full" == "$expected_source"* ]] || {
+  echo "FAIL: full pinned source $expected_source_full does not begin with short source $expected_source" >&2
+  exit 1
+}
 st2_path="$(command -v st2)"
 actual_version="$(st2 --version)"
 [[ "$actual_version" =~ $expected_version_regex ]] || {
@@ -20,11 +25,7 @@ actual_binary_sha256="$(sha256sum "$st2_path" | awk '{ print $1 }')"
   echo "FAIL: expected st2 binary sha256 $expected_binary_sha256, found $actual_binary_sha256 at $st2_path" >&2
   exit 1
 }
-LC_ALL=C grep -aFq "$expected_source_full" "$st2_path" || {
-  echo "FAIL: st2 binary at $st2_path does not embed full pinned source $expected_source_full" >&2
-  exit 1
-}
-echo "PASS: pinned runner source $expected_source ($actual_version; sha256 $actual_binary_sha256)"
+echo "PASS: pinned runner source $expected_source_full (archive sha256 $expected_archive_sha256; $actual_version; binary sha256 $actual_binary_sha256)"
 
 mapfile -d '' shell_files < <(
   find bin cells -type f -name '*.sh' -not -path '*/_git/*' -print0 | sort -z

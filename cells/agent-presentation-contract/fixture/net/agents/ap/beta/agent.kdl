@@ -1,0 +1,12 @@
+agent "beta" {
+  identity "beta"
+  host "ap"
+  role "worker"
+  name "Shared Worker"
+  description "Owns beta acceptance"
+  workspace "$CATALOG/workspace"
+  env {
+    ST_AGENT "ap.beta"
+  }
+  command "exec bash \"$CATALOG/../task.sh\" beta"
+}

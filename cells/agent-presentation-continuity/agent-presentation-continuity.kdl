@@ -1,0 +1,27 @@
+// Additive Agent Spec presentation changes preserve stable identity, runtime generation, and durable state.
+eval {
+  copy "./fixture"
+  max-timeout "90s"
+
+  run "continuity" {
+    command "bash ./continuity.sh"
+  }
+
+  judges {
+    judge "AUTHORITY - Agent Spec presentation ignores the retired sibling name file" {
+      exec "grep -Fqx PRESENTATION-AUTHORITY-GREEN-a128 $RUNS_DIR/continuity.out"
+    }
+    judge "ROSTER - add, change, repeat, and clear project exact presentation fields" {
+      exec "grep -Fqx PRESENTATION-ROSTER-GREEN-a128 $RUNS_DIR/continuity.out"
+    }
+    judge "GENERATION - every presentation-only reconcile preserves PTY id, pid, createdAt, and one session start" {
+      exec "grep -Fqx PRESENTATION-GENERATION-GREEN-a128 $RUNS_DIR/continuity.out"
+    }
+    judge "DURABILITY - inbox, archive, context, decisions, resources, presence, and transcript survive" {
+      exec "grep -Fqx PRESENTATION-DURABILITY-GREEN-a128 $RUNS_DIR/continuity.out"
+    }
+    judge "CLEANUP - explicit retirement leaves no retained PTY state" {
+      exec "grep -Fqx PRESENTATION-CLEANUP-GREEN-a128 $RUNS_DIR/continuity.out"
+    }
+  }
+}

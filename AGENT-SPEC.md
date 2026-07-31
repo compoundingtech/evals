@@ -1,8 +1,8 @@
 # Canonical st2 agent specification
 
 This is the sole agent-authoring specification for this repository. It is pinned to st2
-[`9887b2842222def0838c2cd82e6c24c218f7efa6`](https://github.com/compoundingtech/st2/commit/9887b2842222def0838c2cd82e6c24c218f7efa6)
-(`0.1.0`, source `9887b28`). It documents the hand-authored KDL accepted at that commit. Do not infer
+[`acb00164d8e1d0b08e70c8cc7fb932aee214f555`](https://github.com/compoundingtech/st2/commit/acb00164d8e1d0b08e70c8cc7fb932aee214f555)
+(`0.1.0`, source `acb0016`). It documents the hand-authored KDL accepted at that commit. Do not infer
 additional fields or commands from older corpus fixtures.
 
 st2 runs long-lived `service` agents made of interactive `pty` tasks and terminal-free `exec` tasks.
@@ -38,6 +38,8 @@ owns product work. Shipped declarations must not contain a developer's absolute 
 ```kdl
 agent "<identity>" {
   identity "<identity>"
+  name "<human-facing name>"
+  description "<enduring responsibility>"
   host "<host>"
   role "worker"
   type "service"
@@ -75,6 +77,8 @@ Supported agent children are:
 | Node | Meaning |
 |---|---|
 | `identity "…"` | Overrides the positional/path-derived identity. |
+| `name "…"` | Optional, non-unique human-facing name. It never routes or selects work. |
+| `description "…"` | Optional enduring responsibility boundary. It never grants authority. |
 | `host "…"` | Execution host. The canonical folder path and content should agree. |
 | `role "…"` | Optional metadata with no execution behavior. |
 | `type "service"` | Optional; `service` is the only accepted value and the default. |
@@ -93,6 +97,51 @@ Supported agent children are:
 Canonical declarations normally omit `type`. Unknown non-render children may be ignored; that is not
 extension syntax, and required behavior must never depend on them. `schedule` is explicitly reserved and
 rejected. Unknown render directives are errors.
+
+## Stable identity and presentation
+
+The positional or child `identity` remains the stable automation ID. It alone
+owns bus routing, supervisor edges, task IDs, durable state paths, resources,
+authorization, and lifecycle reconciliation. Existing positional and child
+identity grammar remains valid; roster JSON continues to expose the stable bus
+ID as `identity`.
+
+`name` and `description` are optional presentation metadata. Explicit values
+must be non-empty, trimmed, single-line, and free of control characters. Limits
+are 160 Unicode scalars for `name` and 1,000 for `description`; omission means
+absent. Names need not be unique and are never st2 message, status, resource,
+authorization, or lifecycle aliases. The retired sibling `name` file is not a
+fallback source.
+
+The roster exposes separate nullable `name` and `description` fields. Mutable
+canonical KDL can be edited source-preservingly with:
+
+```console
+st2 rename <stable-id> <name>
+st2 rename <stable-id> --clear
+st2 describe <stable-id> <description>
+st2 describe <stable-id> --clear
+```
+
+An agent may edit itself; a declared supervisor ancestor may edit a descendant;
+an operator with no `ST_AGENT` may edit a selected mutable catalog. Peer edits
+fail. JSON, TOML, and declarations marked `meta { managed-by "nix" }` are
+readable but refuse these live authoring commands. Concurrent commands serialize
+through the catalog lock and preserve both accepted field edits.
+
+Every managed PTY receives the owned tags
+`agent.presentation.schema=1`, `agent.actor.path=<host>.<identity>`, and the
+optional `agent.presentation.description`. Only the primary `agent` PTY maps
+Agent Spec `name` to native `displayName`; secondary PTYs retain their existing
+task-specific display behavior. st2 reconciles this envelope through exact PTY
+IDs with one atomic metadata patch, preserves unrelated tags, clears removed
+owned fields, emits one coherent `metadata_change` event per real transition,
+and emits no event for a no-op. Presentation reconciliation never replaces the
+PTY process or its durable Agent Spec state.
+
+This contract is proved model-free by
+[`agent-presentation-contract`](./cells/agent-presentation-contract/) and
+[`agent-presentation-continuity`](./cells/agent-presentation-continuity/).
 
 The restart defaults are 3 attempts per 60 seconds, no delay, and `mode "delay"`. Durations accept bare
 seconds or `ms`, `s|sec|secs`, `m|min|mins`, `h|hr|hrs`, and `d|day|days`. `mode "delay"` keeps retrying with
@@ -432,8 +481,8 @@ Inspect the declaration, every referenced template, and every workspace destinat
 materialization command. Materialization is byte-idempotent and does not imply hook installation. Starting
 the network is a separate, explicitly authorized action.
 
-For source `9887b28`, the accepted Linux executable has SHA256
-`d49d44fd4f3f6f655455c212353a469fefa956082bedf22163deb767d8a36a0d`; its published archive has SHA256
-`32ee103bd17ccb3e155ac63d816a3906c2470a3c98e3cc04b56e5a67138b9927`. `bin/check-corpus.sh` verifies
-the variable-age version contract, exact installed binary, embedded full source commit, strict semantic
-validation, fixture resets, and the rest of the model-free corpus gate before an eval may run.
+For source `acb00164d8e1d0b08e70c8cc7fb932aee214f555`, the accepted Linux executable has SHA256
+`bd933332784b1d87ba3d539c5570e4e3fd0572504ee2ec1ee52acbb5e8cdbbf4`; its published archive has SHA256
+`c09a743c5a757998edcb3ff2963b80e459a9050d8c452d5eb3b241d34806ac86`. `bin/check-corpus.sh` verifies
+the variable-age version contract with the Nix-stamped short revision, exact installed binary, strict
+semantic validation, fixture resets, and the rest of the model-free corpus gate before an eval may run.

@@ -92,6 +92,7 @@ authoring="$root/authoring"
 mkdir -p \
   "$authoring/agents/ap/root" \
   "$authoring/agents/ap/child" \
+  "$authoring/agents/ap/grandchild" \
   "$authoring/agents/ap/sibling" \
   "$authoring/agents/ap/nix" \
   "$authoring/agents/ap/json" \
@@ -112,6 +113,16 @@ agent "child" {
   host "ap"
   role "fixture"
   supervisor "ap.root"
+  meta { managed-by "catalog" }
+  command "true"
+}
+KDL
+cat >"$authoring/agents/ap/grandchild/agent.kdl" <<'KDL'
+agent "grandchild" {
+  identity "grandchild"
+  host "ap"
+  role "fixture"
+  supervisor "ap.child"
   meta { managed-by "catalog" }
   command "true"
 }
@@ -181,11 +192,19 @@ expect_invalid_presentation rename " leading"
 expect_invalid_presentation rename "trailing "
 expect_invalid_presentation rename $'two\nlines'
 expect_invalid_presentation rename $'control\x01character'
+expect_invalid_presentation describe ""
+expect_invalid_presentation describe " leading"
+expect_invalid_presentation describe "trailing "
+expect_invalid_presentation describe $'two\nlines'
+expect_invalid_presentation describe $'control\x01character'
 env -u ST_AGENT st2 --catalog "$authoring" rename ap.root "Root Operator" --host ap --json >/dev/null
 env -u ST_AGENT st2 --catalog "$authoring" describe ap.root --clear --host ap --json >/dev/null
 
 ST_AGENT=ap.root st2 --catalog "$authoring" describe ap.child "Owned by root" --host ap --json \
   | jq -e '.result == "changed" and .identity == "ap.child" and .field == "description"' >/dev/null
+ST_AGENT=ap.root st2 --catalog "$authoring" describe ap.grandchild "Owned by ancestor" --host ap --json \
+  | jq -e '.result == "changed" and .identity == "ap.grandchild" and .field == "description" and .value == "Owned by ancestor"' >/dev/null
+grep -Fq 'description "Owned by ancestor"' "$authoring/agents/ap/grandchild/agent.kdl"
 ST_AGENT=ap.child st2 --catalog "$authoring" rename ap.child "Child Self" --host ap --json \
   | jq -e '.result == "changed" and .identity == "ap.child" and .field == "name"' >/dev/null
 ST_AGENT=ap.child st2 --catalog "$authoring" rename ap.child "Child Self" --host ap --json \
@@ -233,6 +252,9 @@ done
 
 ST_AGENT=ap.root st2 --catalog "$authoring" describe ap.child --clear --host ap --json \
   | jq -e '.result == "changed" and .value == null' >/dev/null
+env -u ST_AGENT st2 --catalog "$authoring" rename ap.root --clear --host ap --json \
+  | jq -e '. == {result:"changed",identity:"ap.root",field:"name",value:null,retired:false}' >/dev/null
+! grep -Fq 'name "' "$authoring/agents/ap/root/agent.kdl"
 grep -Fqx '// preserve-root-comment-b128' "$authoring/agents/ap/root/agent.kdl"
 grep -Fq 'keep "unchanged"' "$authoring/agents/ap/root/agent.kdl"
 grep -Fq 'identity "root"' "$authoring/agents/ap/root/agent.kdl"
@@ -324,10 +346,18 @@ display_route_rc=$?
 st2 status "Shared Worker" --set busy --catalog "$net" --host ap --as ap.sender \
   >"$root/display-status.out" 2>"$root/display-status.err"
 display_status_rc=$?
+st2 message send "Owns alpha acceptance" --catalog "$net" --host ap --as ap.sender \
+  --subject DESCRIPTION-MUST-NOT-ROUTE-b128 \
+  >"$root/description-route.out" 2>"$root/description-route.err" <<'MSG'
+DESCRIPTION-MUST-NOT-ROUTE-b128
+MSG
+description_route_rc=$?
 set -e
 test "$display_route_rc" -ne 0
 test "$display_status_rc" -ne 0
+test "$description_route_rc" -ne 0
 ! grep -RFq DISPLAY-MUST-NOT-ROUTE-b128 "$net/agents/ap"
+! grep -RFq DESCRIPTION-MUST-NOT-ROUTE-b128 "$net"
 echo "PRESENTATION-ROUTING-GREEN-b128"
 
 pty_at tag ap.alpha external.keep=untouched >/dev/null

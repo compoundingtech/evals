@@ -1,0 +1,37 @@
+// Focus cold-start tournament candidate. Task facts exist only behind declared resource URIs.
+team "arc" {
+  agent "sup" {
+    workspace "./sup"
+    env { ST_AGENT "arc.sup" }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You cold-started in a hermetic st2 eval. Read AGENTS.md. Drain the inbox once using st2 message, then set status available; presence failure is non-blocking. If there is no work, stand by for DING. After any DING, drain again, act on every message, archive each handled item, coordinate the declared durable work end-to-end, and report completion or blockers over the st2 bus.'"#
+    ding
+  }
+  agent "worker" {
+    workspace "./worker"
+    env { ST_AGENT "arc.worker" }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You cold-started in a hermetic st2 eval. Read AGENTS.md. Drain the inbox once using st2 message, then set status available; presence failure is non-blocking. If there is no work, stand by for DING. After any DING, drain again, act on every message, archive each handled item, execute the declared durable work end-to-end, and report completion or blockers over the st2 bus.'"#
+    ding
+  }
+}
+
+eval {
+  copy "./fixture"
+  message {
+    from "requester"
+    to "arc.sup"
+    content "./task.md"
+  }
+  max-timeout "1200s"
+
+  judges {
+    judge "resource contract is sufficient and followed before mutation" {
+      exec "bash ./judges/contract.sh"
+    }
+    judge "selected issue is completed without code behavior drift" {
+      exec "bash ./judges/outcome.sh"
+    }
+    judge "coordination closes with the selected work URI" {
+      exec "bash ./judges/coordination.sh"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+agent "worker" {
+  host "evalhost"
+  workspace "$CATALOG/shared"
+  command "true"
+
+  render {
+    copy "_templates/worker.md" ".st2/PERSONA.md"
+  }
+}

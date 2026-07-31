@@ -11,8 +11,9 @@ The corpus contains Claude, Codex, mixed-family, and model-free cells.
 
 ## Authoritative surfaces
 
-- [`AGENT-SPEC.md`](AGENT-SPEC.md) is the sole hand-authored st2 agent specification, pinned to the exact
-  stabilization commit.
+- [`AGENT-SPEC.md`](AGENT-SPEC.md) and its maintained acceptance cells are the canonical Agent Spec contract
+  and proof surface. The exact st2 pin names the implementation and version the corpus currently proves; st2
+  does not own the specification.
 - [`CATALOG.md`](CATALOG.md) is the generated current cell inventory, cost view, exclusions, latest accepted
   PASS evidence, and last-run status. [`evidence/run-history.tsv`](evidence/run-history.tsv) is the append-only
   PASS/FAIL ledger with exact commits, model/effort, duration, usage/cost, cleanup, and receipt.
@@ -96,7 +97,7 @@ VERDICT: PASS
 ```
 
 Requirements are `st2 0.1.0` from source
-[`9887b28`](https://github.com/compoundingtech/st2/commit/9887b2842222def0838c2cd82e6c24c218f7efa6),
+[`0fed14b`](https://github.com/compoundingtech/st2/commit/0fed14bb5653b67e1d64f1199e240c4c5c612bf7),
 `pty`, Bash, Git, `jq`, Rust/Cargo for the pinned KDL parser gate, and Node for JavaScript fixtures. A paid cell
 also needs every harness named by its dry-run row.
 
@@ -121,6 +122,42 @@ current bus-connected model agent.
 
 Team-less cells use deterministic `run` steps and judges without a model. Current examples cover native hook
 materialization, network health, catalog/pty isolation, and pty send/peek behavior.
+
+## Native Resource-envelope acceptance
+
+`agent-spec-resource-bindings` is the model-free companion to
+[`compoundingtech/st2#86`](https://github.com/compoundingtech/st2/pull/86). It exercises native catalog
+declarations rather than the tournament's synthetic Resource documents. The cell proves strict envelope
+validation, deterministic `st2 agents --json` inspection, opaque downstream tags, exact URI preservation, and
+adoption of a live task after a Resource-only declaration edit.
+
+Folder-eval Resource projection, Resource resolution, access, readiness, and lifecycle policy are outside this
+cell. The portable Agent Spec envelope does not imply any of them.
+
+## Resource-binding tournament
+
+The nine `assignment-contract-*` cells form one matched tournament over three lifecycle scenarios and three
+Agent Spec treatments. The kickoff and product task are treatment-neutral; only the experimental durable
+declaration and its resolver rules differ.
+
+| Scenario | Direct named resources | Resources plus `focus` | Resources plus `assignment` |
+| --- | --- | --- | --- |
+| Cold discovery | One `work` binding selects the issue | `focus` selects an `intent` binding | An Assignment groups four bindings |
+| Hot retarget | Rebind `work`, then remove it | Rebind focused `intent`, then remove `focus` | Replace the active Assignment, then make it idle |
+| Handoff/restart | Remove A's `work`, then add B's | Remove A's focus, then focus B | Make A idle, then activate B |
+
+The selected contract is the direct-resource treatment: the resource URI is identity, `_tag` discriminates
+the resource type, and the KDL name is the binding's semantic role. An agent has zero or one direct `work`
+binding; zero means idle. A handoff publishes `A -> no holder -> B`. The Focus and Assignment treatments remain
+as controls, not proposed product layers. Required/optional and access semantics are intentionally outside
+this tournament.
+
+Exploratory Codex E2E runs on 2026-07-30 completed the intended behavior in all nine cells. Three original
+graders produced false negatives: abbreviated commit evidence in cold Focus, message cardinality in hot Focus,
+and terminal ordering in resource-only handoff. The checked-in graders accept the preserved correct behavior
+and include model-free regression tests for those oracle boundaries. These pre-publication runs are design
+evidence, not accepted corpus receipts; `CATALOG.md` remains authoritative and will show no accepted PASS until
+a committed cell is rerun.
 
 ## Add or change a cell
 

@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+if [ "$#" -ne 1 ]; then
+  echo "usage: resource-read <URI>" >&2
+  exit 64
+fi
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+URI="$1"
+SPEC="$ROOT/agent-spec.kdl"
+LOG="$ROOT/.oracle/resource-reads.tsv"
+mkdir -p "$ROOT/.oracle"
+: >>"$LOG"
+
+sequence=$(( $(wc -l <"$LOG") + 1 ))
+head=$(git -C "$ROOT/worker" rev-parse HEAD 2>/dev/null || true)
+source_blob=$(git -C "$ROOT/worker" hash-object src/names.js 2>/dev/null || true)
+test_blob=$(git -C "$ROOT/worker" hash-object test/names.test.js 2>/dev/null || true)
+declared=false
+if grep -Fq "uri=\"$URI\"" "$SPEC"; then
+  declared=true
+fi
+printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+  "$sequence" "$URI" "$declared" "$head" "$source_blob" "$test_blob" >>"$LOG"
+
+if [ "$declared" != true ]; then
+  echo "resource URI is not currently declared: $URI" >&2
+  exit 66
+fi
+
+case "$URI" in
+  github-issue://eval/names-normalize) file="$ROOT/resources/phase-a.md" ;;
+  github-issue://eval/names-format-label) file="$ROOT/resources/phase-b.md" ;;
+  worktree://eval/names) file="$ROOT/resources/source.md" ;;
+  ding://eval/ahr.worker) file="$ROOT/resources/delivery.md" ;;
+  github-pr://eval/names-reverse) file="$ROOT/resources/distractor.md" ;;
+  *)
+    echo "no resolver for declared URI: $URI" >&2
+    exit 67
+    ;;
+esac
+
+exec sed -n '1,$p' "$file"

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+if [ "$#" -ne 1 ] || [ "$1" != "phase-2-precommit" ]; then
+  echo "usage: resource-checkpoint phase-2-precommit" >&2
+  exit 64
+fi
+if [ "${ST_AGENT:-}" != "arh.b" ]; then
+  echo "only the successor holder may checkpoint phase 2" >&2
+  exit 66
+fi
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+mkdir -p "$ROOT/.oracle"
+if [ ! -f "$ROOT/.oracle/phase-2-precommit" ]; then
+  next="$ROOT/.oracle/phase-2-precommit.next"
+  {
+    printf 'agent=%s\n' "$ST_AGENT"
+    printf 'epoch=%s\n' "$(date +%s)"
+    printf 'head=%s\n' "$(git -C "$ROOT/repo" rev-parse HEAD)"
+    printf 'status:\n'
+    git -C "$ROOT/repo" status --short --untracked-files=all
+  } >"$next"
+  mv "$next" "$ROOT/.oracle/phase-2-precommit"
+fi
+
+# The first session cannot race from checkpoint to commit. The controller explicitly restarts B, proves the
+# replacement PTY identity, then publishes this release for the successor session.
+until [ -f "$ROOT/.oracle/restart.release" ]; do sleep 1; done

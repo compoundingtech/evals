@@ -1,0 +1,13 @@
+{
+  "identity": "worker",
+  "host": "rb",
+  "workspace": "$CATALOG",
+  "resource": {
+    "work": {
+      "_tag": "github-issue",
+      "uri": "github-issue://example/project/41",
+      "access": "write"
+    }
+  },
+  "command": "true"
+}

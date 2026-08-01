@@ -4,10 +4,11 @@ Contract-first, model-free acceptance matrix for the field-change rules in merge
 [`compoundingtech/st2#102`](https://github.com/compoundingtech/st2/pull/102) at exact merge
 [`e54a04a3ee8af6fe0b0bce4cd961f8188ac90525`](https://github.com/compoundingtech/st2/commit/e54a04a3ee8af6fe0b0bce4cd961f8188ac90525).
 
-The cell is intentionally product-red. PR #102 changes documentation, not runtime behavior, and names eight
-implementation gaps. A red case is accepted by the classification judges only when its public-CLI observation
-matches the exact frozen map below; it is never counted as a conformance pass. The run step remains red until
-all contract cases pass and the manifest is deliberately advanced with matching product evidence.
+This eval is expected to fail until st2 implements the documented field-change rules. PR #102 changes
+documentation, not runtime behavior, and names eight implementation gaps. The classification judges accept a
+known failure only when its public CLI result matches the exact map below. They never count a known failure as
+a conformance pass. The run step continues to fail until all contract cases pass and matching product evidence
+updates the manifest.
 
 **Capabilities required:** `st2,pty,jq,awk,grep,sed,coreutils`. No model and no provider. Every catalog, workspace, exec state,
 message, PTY root, process, and receipt is created below the eval-owned temporary root.
@@ -37,9 +38,10 @@ conformance evidence.
   result-drift, and residue mutations against the static oracle.
 - The focused eval runs all public-behavior probes, prints one receipt row per closed-set case, cleans every
   exact eval-owned process/session, and exits nonzero while any contract case is red.
-- `bin/check-corpus.sh` remains the model-free repository preflight and does not execute the product-red cell.
+- `bin/check-corpus.sh` remains the model-free repository preflight and does not execute this expected-failure
+  cell.
 
-Run the static oracle and the expected-red product matrix with:
+Run the static oracle and the expected-failure product matrix with:
 
 ```sh
 bash ./cells/agent-spec-field-change-matrix/judges/self-test.sh

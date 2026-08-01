@@ -1,5 +1,5 @@
 // Contract-first, model-free acceptance for the field-change rules proposed by merged st2 PR #102.
-// The run step is intentionally RED while the exact expected G01-G08 product gaps remain.
+// The run step is expected to fail while the exact G01-G08 product gaps remain.
 eval {
   copy "./fixture"
   max-timeout "180s"

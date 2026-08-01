@@ -56,6 +56,33 @@ tracked cell
   selection and transport failure but does not import PTY source modules or
   bypass the packaged launcher.
 
+### Composed runtime cells
+
+```text
+authored Agent Spec environment
+  -> st2 reconciliation and transient scope
+  -> persisted PTY environment policy
+  -> standalone PTY restart
+  -> observation inside the relaunched task
+```
+
+- **R04-R05:** A composed runtime cell declares every participating runtime
+  capability and observes the result beyond the final process boundary. Its
+  negative controls must distinguish which dependency owns each part of the
+  contract rather than merely proving the combined happy path.
+- `managed-agent-color-env` proves that an undeclared `NO_COLOR` remains absent
+  and an explicitly authored value remains present through live adoption,
+  st2-owned replacement, and standalone PTY restart. Its dependency controls
+  distinguish st2's managed-agent launch policy from PTY's persisted restart
+  policy. The cell refuses runtime artifacts whose executable digest differs
+  from its declared dependency receipt and also verifies source versions where
+  the executable exposes them. A real accepted older st2 proves
+  the initial-launch failure, while a labeled PTY argument mutation proves the
+  restart-persistence failure without presenting the mutation as a released
+  artifact. Cleanup retains its failure trap until the PTY registry is empty,
+  every observed process identity has ended, and every captured st2 transient
+  scope is inactive with its exact live-observed cgroup path gone (R07).
+
 ## Current execution
 
 ```text

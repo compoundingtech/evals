@@ -1,0 +1,43 @@
+// Managed agent PTYs get a color-capable default even when the reconciler itself was launched under
+// NO_COLOR. An explicit Agent Spec value remains authoritative across adoption and replacement.
+eval {
+  copy "./fixture"
+  max-timeout "90s"
+
+  run "dependency-mutations" {
+    command "bash ./dependency-mutations.sh"
+  }
+  run "matrix" {
+    command "bash ./matrix.sh"
+  }
+
+  judges {
+    judge "PROVENANCE - the composition uses the declared st2 and PTY artifacts" {
+      exec "grep -Fqx EXACT-RUNTIME-PROVENANCE-GREEN-90c4 $RUNS_DIR/matrix.out"
+    }
+    judge "DEPENDENCIES - controls isolate st2 launch policy from PTY restart persistence" {
+      exec "grep -Fqx OLD-ST2-INITIAL-COLOR-RED-90c4 $RUNS_DIR/dependency-mutations.out && grep -Fqx STRIPPED-PTY-RESTART-COLOR-RED-90c4 $RUNS_DIR/dependency-mutations.out"
+    }
+    judge "DEFAULT - ambient NO_COLOR is removed from the canonical agent PTY" {
+      exec "grep -Fqx AMBIENT-COLOR-DEFAULT-GREEN-90c4 $RUNS_DIR/matrix.out"
+    }
+    judge "EXPLICIT - Agent Spec NO_COLOR remains authoritative" {
+      exec "grep -Fqx EXPLICIT-NO-COLOR-GREEN-90c4 $RUNS_DIR/matrix.out"
+    }
+    judge "SCOPE - both observations run inside real st2 transient scopes" {
+      exec "grep -Fqx SYSTEMD-SCOPE-GREEN-90c4 $RUNS_DIR/matrix.out"
+    }
+    judge "ADOPT - reconciliation retains both live generations without changing their environment" {
+      exec "grep -Fqx LIVE-ADOPTION-GREEN-90c4 $RUNS_DIR/matrix.out"
+    }
+    judge "REPLACE - st2-owned replacement reapplies both environment policies" {
+      exec "grep -Fqx REPLACEMENT-POLICY-GREEN-90c4 $RUNS_DIR/matrix.out"
+    }
+    judge "RESTART - persisted PTY metadata survives an ambient-polluted standalone restart" {
+      exec "grep -Fqx PTY-RESTART-POLICY-GREEN-90c4 $RUNS_DIR/matrix.out"
+    }
+    judge "CLEANUP - no eval-owned PTY, process identity, or transient scope remains" {
+      exec "grep -Fqx COLOR-MATRIX-CLEANUP-GREEN-90c4 $RUNS_DIR/matrix.out"
+    }
+  }
+}

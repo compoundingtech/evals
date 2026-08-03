@@ -252,51 +252,58 @@ conformance claim above. The paired model-free experiment is isolated to
 [`catalog-plan-vs-direct-brief`](cells/catalog-plan-vs-direct-brief/) and runs
 against st2 draft PR
 [#115](https://github.com/compoundingtech/st2/pull/115) at exact current-main source
-`60d48bae5b7ac3a83c8d2c3324b61680bd6404dd`.
+`8a76b6e71355140e5b89cd9313fcfd88c82b5cad`.
 
-The experimental plan surface is pinned to the
-[source sketch revision `5c1d142`](https://gist.github.com/myobie/d5ecfac24cd3965e095a5031cd2e00cb/5c1d1427c0556d95d13890e5c5086cd85b25d994).
-An external plan is a top-level declaration:
+The experiment shape descends from
+[source sketch revision `5c1d142`](https://gist.github.com/myobie/d5ecfac24cd3965e095a5031cd2e00cb/5c1d1427c0556d95d13890e5c5086cd85b25d994);
+the executable discovery and schema authority is the exact PR115 source above.
+An agent discovers a plan only through a childless Resource link:
+
+```kdl
+agent "app-web" {
+  resource "ship-remote-approvals" _tag="plan" uri="file:plans/ship-remote-approvals/plan.kdl"
+}
+```
+
+The positional Resource name is an agent-local role. The referenced
+`plan.kdl`, not the Resource envelope, owns all plan truth:
 
 ```kdl
 plan "ship-remote-approvals" {
   owner "app-web"
-  version "0000" resource="file:versions/0000.md"
-  version "0001" resource="file:versions/0001.md" {
+  version "0000" content="file:versions/0000.md"
+  version "0001" content="file:versions/0001.md" {
     parent "0000"
     why "Browser proof exposed an approval race."
   }
 }
 ```
 
-An agent links it with a source-relative declaration:
+Instead of external Markdown content, a version may keep its complete intent
+inline in the same referenced `plan.kdl`:
 
 ```kdl
-agent "app-web" {
-  plan-ref "file:plans/ship-remote-approvals/plan.kdl"
-}
-```
-
-The equivalent agent-local form derives its owner from the containing explicit
-agent identity:
-
-```kdl
-agent "app-web" {
-  plan "review-follow-up" {
-    version "0000" resource="file:plans/review-follow-up.md"
+plan "review-follow-up" {
+  owner "app-web"
+  version "0000" {
+    intent "Review every unresolved comment and report the exact final head."
   }
 }
 ```
 
 Plan identity is the explicit KDL value, never its directory. External plans
-require one `owner`. Each version requires one source-relative `file:` resource.
-A version may repeat `parent` for multiple declared parents; parents must
-exist, be unique, and form an acyclic graph. A version with parents requires
-one non-empty `why`. The sorted frontier is derived as every version with no
-child, retaining concurrent siblings. `plan-ref` and version resources resolve
-relative to their declaring KDL and must remain inside the selected catalog.
-The experiment stores no content digest or history. It cannot prove that an
-earlier declaration or resource file stayed unchanged.
+require one `owner`. Each version requires exactly one `content="file:..."` or
+one child `intent`; both or neither fail. A version may repeat `parent` for
+multiple declared parents; parents must exist, be unique, and form an acyclic
+graph. A version with parents requires one non-empty `why`. Versions are sorted,
+and the frontier is derived as every version with no child, retaining concurrent
+siblings. Resource URIs resolve relative to the agent KDL, while content URIs
+resolve relative to the referenced `plan.kdl`; both must be relative `file:`
+references to regular files inside the selected catalog. The Resource adds the
+agent to `referencedBy` but owns no plan fields. Legacy `plan-ref`, childful plan
+Resources, and agent-owned inline plan truth are unsupported. The experiment
+stores no content digest or history. It cannot prove that an earlier declaration
+or content file stayed unchanged.
 
 The only supported CLI is read-only:
 

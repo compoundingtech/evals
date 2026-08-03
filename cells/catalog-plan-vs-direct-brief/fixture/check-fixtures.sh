@@ -9,13 +9,15 @@ measurements="$root/measurement-schema.tsv"
 receipts="$root/receipt-schema.tsv"
 blockers="$root/blockers.tsv"
 runner="$root/runner.tsv"
-plan_declaration="$root/arm-a/catalog/plans/receipt-report/plan.kdl"
+plan_declaration="$root/arm-a/catalog/agents/eval/receipt-worker/plans/receipt-report/plan.kdl"
 agent_declaration="$root/arm-a/catalog/agents/eval/receipt-worker/agent.kdl"
-initial_plan_declaration="$root/arm-a/catalog-initial/plans/receipt-report/plan.kdl"
+inline_plan_declaration="$root/arm-a/catalog/agents/eval/receipt-worker/plans/inline-intent/plan.kdl"
+initial_plan_declaration="$root/arm-a/catalog-initial/agents/eval/receipt-worker/plans/receipt-report/plan.kdl"
 initial_agent_declaration="$root/arm-a/catalog-initial/agents/eval/receipt-worker/agent.kdl"
-initial_plan_0000="$root/arm-a/catalog-initial/plans/receipt-report/versions/0000.md"
-plan_0000="$root/arm-a/catalog/plans/receipt-report/versions/0000.md"
-plan_0001="$root/arm-a/catalog/plans/receipt-report/versions/0001.md"
+initial_inline_plan_declaration="$root/arm-a/catalog-initial/agents/eval/receipt-worker/plans/inline-intent/plan.kdl"
+initial_plan_0000="$root/arm-a/catalog-initial/agents/eval/receipt-worker/plans/receipt-report/versions/0000.md"
+plan_0000="$root/arm-a/catalog/agents/eval/receipt-worker/plans/receipt-report/versions/0000.md"
+plan_0001="$root/arm-a/catalog/agents/eval/receipt-worker/plans/receipt-report/versions/0001.md"
 brief_0000="$root/arm-b/inbox/brief-0000.md"
 brief_0001="$root/arm-b/inbox/brief-0001.md"
 
@@ -60,16 +62,16 @@ grep -Fqx $'steering_revision\t0001' "$experiment"
 grep -Fqx $'model_free_result\tno-measured-advantage-for-cold-resume-intent-recovery-or-acceptance-evidence' "$experiment"
 grep -Fqx $'source_gist\thttps://gist.github.com/myobie/d5ecfac24cd3965e095a5031cd2e00cb/5c1d1427c0556d95d13890e5c5086cd85b25d994' "$experiment"
 grep -Fqx $'source_gist_revision\t5c1d1427c0556d95d13890e5c5086cd85b25d994' "$experiment"
-grep -Fqx $'st2_plan_source\t60d48bae5b7ac3a83c8d2c3324b61680bd6404dd' "$experiment"
-grep -Fqx $'st2_plan_binary_sha256\tf3e935ee8e6c38b5ba29f0507b4639fe2212e3764b43e18967f6762a5962e48a' "$experiment"
+grep -Fqx $'st2_plan_source\t8a76b6e71355140e5b89cd9313fcfd88c82b5cad' "$experiment"
+grep -Fqx $'st2_plan_binary_sha256\t214e08874720bc546d4adf7d7977e614237baf7989cc09f6932cd991f497a753' "$experiment"
 grep -Fqx $'live_run_status\tblocked-pending-separate-provider-authorization' "$experiment"
 grep -Fqx $'st2_pr\thttps://github.com/compoundingtech/st2/pull/115' "$runner"
-grep -Fqx $'source_full\t60d48bae5b7ac3a83c8d2c3324b61680bd6404dd' "$runner"
-grep -Fqx $'source_short\t60d48ba' "$runner"
-grep -Fqx $'binary_sha256\tf3e935ee8e6c38b5ba29f0507b4639fe2212e3764b43e18967f6762a5962e48a' "$runner"
+grep -Fqx $'source_full\t8a76b6e71355140e5b89cd9313fcfd88c82b5cad' "$runner"
+grep -Fqx $'source_short\t8a76b6e' "$runner"
+grep -Fqx $'binary_sha256\t214e08874720bc546d4adf7d7977e614237baf7989cc09f6932cd991f497a753' "$runner"
 grep -Fqx $'source_gist_revision\t5c1d1427c0556d95d13890e5c5086cd85b25d994' "$runner"
 grep -Fqx $'runtime_scope\tread-only-validate-list-show-inspect' "$runner"
-grep -Fqx $'hosted_run\thttps://github.com/compoundingtech/st2/actions/runs/30666101129' "$runner"
+grep -Fqx $'hosted_run\thttps://github.com/compoundingtech/st2/actions/runs/30835684680' "$runner"
 grep -Fqx $'hosted_status\tpass' "$runner"
 
 cmp -s "$initial_plan_0000" "$plan_0000"
@@ -93,25 +95,34 @@ awk -F '\t' '
     }
   }
 ' "$arms"
-grep -Fqx $'A\tversioned-catalog-plan\tarm-a/catalog-initial/plans/receipt-report/versions/0000.md\tlocal plan catalog inspected through st2 plan\tarm-a/catalog/plans/receipt-report/versions/0001.md\tevaluator-owned receipt only\tnode,bash,git\t1200\t40000\tarm-neutral-public-plus-held-out\tpublic and held-out tests pass; only src/report.mjs differs from the seed; no dependency or network change' "$arms"
+grep -Fqx $'A\tversioned-catalog-plan\tarm-a/catalog-initial/agents/eval/receipt-worker/plans/receipt-report/versions/0000.md\tlocal plan catalog inspected through st2 plan\tarm-a/catalog/agents/eval/receipt-worker/plans/receipt-report/versions/0001.md\tevaluator-owned receipt only\tnode,bash,git\t1200\t40000\tarm-neutral-public-plus-held-out\tpublic and held-out tests pass; only src/report.mjs differs from the seed; no dependency or network change' "$arms"
 grep -Fqx $'B\tdurable-direct-brief\tarm-b/inbox/brief-0000.md\tlocal st2 message inbox read through st2 message\tarm-b/inbox/brief-0001.md\tevaluator-owned receipt only\tnode,bash,git\t1200\t40000\tarm-neutral-public-plus-held-out\tpublic and held-out tests pass; only src/report.mjs differs from the seed; no dependency or network change' "$arms"
 
 grep -Fqx 'plan "receipt-report" {' "$plan_declaration"
 grep -Fqx '  owner "receipt-worker"' "$plan_declaration"
-grep -Fqx '  version "0000" resource="file:versions/0000.md"' "$plan_declaration"
-grep -Fqx '  version "0001" resource="file:versions/0001.md" {' "$plan_declaration"
+grep -Fqx '  version "0000" content="file:versions/0000.md"' "$plan_declaration"
+grep -Fqx '  version "0001" content="file:versions/0001.md" {' "$plan_declaration"
 grep -Fqx '    parent "0000"' "$plan_declaration"
 grep -Fqx '    why "Human steering tightens input validation without changing scope."' "$plan_declaration"
 grep -Fqx 'plan "receipt-report" {' "$initial_plan_declaration"
 grep -Fqx '  owner "receipt-worker"' "$initial_plan_declaration"
-grep -Fqx '  version "0000" resource="file:versions/0000.md"' "$initial_plan_declaration"
+grep -Fqx '  version "0000" content="file:versions/0000.md"' "$initial_plan_declaration"
 if grep -Fq 'version "0001"' "$initial_plan_declaration"; then
   echo "initial plan snapshot already contains the steering revision" >&2
   exit 1
 fi
 grep -Fqx 'agent "receipt-worker" {' "$agent_declaration"
-grep -Fqx '  plan-ref "file:../../../plans/receipt-report/plan.kdl"' "$agent_declaration"
+grep -Fqx '  resource "receipt-report" _tag="plan" uri="file:plans/receipt-report/plan.kdl"' "$agent_declaration"
+grep -Fqx '  resource "inline-intent" _tag="plan" uri="file:plans/inline-intent/plan.kdl"' "$agent_declaration"
+grep -Fqx 'plan "inline-intent" {' "$inline_plan_declaration"
+grep -Fqx '  owner "receipt-worker"' "$inline_plan_declaration"
+grep -Fqx '    intent "Keep the complete inline intent in plan.kdl."' "$inline_plan_declaration"
+cmp -s "$initial_inline_plan_declaration" "$inline_plan_declaration"
 cmp -s "$initial_agent_declaration" "$agent_declaration"
+if rg -n 'plan-ref|^[[:space:]]+plan[[:space:]]' "$initial_agent_declaration" "$agent_declaration"; then
+  echo "agent declaration still owns plan truth" >&2
+  exit 1
+fi
 
 if (
   cd "$root/task-repo"
@@ -201,11 +212,11 @@ echo "PROVENANCE-GREEN-43af"
 
 test "$(awk -F '\t' 'NR > 1 && $5 == "ready" { count++ } END { print count + 0 }' "$blockers")" -eq 1
 test "$(awk -F '\t' 'NR > 1 && $5 == "blocked" { count++ } END { print count + 0 }' "$blockers")" -eq 1
-grep -Fq '60d48bae5b7ac3a83c8d2c3324b61680bd6404dd' "$blockers"
-grep -Fq 'f3e935ee8e6c38b5ba29f0507b4639fe2212e3764b43e18967f6762a5962e48a' "$blockers"
-grep -Fq 'hosted run 30666101129 green' "$blockers"
+grep -Fq '8a76b6e71355140e5b89cd9313fcfd88c82b5cad' "$blockers"
+grep -Fq '214e08874720bc546d4adf7d7977e614237baf7989cc09f6932cd991f497a753' "$blockers"
+grep -Fq 'hosted run 30835684680 job 91760161352 green' "$blockers"
 grep -Fq 'separate authorization' "$blockers"
-test "$(find "$root/arm-a" -type f -name '*.kdl' | wc -l)" -eq 4
+test "$(find "$root/arm-a" -type f -name '*.kdl' | wc -l)" -eq 6
 echo "PRODUCT-PAIRING-GREEN-43af"
 
 if rg -n --pcre2 \

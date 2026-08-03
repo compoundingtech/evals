@@ -33,22 +33,27 @@ Correctness, coordination traffic, token use, cost, and wall duration remain
 unresolved live-run endpoints. The reference solution establishes a valid task
 and neutral judge; it is not substituted for two agent executions.
 
-Arm A uses the exact external `plan.kdl` and agent `plan-ref` contract from
+Arm A uses the exact Resource-linked external `plan.kdl` contract from
 [st2 draft PR #115](https://github.com/compoundingtech/st2/pull/115) at source
-`60d48bae5b7ac3a83c8d2c3324b61680bd6404dd`, paired to the source gist at
-revision `5c1d1427c0556d95d13890e5c5086cd85b25d994`. The accepted Linux
-artifact SHA256 is
-`f3e935ee8e6c38b5ba29f0507b4639fe2212e3764b43e18967f6762a5962e48a`.
-The fixture exercises only `plan validate`, `list`, `show`, and `inspect`, and
-proves they do not alter the catalog.
+`8a76b6e71355140e5b89cd9313fcfd88c82b5cad`, while retaining the experiment
+shape from source gist revision
+`5c1d1427c0556d95d13890e5c5086cd85b25d994`. A childless Agent Spec Resource
+with `_tag="plan"` supplies only the agent-local role and source-relative file
+link. The referenced `plan.kdl` owns the plan identity, owner, versions, and
+intent truth. The comparison path keeps its external Markdown content, and one
+focused second target proves the supported inline-intent form without changing
+the A/B scenario.
+
+The accepted Linux artifact SHA256 is
+`214e08874720bc546d4adf7d7977e614237baf7989cc09f6932cd991f497a753`;
+hosted Nix run
+[30835684680](https://github.com/compoundingtech/st2/actions/runs/30835684680),
+job `91760161352`, passed. The fixture exercises only `plan validate`, `list`,
+`show`, and `inspect`, and proves they do not alter the catalog. Legacy
+`plan-ref` and agent-owned inline plan truth are not used.
 
 This plan model stores no content digest or history, so it cannot prove that an
-earlier declaration, parent link, or resource file stayed unchanged. The
-correction executable is not byte-identical to predecessor source
-`044964e4e07e3a656ccc1860bfff8517adf72c16`; its binary SHA256 was
-`38a7fe4657e0583c34d13f73a9215e9f388e6cc2b87d6c9b9c70f07a9fce8f81`.
-The correction changes plan terminology only. The test blob and this fixture's
-JSON outputs for all four read-only commands remain byte-identical.
+earlier declaration, parent link, or content file stayed unchanged.
 
 Arm B uses the product's ordinary durable message store rather than a synthetic
 thread sidecar. Neither arm receives a pre-authored acceptance receipt. The

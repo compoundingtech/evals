@@ -35,17 +35,24 @@ find "$catalog" -type f -print0 |
 validate_json="$("$st2_path" plan validate --catalog "$catalog" --json)"
 jq -e '
   .result == "valid" and
-  .plans == 1 and
+  .plans == 2 and
   .errors == 0
 ' <<<"$validate_json" >/dev/null
 echo "PLAN-VALIDATE-GREEN-43af"
 
 list_json="$("$st2_path" plan list --catalog "$catalog" --json)"
 jq -e '
-  length == 1 and
-  .[0].identity == "receipt-report" and
-  .[0].owner == "receipt-worker" and
-  .[0].frontier == ["0001"]
+  length == 2 and
+  .[0] == {
+    "identity": "inline-intent",
+    "owner": "receipt-worker",
+    "frontier": ["0000"]
+  } and
+  .[1] == {
+    "identity": "receipt-report",
+    "owner": "receipt-worker",
+    "frontier": ["0001"]
+  }
 ' <<<"$list_json" >/dev/null
 echo "PLAN-LIST-GREEN-43af"
 
@@ -59,16 +66,16 @@ jq -e '
     "identity": "0000",
     "parents": [],
     "why": null,
-    "resource": "file:versions/0000.md"
+    "content": "file:versions/0000.md"
   } and
   .versions[1] == {
     "identity": "0001",
     "parents": ["0000"],
     "why": "Human steering tightens input validation without changing scope.",
-    "resource": "file:versions/0001.md"
+    "content": "file:versions/0001.md"
   } and
   (has("source") | not) and
-  (.versions[0] | has("resolvedResource") | not)
+  (.versions[0] | has("resolvedContent") | not)
 ' <<<"$show_json" >/dev/null
 echo "PLAN-SHOW-GREEN-43af"
 
@@ -79,10 +86,38 @@ jq -e '
   .sourceKind == "external" and
   .referencedBy == ["receipt-worker"] and
   .frontier == ["0001"] and
-  (.source | endswith("/plans/receipt-report/plan.kdl")) and
-  (.versions[0].resolvedResource | endswith("/plans/receipt-report/versions/0000.md")) and
-  (.versions[1].resolvedResource | endswith("/plans/receipt-report/versions/0001.md"))
+  (.source | endswith("/agents/eval/receipt-worker/plans/receipt-report/plan.kdl")) and
+  (.versions[0].resolvedContent | endswith("/agents/eval/receipt-worker/plans/receipt-report/versions/0000.md")) and
+  (.versions[1].resolvedContent | endswith("/agents/eval/receipt-worker/plans/receipt-report/versions/0001.md"))
 ' <<<"$inspect_json" >/dev/null
+
+inline_show_json="$("$st2_path" plan show inline-intent --catalog "$catalog" --json)"
+jq -e '
+  .identity == "inline-intent" and
+  .owner == "receipt-worker" and
+  .frontier == ["0000"] and
+  .versions == [{
+    "identity": "0000",
+    "parents": [],
+    "why": null,
+    "intent": "Keep the complete inline intent in plan.kdl."
+  }] and
+  (has("source") | not) and
+  (.versions[0] | has("content") | not) and
+  (.versions[0] | has("resolvedContent") | not)
+' <<<"$inline_show_json" >/dev/null
+
+inline_inspect_json="$("$st2_path" plan inspect inline-intent --catalog "$catalog" --json)"
+jq -e '
+  .identity == "inline-intent" and
+  .sourceKind == "external" and
+  .referencedBy == ["receipt-worker"] and
+  (.source | endswith("/agents/eval/receipt-worker/plans/inline-intent/plan.kdl")) and
+  .versions[0].intent == "Keep the complete inline intent in plan.kdl." and
+  (.versions[0] | has("content") | not) and
+  (.versions[0] | has("resolvedContent") | not)
+' <<<"$inline_inspect_json" >/dev/null
+echo "PLAN-TARGET-FORMS-GREEN-43af"
 
 find "$catalog" -type f -print0 |
   LC_ALL=C sort -z |

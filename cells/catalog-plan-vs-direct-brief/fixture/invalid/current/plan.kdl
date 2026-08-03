@@ -1,5 +1,5 @@
 plan "unsupported-current" {
   owner "receipt-worker"
   current "0000"
-  version "0000" resource="file:0000.md"
+  version "0000" content="file:0000.md"
 }

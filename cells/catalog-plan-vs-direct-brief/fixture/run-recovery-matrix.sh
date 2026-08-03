@@ -44,7 +44,7 @@ local_store="$scratch/local"
 session="$scratch/session"
 plan_local="$local_store/plan-catalog"
 direct_bus="$local_store/direct-bus"
-mkdir -p "$remote" "$local_store" "$session"
+mkdir -p "$remote" "$local_store" "$session" "$direct_bus"
 cp -a "$root/arm-a/catalog-initial" "$remote/plan-initial"
 cp -a "$root/arm-a/catalog" "$remote/plan-steered"
 cp -a "$root/arm-b/inbox" "$remote/direct-source"
@@ -73,9 +73,9 @@ jq -e '
   (.versions | length) == 1 and
   .versions[0].identity == "0000"
 ' <<<"$plan_initial_show" >/dev/null
-plan_initial_path="$(jq -r '.versions[0].resolvedResource' <<<"$plan_initial_inspect")"
+plan_initial_path="$(jq -r '.versions[0].resolvedContent' <<<"$plan_initial_inspect")"
 plan_initial_sha="$(hash_file "$plan_initial_path")"
-test "$plan_initial_sha" = "$(hash_file "$root/arm-a/catalog-initial/plans/receipt-report/versions/0000.md")"
+test "$plan_initial_sha" = "$(hash_file "$root/arm-a/catalog-initial/agents/eval/receipt-worker/plans/receipt-report/versions/0000.md")"
 assert_no_acceptance_claim <<<"$plan_initial_show"
 assert_no_acceptance_claim <<<"$plan_initial_inspect"
 
@@ -123,9 +123,9 @@ jq -e '
   .versions[1].identity == "0001" and
   .versions[1].parents == ["0000"]
 ' <<<"$plan_steered_show" >/dev/null
-plan_steered_path="$(jq -r '.versions[] | select(.identity == "0001") | .resolvedResource' <<<"$plan_steered_inspect")"
+plan_steered_path="$(jq -r '.versions[] | select(.identity == "0001") | .resolvedContent' <<<"$plan_steered_inspect")"
 plan_steered_sha="$(hash_file "$plan_steered_path")"
-test "$plan_steered_sha" = "$(hash_file "$root/arm-a/catalog/plans/receipt-report/versions/0001.md")"
+test "$plan_steered_sha" = "$(hash_file "$root/arm-a/catalog/agents/eval/receipt-worker/plans/receipt-report/versions/0001.md")"
 assert_no_acceptance_claim <<<"$plan_steered_show"
 assert_no_acceptance_claim <<<"$plan_steered_inspect"
 

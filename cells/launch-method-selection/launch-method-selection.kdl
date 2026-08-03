@@ -1,0 +1,28 @@
+// Proposal-tracking launch-method selection over isolated synthetic session records.
+// The run step remains red while the proposed Agent Spec grammar is unavailable.
+eval {
+  copy "./fixture"
+  max-timeout "120s"
+
+  run "probe" {
+    command "bash ./probe.sh"
+  }
+
+  judges {
+    judge "COVERAGE - every proposed branch and the legacy positive control has one closed-set case" {
+      exec "bash ./judges/contract.sh coverage $RUNS_DIR/probe.out ./fixture/cases.tsv"
+    }
+    judge "GAPS - every red maps only to a named P01-P06 proposal gap" {
+      exec "bash ./judges/contract.sh gaps $RUNS_DIR/probe.out ./fixture/cases.tsv"
+    }
+    judge "CLASSIFICATION - observations match the frozen proposal-red and legacy-pass map" {
+      exec "bash ./judges/contract.sh classification $RUNS_DIR/probe.out ./fixture/cases.tsv"
+    }
+    judge "HONESTY - expected product reds are never counted as conformance passes" {
+      exec "bash ./judges/contract.sh honesty $RUNS_DIR/probe.out ./fixture/cases.tsv"
+    }
+    judge "CLEANUP - all eval-owned catalogs and processes leave zero live residue" {
+      exec "bash ./judges/contract.sh cleanup $RUNS_DIR/probe.out ./fixture/cases.tsv"
+    }
+  }
+}

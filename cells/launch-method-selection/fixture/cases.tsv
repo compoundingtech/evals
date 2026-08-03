@@ -1,0 +1,6 @@
+case_id	expected	gaps	contract
+explicit-start-new-session	RED	P01	explicit start creates a new synthetic native session while durable work remains intact
+explicit-resume-exact	RED	P01	explicit resume appends only to the declared session and never to a newer neighbor
+unavailable-refuse	RED	P01	an unavailable resume refuses without launching either method or mutating session state
+unavailable-start	RED	P01	an unavailable resume degrades to start only when that fallback is declared
+legacy-single-argv	PASS	-	the legacy single top-level argv form retains its existing launch behavior

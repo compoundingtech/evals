@@ -3,6 +3,7 @@
 .sandbox/
 .personas/
 .eval-runs/
+tmp/
 
 # noise
 .DS_Store

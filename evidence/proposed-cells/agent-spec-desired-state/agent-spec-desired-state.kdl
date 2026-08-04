@@ -14,11 +14,17 @@ eval {
     judge "HEALTH — Doctor accepts the converged suspended declaration" {
       exec "grep -Fqx HEALTH-GREEN-7c31 $RUNS_DIR/matrix.out"
     }
+    judge "KEEP — suspension stops live keep work and retains its dead evidence" {
+      exec "grep -Fqx KEEP-GREEN-7c31 $RUNS_DIR/matrix.out"
+    }
     judge "DURABLE STATE — inbox filename survives suspension" {
       exec "grep -Fqx INBOX-RETAINED-GREEN-7c31 $RUNS_DIR/matrix.out"
     }
     judge "OBSERVABILITY — worker and generated DING expose declaration intent separately from task state" {
       exec "grep -Fqx OBSERVABILITY-GREEN-7c31 $RUNS_DIR/matrix.out"
+    }
+    judge "SOURCE — suspend and resume preserve unrelated declaration bytes" {
+      exec "grep -Fqx SOURCE-PRESERVED-GREEN-7c31 $RUNS_DIR/matrix.out"
     }
     judge "RESUME — worker and DING relaunch through ordinary reconcile" {
       exec "grep -Fqx RESUME-GREEN-7c31 $RUNS_DIR/matrix.out"

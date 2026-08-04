@@ -282,7 +282,8 @@ adopt-only override.
 
 Health checks accept either a live foreign host-lock owner or the default manual/no-lock mode. An explicit
 supervisor requirement makes a missing live lock fail; a stale lock always fails. Active declarations require
-their tasks alive and presence fresh. Suspended declarations require no live tasks or presence; dead
+their tasks alive and presence fresh. Suspended declarations require no live tasks and, unlike active declarations,
+do not require a presence check; dead
 keep-pinned records may remain as intentional evidence, while dead non-keep records are unhealthy. Retired
 declarations require all task records absent. The PTY runtime
 probe closes stdin and is bounded at two seconds; timeout is reported as a failed readable-runtime check, not

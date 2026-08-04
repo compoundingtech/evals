@@ -11,6 +11,24 @@ tasks() {
   st2 tasks --catalog "$net" --host proof --json
 }
 
+proc_start_token() {
+  pid="$1"
+  stat="$(<"/proc/$pid/stat")"
+  suffix="${stat##*) }"
+  read -r -a fields <<<"$suffix"
+  printf '%s\n' "${fields[19]}"
+}
+
+assert_process_gone() {
+  pid="$1"
+  start_token="$2"
+  label="$3"
+  if test -r "/proc/$pid/stat" && test "$(proc_start_token "$pid")" = "$start_token"; then
+    printf '%s process identity remains live: pid=%s start=%s\n' "$label" "$pid" "$start_token" >&2
+    return 1
+  fi
+}
+
 wait_task_state() {
   runtime_id="$1"
   expected="$2"
@@ -44,10 +62,16 @@ trap cleanup EXIT
 st2 up --once --catalog "$net" --host proof >"$root/launch.out"
 grep -Fq 'launched (3)' "$root/launch.out"
 initial="$(tasks)"
+worker_pid="$(jq -r '.tasks[] | select(.runtimeId == "proof.worker") | .runtime.pid' <<<"$initial")"
+ding_pid="$(jq -r '.tasks[] | select(.runtimeId == "proof.worker.ding") | .runtime.pid' <<<"$initial")"
 sibling_pid="$(jq -r '.tasks[] | select(.runtimeId == "proof.sibling") | .runtime.pid' <<<"$initial")"
 sibling_generation="$(jq -r '.tasks[] | select(.runtimeId == "proof.sibling") | .runtime.generationId' <<<"$initial")"
+test "$worker_pid" != null
+test "$ding_pid" != null
 test "$sibling_pid" != null
 test "$sibling_generation" != null
+worker_start_token="$(proc_start_token "$worker_pid")"
+ding_start_token="$(proc_start_token "$ding_pid")"
 
 message="$(st2 message send --catalog "$net" worker --as proof.sibling --host proof \
   --subject retained -m "survive suspension")"
@@ -73,6 +97,8 @@ done
 grep -Fq 'adopted (1): sibling' "$root/suspend-settle.out"
 wait_task_state proof.worker absent
 wait_task_state proof.worker.ding absent
+assert_process_gone "$worker_pid" "$worker_start_token" proof.worker
+assert_process_gone "$ding_pid" "$ding_start_token" proof.worker.ding
 suspended="$(tasks)"
 test "$(jq -r '.tasks[] | select(.runtimeId == "proof.sibling") | .runtime.pid' <<<"$suspended")" = "$sibling_pid"
 test "$(jq -r '.tasks[] | select(.runtimeId == "proof.sibling") | .runtime.generationId' <<<"$suspended")" = "$sibling_generation"
@@ -104,6 +130,12 @@ grep -Fq 'adopted (1): sibling' "$root/resume.out"
 wait_task_state proof.worker running
 wait_task_state proof.worker.ding running
 resumed="$(tasks)"
+resumed_worker_pid="$(jq -r '.tasks[] | select(.runtimeId == "proof.worker") | .runtime.pid' <<<"$resumed")"
+resumed_ding_pid="$(jq -r '.tasks[] | select(.runtimeId == "proof.worker.ding") | .runtime.pid' <<<"$resumed")"
+resumed_sibling_pid="$(jq -r '.tasks[] | select(.runtimeId == "proof.sibling") | .runtime.pid' <<<"$resumed")"
+resumed_worker_start_token="$(proc_start_token "$resumed_worker_pid")"
+resumed_ding_start_token="$(proc_start_token "$resumed_ding_pid")"
+resumed_sibling_start_token="$(proc_start_token "$resumed_sibling_pid")"
 test "$(jq -r '.tasks[] | select(.runtimeId == "proof.sibling") | .runtime.pid' <<<"$resumed")" = "$sibling_pid"
 test "$(jq -r '.tasks[] | select(.runtimeId == "proof.sibling") | .runtime.generationId' <<<"$resumed")" = "$sibling_generation"
 test -f "$net/agents/proof/worker/resources/inbox/$message"
@@ -115,4 +147,7 @@ test "$(PTY_ROOT="$PTY_ROOT" pty list --json | jq 'length')" -eq 0
 if test -d "$state/st2/proof/exec"; then
   test -z "$(find "$state/st2/proof/exec" -maxdepth 1 -type f -name '*.pid' -print -quit)"
 fi
+assert_process_gone "$resumed_worker_pid" "$resumed_worker_start_token" proof.worker
+assert_process_gone "$resumed_ding_pid" "$resumed_ding_start_token" proof.worker.ding
+assert_process_gone "$resumed_sibling_pid" "$resumed_sibling_start_token" proof.sibling
 echo CLEANUP-GREEN-7c31

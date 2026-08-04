@@ -8,7 +8,7 @@ eval {
   }
 
   judges {
-    judge "SUSPEND — worker and DING become absent while sibling generation survives" {
+    judge "SUSPEND — worker and DING become absent, their process identities end, and sibling generation survives" {
       exec "grep -Fqx SUSPEND-GREEN-7c31 $RUNS_DIR/matrix.out"
     }
     judge "DURABLE STATE — inbox filename survives suspension" {
@@ -20,7 +20,7 @@ eval {
     judge "RESUME — worker and DING relaunch through ordinary reconcile" {
       exec "grep -Fqx RESUME-GREEN-7c31 $RUNS_DIR/matrix.out"
     }
-    judge "CLEANUP — no eval-owned PTY or exec task remains" {
+    judge "CLEANUP — no eval-owned PTY, exec task, or captured process identity remains" {
       exec "grep -Fqx CLEANUP-GREEN-7c31 $RUNS_DIR/matrix.out"
     }
   }

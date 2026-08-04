@@ -304,10 +304,11 @@ Reconciliation is per task:
 routing. New exact Codex launches require verified installed hooks and workspace pretrust; already live/adopted
 Codex tasks are not stopped by that launch gate.
 
-The maintained model-free [`agent-spec-desired-state`](./cells/agent-spec-desired-state/) cell proves the
-whole-agent boundary with a real worker PTY, its generated DING companion, an unrelated sibling generation,
-and a durable inbox filename across suspend and resume. Task runtime `desiredState` remains the per-task
-running/absent target; `agentDesiredState` and its reason expose the declaration-level intent.
+The executable [`agent-spec-desired-state`](./evidence/proposed-cells/agent-spec-desired-state/) scenario
+proves the whole-agent boundary with a real worker PTY, its generated DING companion, an unrelated sibling
+generation, and a durable inbox filename across suspend and resume. It remains outside the maintained
+inventory until the accepted runner pin implements this contract. Task runtime `desiredState` remains the
+per-task running/absent target; `agentDesiredState` and its reason expose the declaration-level intent.
 
 ## Native bus, DING, and presence
 

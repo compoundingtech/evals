@@ -251,6 +251,85 @@ task named `agent`. Network startup materializes running declarations for the se
 reconciliation; suspended, retired, and other-host declarations are skipped. A gating failure suppresses only that agent.
 Prefer a catalog-owned `.st2/` overlay and locally excluded tool loaders.
 
+## Experimental read-only plans
+
+This candidate contract is not part of the released `0fed14b` corpus
+conformance claim above. The paired model-free experiment is isolated to
+[`catalog-plan-vs-direct-brief`](cells/catalog-plan-vs-direct-brief/) and runs
+against st2 draft PR
+[#115](https://github.com/compoundingtech/st2/pull/115) at exact current-main source
+`8a76b6e71355140e5b89cd9313fcfd88c82b5cad`.
+
+The experiment shape descends from
+[source sketch revision `5c1d142`](https://gist.github.com/myobie/d5ecfac24cd3965e095a5031cd2e00cb/5c1d1427c0556d95d13890e5c5086cd85b25d994);
+the executable discovery and schema authority is the exact PR115 source above.
+An agent discovers a plan only through a childless Resource link:
+
+```kdl
+agent "app-web" {
+  resource "ship-remote-approvals" _tag="plan" uri="file:plans/ship-remote-approvals/plan.kdl"
+}
+```
+
+The positional Resource name is an agent-local role. The referenced
+`plan.kdl`, not the Resource envelope, owns all plan truth:
+
+```kdl
+plan "ship-remote-approvals" {
+  owner "app-web"
+  version "0000" content="file:versions/0000.md"
+  version "0001" content="file:versions/0001.md" {
+    parent "0000"
+    why "Browser proof exposed an approval race."
+  }
+}
+```
+
+Instead of external Markdown content, a version may keep its complete intent
+inline in the same referenced `plan.kdl`:
+
+```kdl
+plan "review-follow-up" {
+  owner "app-web"
+  version "0000" {
+    intent "Review every unresolved comment and report the exact final head."
+  }
+}
+```
+
+Plan identity is the explicit KDL value, never its directory. External plans
+require one `owner`. Each version requires exactly one `content="file:..."` or
+one child `intent`; both or neither fail. A version may repeat `parent` for
+multiple declared parents; parents must exist, be unique, and form an acyclic
+graph. A version with parents requires one non-empty `why`. Versions are sorted,
+and the frontier is derived as every version with no child, retaining concurrent
+siblings. Resource URIs resolve relative to the agent KDL, while content URIs
+resolve relative to the referenced `plan.kdl`; both must be relative `file:`
+references to regular files inside the selected catalog. The Resource adds the
+agent to `referencedBy` but owns no plan fields. Legacy `plan-ref`, childful plan
+Resources, and agent-owned inline plan truth are unsupported. The experiment
+stores no content digest or history. It cannot prove that an earlier declaration
+or content file stayed unchanged.
+
+The only supported CLI is read-only:
+
+```sh
+st2 plan validate [PATH] [--json]
+st2 plan list [PATH] [--json]
+st2 plan show <identity> [PATH] [--json]
+st2 plan inspect <identity> [PATH] [--json]
+```
+
+Global `--catalog` selects the same input. The experiment has no current
+pointer, execution, controller, schedule, step graph, retry, claim, receipt,
+event, reconciliation mutation, agent restart, CAS, merge, or deployment
+behavior. Direct KDL and direct human-to-agent planning remain supported.
+The current model-free A/B finds no plan advantage for cold resume, exact
+intent recovery, or acceptance evidence: both durable paths recover equally,
+and neither surface reports worker acceptance. Static validation and resolved
+provenance are plan-only authoring evidence; live correctness, traffic, cost,
+and duration remain unresolved.
+
 ## Validation, health, and lifecycle
 
 Canonical validation is:

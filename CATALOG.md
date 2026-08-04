@@ -27,6 +27,7 @@ harness-native loader plus canonical hook file.
 | `assignment-contract-hot-assignment` | Codex | `gpt-5.6-sol` / medium | 2 | medium | `1200s` | 4 | — | **NO STRUCTURED RUN** |
 | `assignment-contract-hot-focus` | Codex | `gpt-5.6-sol` / medium | 2 | medium | `1200s` | 4 | — | **NO STRUCTURED RUN** |
 | `assignment-contract-hot-resources` | Codex | `gpt-5.6-sol` / medium | 2 | medium | `1200s` | 4 | — | **NO STRUCTURED RUN** |
+| `catalog-plan-vs-direct-brief` | model-free | — | 0 | none | `60s` | 22 | — | **NO STRUCTURED RUN** |
 | `context-resource-continuity` | model-free | — | 0 | none | `90s` | 4 | — | **NO STRUCTURED RUN** |
 | `crash-ding` | mixed | `claude-sonnet-5+gpt-5.6-sol` / medium | 4 | high | `180s` | 5 | — | **NO STRUCTURED RUN** |
 | `ding-mode` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 4 | — | **NO STRUCTURED RUN** |
@@ -95,6 +96,7 @@ while the last-run column makes a recorded failure distinct from a cell with no 
 
 ## Harness hook exclusions
 
+- `catalog-plan-vs-direct-brief` / `cell` — deterministic plan-versus-brief fixture and recovery contract; no harness seat
 - `adopt-only-migration` / `cell` — deterministic native adoption/replacement lifecycle probe; no harness seat
 - `agent-spec-resource-bindings` / `cell` — deterministic native Agent Spec Resource-envelope probe; no harness seat
 - `context-resource-continuity` / `cell` — deterministic native context/resource restart probe; no harness seat

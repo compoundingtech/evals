@@ -1,0 +1,20 @@
+field	value
+experiment_id	catalog-plan-vs-direct-brief-v1
+source_gist	https://gist.github.com/myobie/d5ecfac24cd3965e095a5031cd2e00cb/5c1d1427c0556d95d13890e5c5086cd85b25d994
+source_gist_revision	5c1d1427c0556d95d13890e5c5086cd85b25d994
+st2_plan_pr	https://github.com/compoundingtech/st2/pull/115
+st2_plan_source	8a76b6e71355140e5b89cd9313fcfd88c82b5cad
+st2_plan_binary_sha256	214e08874720bc546d4adf7d7977e614237baf7989cc09f6932cd991f497a753
+task_id	receipt-report-latest-pass
+seed_repository	task-repo
+allowed_change	src/report.mjs
+allowed_tools	node,bash,git
+network_policy	disabled
+wall_budget_seconds	1200
+model_token_budget	40000
+judge_profile	arm-neutral-public-plus-held-out
+done_condition	public and held-out tests pass; only src/report.mjs differs from the seed; no dependency or network change
+initial_revision	0000
+steering_revision	0001
+model_free_result	no-measured-advantage-for-cold-resume-intent-recovery-or-acceptance-evidence
+live_run_status	blocked-pending-separate-provider-authorization

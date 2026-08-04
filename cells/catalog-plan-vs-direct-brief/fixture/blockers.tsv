@@ -1,0 +1,3 @@
+blocker_id	owner	dependency	required_evidence	status
+st2-plan-runtime	st2-owner	https://github.com/compoundingtech/st2/pull/115	exact Resource-link source 8a76b6e71355140e5b89cd9313fcfd88c82b5cad and binary SHA256 214e08874720bc546d4adf7d7977e614237baf7989cc09f6932cd991f497a753 with prior gates and hosted run 30835684680 job 91760161352 green	ready
+live-ab	evals-owner	future provider-backed execution	separate authorization naming exact plan artifact, model, effort, per-arm token and wall budgets, arm order or counterbalancing, maximum spend, cleanup, and rollback	blocked

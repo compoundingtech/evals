@@ -1,0 +1,7 @@
+ordinal	event	arm_a_input	arm_b_input	invariant
+1	initial_delivery	catalog snapshot with version 0000	st2 message carrying brief 0000	byte-identical intent; neither delivery claims worker acceptance
+2	cold_restart	st2 plan show on local snapshot	st2 message read from local inbox	no volatile conversation or process state
+3	simulated_partition	local catalog only	local message inbox only	remote input source unavailable during recovery
+4	human_steering	catalog snapshot adds version 0001	second st2 message replies to brief 0000	byte-identical complete revised intent
+5	restart_after_steering	frontier 0001 with version 0000 retained	brief 0001 with inReplyTo 0000 retained	revision 0001 recovered and lineage remains inspectable
+6	model_free_verdict	static validation and provenance only	message delivery and reply lineage only	cold resume, intent recovery, and acceptance evidence tie; correctness, traffic, cost, and duration remain live-run endpoints

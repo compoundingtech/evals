@@ -1,0 +1,6 @@
+plan "inline-intent" {
+  owner "receipt-worker"
+  version "0000" {
+    intent "Keep the complete inline intent in plan.kdl."
+  }
+}

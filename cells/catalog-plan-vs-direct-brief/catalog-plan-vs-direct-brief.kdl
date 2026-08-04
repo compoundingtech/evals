@@ -1,0 +1,81 @@
+// Neutral, model-free fixture contract for a catalog-plan versus direct-brief A/B.
+eval {
+  copy "./fixture"
+  max-timeout "60s"
+
+  run "fixture-contract" {
+    command "bash ./check-fixtures.sh"
+  }
+  run "plan-contract" {
+    command "bash ./check-plan-contract.sh"
+  }
+
+  judges {
+    judge "TASK — frozen repository starts red and its arm-neutral reference implementation passes" {
+      exec "grep -Fqx TASK-CONTRACT-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "PARITY — task intent, tools, budgets, judges, and done condition match across arms" {
+      exec "grep -Fqx ARM-PARITY-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "RESTART — catalog plan and real direct-message inbox both recover after cold state loss" {
+      exec "grep -Fqx COLD-RESTART-TIE-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "PARTITION — both arms recover locally while their remote sources are unavailable" {
+      exec "grep -Fqx LOCAL-PARTITION-TIE-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "INTENT — both arms recover byte-identical initial and revised intent" {
+      exec "grep -Fqx INTENT-RECOVERY-TIE-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "STEERING — a complete plan version and reply-linked direct brief recover equally" {
+      exec "grep -Fqx HUMAN-STEERING-TIE-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "ACCEPTANCE — neither read-only plan inspection nor message delivery proves worker acceptance" {
+      exec "grep -Fqx ACCEPTANCE-EVIDENCE-TIE-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "STATIC VALUE — plan validation and provenance are plan-only authoring evidence" {
+      exec "grep -Fqx PLAN-STATIC-EVIDENCE-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "DIRECT REALISM — the control uses durable st2 messages and reply lineage" {
+      exec "grep -Fqx DIRECT-MESSAGE-EVIDENCE-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "MEASUREMENT — correctness gates are separate from neutral traffic and cost observations" {
+      exec "grep -Fqx MEASUREMENT-CONTRACT-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "PROVENANCE — every authoritative input has a verified content hash" {
+      exec "grep -Fqx PROVENANCE-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "PAIRING — exact experimental source and artifact are frozen while live execution stays blocked" {
+      exec "grep -Fqx PRODUCT-PAIRING-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "STORAGE — plain local folders suffice and CAS is not required" {
+      exec "grep -Fqx PLAIN-FOLDER-NO-CAS-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "VERDICT — the model-free endpoints show no plan advantage and live endpoints stay unresolved" {
+      exec "grep -Fqx MODEL-FREE-OUTCOME-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+    judge "RUNNER — the exact experimental st2 binary matches the accepted source and SHA256" {
+      exec "grep -Fqx PLAN-RUNNER-PIN-GREEN-43af $RUNS_DIR/plan-contract.out"
+    }
+    judge "PLAN VALIDATE — Resource-linked external plans normalize without errors" {
+      exec "grep -Fqx PLAN-VALIDATE-GREEN-43af $RUNS_DIR/plan-contract.out"
+    }
+    judge "PLAN TARGETS — external Markdown content and inline intent are both exact" {
+      exec "grep -Fqx PLAN-TARGET-FORMS-GREEN-43af $RUNS_DIR/plan-contract.out"
+    }
+    judge "PLAN LIST — explicit identity, owner, and derived frontier are exact" {
+      exec "grep -Fqx PLAN-LIST-GREEN-43af $RUNS_DIR/plan-contract.out"
+    }
+    judge "PLAN SHOW — normalized intent exposes versions but not provenance paths" {
+      exec "grep -Fqx PLAN-SHOW-GREEN-43af $RUNS_DIR/plan-contract.out"
+    }
+    judge "PLAN INSPECT — provenance and resolved content are exact and read-only" {
+      exec "grep -Fqx PLAN-INSPECT-READONLY-GREEN-43af $RUNS_DIR/plan-contract.out"
+    }
+    judge "PLAN BOUNDARY — a mutable current pointer is rejected with a classified error" {
+      exec "grep -Fqx PLAN-BOUNDARY-GREEN-43af $RUNS_DIR/plan-contract.out"
+    }
+    judge "HERMETIC — the scaffold launches no model, provider, network client, or mutating product runtime" {
+      exec "grep -Fqx HERMETIC-SCAFFOLD-GREEN-43af $RUNS_DIR/fixture-contract.out"
+    }
+  }
+}

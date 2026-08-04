@@ -1,0 +1,6 @@
+agent "receipt-worker" {
+  host "eval"
+  command "true"
+  resource "receipt-report" _tag="plan" uri="file:plans/receipt-report/plan.kdl"
+  resource "inline-intent" _tag="plan" uri="file:plans/inline-intent/plan.kdl"
+}

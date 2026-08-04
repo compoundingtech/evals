@@ -1,0 +1,4 @@
+plan "receipt-report" {
+  owner "receipt-worker"
+  version "0000" content="file:versions/0000.md"
+}

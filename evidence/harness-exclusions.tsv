@@ -1,4 +1,5 @@
 cell	surface	reason
+catalog-plan-vs-direct-brief	cell	deterministic plan-versus-brief fixture and recovery contract; no harness seat
 adopt-only-migration	cell	deterministic native adoption/replacement lifecycle probe; no harness seat
 agent-spec-resource-bindings	cell	deterministic native Agent Spec Resource-envelope probe; no harness seat
 context-resource-continuity	cell	deterministic native context/resource restart probe; no harness seat

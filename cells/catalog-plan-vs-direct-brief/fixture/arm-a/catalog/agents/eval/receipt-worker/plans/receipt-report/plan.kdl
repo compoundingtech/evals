@@ -1,0 +1,9 @@
+plan "receipt-report" {
+  owner "receipt-worker"
+
+  version "0000" content="file:versions/0000.md"
+  version "0001" content="file:versions/0001.md" {
+    parent "0000"
+    why "Human steering tightens input validation without changing scope."
+  }
+}

@@ -1,0 +1,15 @@
+metric	type	unit	role	preferred_direction	model_free_arm_a	model_free_arm_b	model_free_verdict	live_source
+correctness	boolean	pass/fail	live-gating	pass	not-run	not-run	unresolved-live	arm-neutral held-out judge
+cold_restart_recovery	boolean	pass/fail	model-free-gating	pass	pass	pass	tie	comparison receipt
+partition_recovery	boolean	pass/fail	model-free-gating	pass	pass	pass	tie	comparison receipt
+human_steering	boolean	pass/fail	model-free-gating	pass	pass	pass	tie	comparison receipt
+acceptance_evidence	enum	evaluator-only|product-native	live-gating	product-native	evaluator-only	evaluator-only	tie	comparison receipt plus future worker claim
+static_intent_validation	boolean	pass/fail	reporting	pass	pass	n/a	plan-only	st2 plan validate
+lineage_observation	boolean	pass/fail	reporting	pass	pass	pass	tie	st2 plan show and st2 message inReplyTo
+provenance_resolution	boolean	pass/fail	reporting	pass	pass	n/a	plan-only	st2 plan inspect
+coordination_messages	integer	count	live-reporting	lower	unmeasured	unmeasured	unresolved-live	st2 message receipt
+coordination_bytes	integer	bytes	live-reporting	lower	unmeasured	unmeasured	unresolved-live	st2 message and sync receipt
+model_input_tokens	integer	tokens	live-reporting	lower	0	0	model-free-only	harness usage receipt
+model_output_tokens	integer	tokens	live-reporting	lower	0	0	model-free-only	harness usage receipt
+cost_usd	decimal	USD	live-reporting	lower	0	0	model-free-only	harness usage receipt
+wall_duration	decimal	seconds	live-reporting	lower	unmeasured	unmeasured	unresolved-live	evaluator run receipt

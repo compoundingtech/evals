@@ -51,6 +51,7 @@ harness-native loader plus canonical hook file.
 | `presence-ding-matrix` | model-free | — | 0 | none | `60s` | 6 | — | **NO STRUCTURED RUN** |
 | `pty-attach-machine-stream` | model-free | — | 0 | none | `90s` | 5 | — | **NO STRUCTURED RUN** |
 | `pty-attach-only` | model-free | — | 0 | none | `90s` | 7 | — | **NO STRUCTURED RUN** |
+| `pty-live-recovery` | model-free | — | 0 | none | `120s` | 10 | — | **NO STRUCTURED RUN** |
 | `pty-send-peek` | model-free | — | 0 | none | `120s` | 5 | **PASS** 2026-07-28T19:53:59Z, 13/13, source [`b7da882`](https://github.com/compoundingtech/evals/commit/b7da8826b503e0408e309af8702fb684d28e3a19), [receipt](evidence/stable-main-phase4-runs-20260728.json) | **PASS** 2026-07-28T19:53:59Z, 13/13, source [`b7da882`](https://github.com/compoundingtech/evals/commit/b7da8826b503e0408e309af8702fb684d28e3a19), [receipt](evidence/stable-main-phase4-runs-20260728.json) |
 | `reconcile-retire-keep` | model-free | — | 0 | none | `90s` | 6 | — | **NO STRUCTURED RUN** |
 | `render-target-safety` | model-free | — | 0 | none | `90s` | 5 | — | **NO STRUCTURED RUN** |
@@ -105,6 +106,7 @@ while the last-run column makes a recorded failure distinct from a cell with no 
 - `pty-attach-machine-stream` / `cell` — deterministic installed PTY attach composition probe; no harness seat
 - `managed-agent-color-env` / `cell` — deterministic managed-agent environment policy probe; no harness seat
 - `pty-attach-only` / `cell` — deterministic PTY dead-attach policy probe; no harness seat
+- `pty-live-recovery` / `cell` — deterministic PTY live-registry recovery probe; no harness seat
 - `pty-send-peek` / `cell` — deterministic PTY transport probe; no harness seat
 - `presence-ding-matrix` / `cell` — deterministic native presence and DING probe; no harness seat
 - `reconcile-retire-keep` / `cell` — deterministic native reconcile lifecycle probe; no harness seat

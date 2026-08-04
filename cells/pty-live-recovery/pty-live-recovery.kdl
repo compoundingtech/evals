@@ -1,0 +1,42 @@
+// Held-out, model-free black-box contract for merged PTY PR #128 live recovery.
+eval {
+  copy "./fixture"
+  max-timeout "120s"
+
+  run "probe" {
+    command "bash ./probe.sh"
+  }
+
+  judges {
+    judge "EXACT SOURCE - selected PTY PR128 source and built artifacts are exact" {
+      exec "grep -Fqx LIVE-RECOVERY-EXACT-PR128-GREEN-d42e $RUNS_DIR/probe.out"
+    }
+    judge "CAPABILITY - private roots advertise the complete authenticated snapshot contract" {
+      exec "grep -Fqx LIVE-RECOVERY-CAPABILITY-GREEN-d42e $RUNS_DIR/probe.out"
+    }
+    judge "IDENTITY - recovery preserves daemon identity while rotating secret and revision" {
+      exec "grep -Fqx LIVE-RECOVERY-IDENTITY-ROTATION-GREEN-d42e $RUNS_DIR/probe.out"
+    }
+    judge "CONTINUITY - established and new clients both reach the original provider" {
+      exec "grep -Fqx LIVE-RECOVERY-CONTINUITY-GREEN-d42e $RUNS_DIR/probe.out"
+    }
+    judge "REPLAY - a rotated snapshot cannot replay or duplicate the provider" {
+      exec "grep -Fqx LIVE-RECOVERY-REPLAY-NO-DUPLICATE-GREEN-d42e $RUNS_DIR/probe.out"
+    }
+    judge "REVISION - a pre-mutation snapshot fails closed and current metadata survives" {
+      exec "grep -Fqx LIVE-RECOVERY-REVISION-GREEN-d42e $RUNS_DIR/probe.out"
+    }
+    judge "AUTHENTICATION - a secret-tampered snapshot writes no registry and valid recovery remains possible" {
+      exec "grep -Fqx LIVE-RECOVERY-AUTHENTICATION-GREEN-d42e $RUNS_DIR/probe.out"
+    }
+    judge "PRIVACY - public root or recovery-directory modes refuse before exchange" {
+      exec "grep -Fqx LIVE-RECOVERY-PRIVACY-GREEN-d42e $RUNS_DIR/probe.out"
+    }
+    judge "UNSUPPORTED - a daemon without a capability is not signaled, relaunched, or claimed recoverable" {
+      exec "grep -Fqx LIVE-RECOVERY-UNSUPPORTED-GREEN-d42e $RUNS_DIR/probe.out"
+    }
+    judge "CLEANUP/MODEL FREE - every captured daemon is dead and exact eval roots are removed" {
+      exec "grep -Fqx LIVE-RECOVERY-CLEANUP-MODEL-FREE-GREEN-d42e $RUNS_DIR/probe.out && jq -e '.modelCalls == 0 and .cleanup.rootsAbsent and .cleanup.allTrackedDaemonsDead and .cleanup.trackedDaemons > 0 and .cleanup.killFallbacks > 0 and .coverage.duplicateLaunches == 0' $CATALOG/pty-live-recovery-receipt.json >/dev/null"
+    }
+  }
+}

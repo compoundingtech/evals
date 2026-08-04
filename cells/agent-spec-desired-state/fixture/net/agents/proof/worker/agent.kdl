@@ -1,0 +1,5 @@
+agent "worker" {
+  host "proof"
+  argv "sh" "-c" "exec sleep 300"
+  ding
+}

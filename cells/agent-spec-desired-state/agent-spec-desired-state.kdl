@@ -1,0 +1,27 @@
+// Real whole-agent suspend/resume across PTY, generated DING, sibling, and durable inbox state.
+eval {
+  copy "./fixture"
+  max-timeout "90s"
+
+  run "matrix" {
+    command "bash ./matrix.sh"
+  }
+
+  judges {
+    judge "SUSPEND — worker and DING become absent while sibling generation survives" {
+      exec "grep -Fqx SUSPEND-GREEN-7c31 $RUNS_DIR/matrix.out"
+    }
+    judge "DURABLE STATE — inbox filename survives suspension" {
+      exec "grep -Fqx INBOX-RETAINED-GREEN-7c31 $RUNS_DIR/matrix.out"
+    }
+    judge "OBSERVABILITY — task and agent desired state remain distinct" {
+      exec "grep -Fqx OBSERVABILITY-GREEN-7c31 $RUNS_DIR/matrix.out"
+    }
+    judge "RESUME — worker and DING relaunch through ordinary reconcile" {
+      exec "grep -Fqx RESUME-GREEN-7c31 $RUNS_DIR/matrix.out"
+    }
+    judge "CLEANUP — no eval-owned PTY or exec task remains" {
+      exec "grep -Fqx CLEANUP-GREEN-7c31 $RUNS_DIR/matrix.out"
+    }
+  }
+}

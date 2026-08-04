@@ -49,7 +49,8 @@ agent "<identity>" {
   type "service"
   workspace "/absolute/workspace/or/$CATALOG/path"
   supervisor "<host>.<supervisor-identity>"
-  retired #false
+  // Optional when intentionally non-running:
+  // desired-state "suspended" reason="Waiting for capacity"
   keep #false
 
   resource "work" _tag="github-issue" uri="github-issue://example/project/123"
@@ -88,7 +89,8 @@ Supported agent children are:
 | `type "service"` | Optional; `service` is the only accepted value and the default. |
 | `workspace "…"` | Default working directory. It must be absolute or `$CATALOG`-rooted. |
 | `supervisor "…"` | Optional bare identity or full bus id for crash-loop routing. |
-| `retired #true` | Decommission the declaration on the next reconciliation. Edit this flag; do not delete a live declaration to retire it. |
+| `desired-state "suspended" reason="..."` | Keep the declaration and durable state in the catalog while reconciling all of its tasks absent. `running` is normally represented by omitting this node; `retired` requests final collection. |
+| `retired #true` | Legacy read-compatible spelling of retirement. New lifecycle transitions use `desired-state` with a rationale. |
 | `keep #true` | Freeze dead evidence and suppress collection/restart for every task; retirement still stops live tasks. |
 | `resource "name" _tag="type" uri="absolute-uri"` | Binds one uniquely named, externally identified Resource as declaration metadata. |
 | `restart { … }` | Optional service restart policy. |
@@ -99,9 +101,13 @@ Supported agent children are:
 | `exec "name" { … }` | Explicit non-interactive task. |
 | `render { … }` | Ordered, pre-boot workspace materialization. |
 
-Canonical declarations normally omit `type`. Unknown non-render children may be ignored; that is not
-extension syntax, and required behavior must never depend on them. `schedule` is explicitly reserved and
-rejected. Unknown render directives are errors.
+Canonical running declarations normally omit both `type` and `desired-state`. A new `suspended` or `retired`
+state requires a `reason` property containing 1–160 UTF-8 bytes with no surrounding whitespace or control
+characters. `running` forbids a reason and the authoring command canonicalizes it by removing the lifecycle
+node. Legacy `retired #true` remains readable without a rationale, but cannot be combined with
+`desired-state`; even `retired #false` cannot be mixed into the new shape. Unknown non-render children may
+be ignored; that is not extension syntax, and required behavior must never depend on them. `schedule` is
+explicitly reserved and rejected. Unknown render directives are errors.
 
 The restart defaults are 3 attempts per 60 seconds, no delay, and `mode "delay"`. Durations accept bare
 seconds or `ms`, `s|sec|secs`, `m|min|mins`, `h|hr|hrs`, and `d|day|days`. `mode "delay"` keeps retrying with
@@ -241,8 +247,8 @@ closed when a workspace looks like a worktree but cannot be inspected. If a rend
 refresh.
 
 Render expansion begins with catalog/runtime values and `ST_AGENT=<bus-id>`, then applies environment from the
-task named `agent`. Network startup materializes active declarations for the selected host before
-reconciliation; retired and other-host declarations are skipped. A gating failure suppresses only that agent.
+task named `agent`. Network startup materializes running declarations for the selected host before
+reconciliation; suspended, retired, and other-host declarations are skipped. A gating failure suppresses only that agent.
 Prefer a catalog-owned `.st2/` overlay and locally excluded tool loaders.
 
 ## Validation, health, and lifecycle
@@ -260,25 +266,48 @@ missing paths, malformed render operations, and missing copy sources. Warnings i
 an absent supervisor address, selected-host external paths missing locally, and dangling Claude imports.
 `--strict` turns warnings into failure. `--json` emits stable issue metadata and totals.
 
+Lifecycle changes use a source-preserving, catalog-locked mutation rather than direct deletion:
+
+```sh
+st2 agent desired-state <identity> suspended --reason "Waiting for capacity" --catalog "$CATALOG" --host <host>
+st2 agent desired-state <identity> running --catalog "$CATALOG" --host <host>
+st2 agent desired-state <identity> retired --reason "Decommissioned" --catalog "$CATALOG" --host <host>
+```
+
+The command refuses Nix-owned declarations, stale source bytes, self-retirement, and retirement of an agent
+with live descendants. Its receipt proves only that desired state was authored; a later reconciliation and
+status/health observation prove convergence. Suspension preserves declaration-owned inbox, context, and
+Resource state. Resume is ordinary reconciliation: it does not imply checkpoint restoration or an
+adopt-only override.
+
 Health checks accept either a live foreign host-lock owner or the default manual/no-lock mode. An explicit
 supervisor requirement makes a missing live lock fail; a stale lock always fails. Active declarations require
-their tasks alive and presence fresh. Retired declarations require all task records absent. The PTY runtime
+their tasks alive and presence fresh. Suspended declarations require no live tasks or presence; dead
+keep-pinned records may remain as intentional evidence, while dead non-keep records are unhealthy. Retired
+declarations require all task records absent. The PTY runtime
 probe closes stdin and is bounded at two seconds; timeout is reported as a failed readable-runtime check, not
 misclassified as an empty registry.
 
 Reconciliation is per task:
 
-- active and alive: adopt;
-- missing: launch only that task;
-- dead non-keep: preserve bounded diagnostics, collect, and restart according to policy;
-- dead keep: freeze evidence without collection or restart;
-- retired and live: stop even when keep is set;
-- retired and dead non-keep: final collection;
+- running and alive: adopt;
+- running and missing: launch only that task;
+- running and dead non-keep: preserve bounded diagnostics, collect, and restart according to policy;
+- running and dead keep: freeze evidence without collection or restart;
+- suspended and live: stop every authored and generated task, including DING, even when keep is set;
+- suspended and dead non-keep: collect; dead keep records remain pinned evidence;
+- retired and live: stop every task even when keep is set;
+- retired and recorded: final collection;
 - unrendered or unrunnable: do not launch.
 
 `role` has no branch in lifecycle behavior. `supervisor` is used for `ST_SUPERVISOR` and best-effort crash-loop
 routing. New exact Codex launches require verified installed hooks and workspace pretrust; already live/adopted
 Codex tasks are not stopped by that launch gate.
+
+The maintained model-free [`agent-spec-desired-state`](./cells/agent-spec-desired-state/) cell proves the
+whole-agent boundary with a real worker PTY, its generated DING companion, an unrelated sibling generation,
+and a durable inbox filename across suspend and resume. Task runtime `desiredState` remains the per-task
+running/absent target; `agentDesiredState` and its reason expose the declaration-level intent.
 
 ## Native bus, DING, and presence
 

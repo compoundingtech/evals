@@ -1,0 +1,42 @@
+// Real whole-agent suspend/resume across PTY, generated DING, sibling, and durable inbox state.
+eval {
+  copy "./fixture"
+  max-timeout "90s"
+
+  run "matrix" {
+    command "bash ./matrix.sh"
+  }
+
+  judges {
+    judge "SUSPEND — worker and DING become absent, their process identities end, and sibling generation survives" {
+      exec "grep -Fqx SUSPEND-GREEN-7c31 $RUNS_DIR/matrix.out"
+    }
+    judge "HEALTH — Doctor accepts the converged suspended declaration" {
+      exec "grep -Fqx HEALTH-GREEN-7c31 $RUNS_DIR/matrix.out"
+    }
+    judge "HEALTH NEGATIVE — Doctor rejects suspended dead non-keep records before settlement" {
+      exec "grep -Fqx HEALTH-NEGATIVE-GREEN-7c31 $RUNS_DIR/matrix.out"
+    }
+    judge "KEEP — suspension stops live keep work and retains its dead evidence" {
+      exec "grep -Fqx KEEP-GREEN-7c31 $RUNS_DIR/matrix.out"
+    }
+    judge "DURABLE STATE — inbox filename survives suspension" {
+      exec "grep -Fqx INBOX-RETAINED-GREEN-7c31 $RUNS_DIR/matrix.out"
+    }
+    judge "OBSERVABILITY — worker and generated DING expose declaration intent separately from task state" {
+      exec "grep -Fqx OBSERVABILITY-GREEN-7c31 $RUNS_DIR/matrix.out"
+    }
+    judge "SOURCE — suspend and resume preserve unrelated declaration bytes" {
+      exec "grep -Fqx SOURCE-PRESERVED-GREEN-7c31 $RUNS_DIR/matrix.out"
+    }
+    judge "RENDER — suspended reconciliation does not recreate removed workspace output" {
+      exec "grep -Fqx RENDER-SUPPRESSED-GREEN-7c31 $RUNS_DIR/matrix.out"
+    }
+    judge "RESUME — worker and DING relaunch through ordinary reconcile" {
+      exec "grep -Fqx RESUME-GREEN-7c31 $RUNS_DIR/matrix.out"
+    }
+    judge "CLEANUP — no eval-owned PTY, exec task, or captured process identity remains" {
+      exec "grep -Fqx CLEANUP-GREEN-7c31 $RUNS_DIR/matrix.out"
+    }
+  }
+}

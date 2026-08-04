@@ -1,0 +1,4 @@
+agent "sibling" {
+  host "proof"
+  command "exec sleep 300"
+}

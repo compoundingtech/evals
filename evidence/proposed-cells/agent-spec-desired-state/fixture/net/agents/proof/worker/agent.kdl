@@ -1,0 +1,11 @@
+agent "worker" {
+  host "proof"
+  // source-sentinel: lifecycle authoring must preserve this formatting and extension
+  operator-extension "preserve-me"
+  workspace "$CATALOG/worker-workspace"
+  command "exec sleep 300"
+  ding
+  render {
+    file "render-sentinel.txt" "running materialization"
+  }
+}

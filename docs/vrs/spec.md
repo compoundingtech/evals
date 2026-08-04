@@ -126,6 +126,13 @@ and continues or stops.
   deterministic output, and proves that a Resource-only edit updates declared
   state without replacing a live task. Folder-eval Resource projection is not
   part of this acceptance boundary.
+- The executable `agent-spec-desired-state` proposed scenario traces reversible
+  whole-agent suspension from source-preserving catalog mutation through real
+  PTY and generated-DING reconciliation. It proves unrelated sibling
+  continuity, durable inbox retention, distinct task-versus-agent desired-state
+  observability, ordinary resume, and complete cleanup. It enters the
+  maintained inventory only after the accepted runner pin supports the
+  lifecycle command.
 - **R12:** A normal agent run is the same declared execution unit as an eval
   run, even when its outcome is open-ended rather than a pass/fail grade. The
   current runtime—st2 today—executes that unit; evals supplies scenarios and

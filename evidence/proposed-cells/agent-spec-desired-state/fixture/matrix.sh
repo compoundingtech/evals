@@ -68,8 +68,10 @@ trap cleanup EXIT
 
 worker_decl="$net/agents/proof/worker/agent.kdl"
 cp "$worker_decl" "$root/worker-source-before.kdl"
+mkdir -p "$net/worker-workspace"
 st2 up --once --catalog "$net" --host proof >"$root/launch.out"
 grep -Fq 'launched (4)' "$root/launch.out"
+test "$(<"$net/worker-workspace/render-sentinel.txt")" = "running materialization"
 initial="$(tasks)"
 st2 status sibling --catalog "$net" --host proof --as proof.sibling --set available >/dev/null
 st2 status worker --catalog "$net" --host proof --as proof.worker --set available >/dev/null
@@ -124,9 +126,19 @@ jq -e '.result == "changed" and .desired_state == "suspended" and .reason == "Wa
 sed '/^[[:space:]]*desired-state "suspended" reason="Waiting for capacity"[[:space:]]*$/d' \
   "$worker_decl" >"$root/worker-source-suspended-without-lifecycle.kdl"
 cmp -s "$root/worker-source-before.kdl" "$root/worker-source-suspended-without-lifecycle.kdl"
+mv "$net/worker-workspace/render-sentinel.txt" "$root/render-sentinel-before-suspend.txt"
 st2 up --once --catalog "$net" --host proof >"$root/suspend.out"
 grep -Fq 'torn down (2): proof.worker, proof.worker.ding' "$root/suspend.out"
 grep -Fq 'adopted (1): sibling' "$root/suspend.out"
+test ! -e "$net/worker-workspace/render-sentinel.txt"
+echo RENDER-SUPPRESSED-GREEN-7c31
+
+if st2 doctor --catalog "$net" --host proof >"$root/suspended-dead-nonkeep-doctor.out" 2>&1; then
+  echo "Doctor accepted suspended dead non-keep records before settlement" >&2
+  exit 1
+fi
+grep -Fq 'dead non-keep' "$root/suspended-dead-nonkeep-doctor.out"
+echo HEALTH-NEGATIVE-GREEN-7c31
 : >"$root/suspend-settle.out"
 for _ in $(seq 1 100); do
   st2 up --once --catalog "$net" --host proof >>"$root/suspend-settle.out"

@@ -8,7 +8,8 @@ reconciliation. It also requires Doctor to accept the converged suspended declar
 intent on both the worker and generated DING task. Cleanup retires and collects every task record and independently
 proves every resumed process identity has ended. Additional controls prove live keep-pinned work is stopped while
 its dead evidence remains, pre-existing presence remains independently observable, context and linked resources survive, and unrelated
-declaration bytes round-trip exactly across suspend and resume.
+declaration bytes round-trip exactly across suspend and resume. Doctor must reject the intermediate dead non-keep
+state before accepting settled absence, and suspended reconciliation must not recreate removed rendered output.
 
 This cell requires an st2 build implementing `desired-state`; the repository-wide runner pin remains
 the older accepted release until the implementation PR is merged and published. It therefore lives under

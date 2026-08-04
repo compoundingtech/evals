@@ -198,6 +198,17 @@ grep -Fq 'adopted (1): sibling' "$root/resume.out"
 wait_task_state proof.worker running
 wait_task_state proof.worker.ding running
 resumed="$(tasks)"
+jq -e '.tasks[] | select(.runtimeId == "proof.worker")
+  | .agentDesiredState == "running"
+    and .agentDesiredStateReason == null' <<<"$resumed" >/dev/null
+jq -e '.tasks[] | select(.runtimeId == "proof.worker.ding")
+  | .agentDesiredState == "running"
+    and .agentDesiredStateReason == null' <<<"$resumed" >/dev/null
+st2 agents --catalog "$net" --host proof --json \
+  | jq -e '.[] | select(.identity == "proof.worker")
+    | .desiredState == "running"
+      and .desiredStateReason == null
+      and .retired == false' >/dev/null
 resumed_worker_pid="$(jq -r '.tasks[] | select(.runtimeId == "proof.worker") | .runtime.pid' <<<"$resumed")"
 resumed_ding_pid="$(jq -r '.tasks[] | select(.runtimeId == "proof.worker.ding") | .runtime.pid' <<<"$resumed")"
 resumed_sibling_pid="$(jq -r '.tasks[] | select(.runtimeId == "proof.sibling") | .runtime.pid' <<<"$resumed")"

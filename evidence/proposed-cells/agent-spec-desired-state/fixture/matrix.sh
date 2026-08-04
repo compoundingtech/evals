@@ -63,6 +63,7 @@ cleanup() {
     fi
     sleep 0.05
   done
+  tasks | jq -e 'all(.tasks[]; .runtime.state == "absent")' >/dev/null
 }
 trap cleanup EXIT
 

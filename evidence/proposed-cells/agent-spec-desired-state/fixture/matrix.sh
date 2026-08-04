@@ -62,6 +62,7 @@ trap cleanup EXIT
 st2 up --once --catalog "$net" --host proof >"$root/launch.out"
 grep -Fq 'launched (3)' "$root/launch.out"
 initial="$(tasks)"
+st2 status sibling --catalog "$net" --host proof --as proof.sibling --set available >/dev/null
 worker_pid="$(jq -r '.tasks[] | select(.runtimeId == "proof.worker") | .runtime.pid' <<<"$initial")"
 ding_pid="$(jq -r '.tasks[] | select(.runtimeId == "proof.worker.ding") | .runtime.pid' <<<"$initial")"
 sibling_pid="$(jq -r '.tasks[] | select(.runtimeId == "proof.sibling") | .runtime.pid' <<<"$initial")"
@@ -104,12 +105,21 @@ test "$(jq -r '.tasks[] | select(.runtimeId == "proof.sibling") | .runtime.pid' 
 test "$(jq -r '.tasks[] | select(.runtimeId == "proof.sibling") | .runtime.generationId' <<<"$suspended")" = "$sibling_generation"
 echo SUSPEND-GREEN-7c31
 
+st2 doctor --catalog "$net" --host proof >"$root/suspended-doctor.out"
+grep -Fq 'proof.worker suspension effective (no live tasks)' "$root/suspended-doctor.out"
+echo HEALTH-GREEN-7c31
+
 test -f "$net/agents/proof/worker/resources/inbox/$message"
 st2 message ls --catalog "$net" worker --as proof.sibling --host proof --json \
   | jq -e --arg filename "$message" 'any(.[]; .filename == $filename)' >/dev/null
 echo INBOX-RETAINED-GREEN-7c31
 
 jq -e '.tasks[] | select(.runtimeId == "proof.worker")
+  | .desiredState == "absent"
+    and .agentDesiredState == "suspended"
+    and .agentDesiredStateReason == "Waiting for capacity"
+    and .retired == false' <<<"$suspended" >/dev/null
+jq -e '.tasks[] | select(.runtimeId == "proof.worker.ding")
   | .desiredState == "absent"
     and .agentDesiredState == "suspended"
     and .agentDesiredStateReason == "Waiting for capacity"

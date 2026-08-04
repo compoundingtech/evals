@@ -11,10 +11,13 @@ eval {
     judge "SUSPEND — worker and DING become absent, their process identities end, and sibling generation survives" {
       exec "grep -Fqx SUSPEND-GREEN-7c31 $RUNS_DIR/matrix.out"
     }
+    judge "HEALTH — Doctor accepts the converged suspended declaration" {
+      exec "grep -Fqx HEALTH-GREEN-7c31 $RUNS_DIR/matrix.out"
+    }
     judge "DURABLE STATE — inbox filename survives suspension" {
       exec "grep -Fqx INBOX-RETAINED-GREEN-7c31 $RUNS_DIR/matrix.out"
     }
-    judge "OBSERVABILITY — task and agent desired state remain distinct" {
+    judge "OBSERVABILITY — worker and generated DING expose declaration intent separately from task state" {
       exec "grep -Fqx OBSERVABILITY-GREEN-7c31 $RUNS_DIR/matrix.out"
     }
     judge "RESUME — worker and DING relaunch through ordinary reconcile" {

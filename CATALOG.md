@@ -17,6 +17,7 @@ harness-native loader plus canonical hook file.
 | Cell | Harness | Model(s) / effort | Model seats | Cost | Timeout | Held-out judges | Latest accepted PASS | Last recorded run |
 |---|---|---|---:|---|---|---:|---|---|
 | `adopt-only-migration` | model-free | — | 0 | none | `90s` | 6 | — | **NO STRUCTURED RUN** |
+| `agent-spec-field-change-matrix` | model-free | — | 0 | none | `180s` | 5 | — | **NO STRUCTURED RUN** |
 | `agent-spec-resource-bindings` | model-free | — | 0 | none | `60s` | 4 | — | **NO STRUCTURED RUN** |
 | `assignment-contract-cold-assignment` | Codex | `gpt-5.6-sol` / medium | 2 | medium | `1200s` | 3 | — | **NO STRUCTURED RUN** |
 | `assignment-contract-cold-focus` | Codex | `gpt-5.6-sol` / medium | 2 | medium | `1200s` | 3 | — | **NO STRUCTURED RUN** |
@@ -96,6 +97,7 @@ while the last-run column makes a recorded failure distinct from a cell with no 
 ## Harness hook exclusions
 
 - `adopt-only-migration` / `cell` — deterministic native adoption/replacement lifecycle probe; no harness seat
+- `agent-spec-field-change-matrix` / `cell` — deterministic native Agent Spec field-change contract probe; no harness seat
 - `agent-spec-resource-bindings` / `cell` — deterministic native Agent Spec Resource-envelope probe; no harness seat
 - `context-resource-continuity` / `cell` — deterministic native context/resource restart probe; no harness seat
 - `docs` / `judge:cold-reader` — one-shot offline Claude print grader; no bus identity, DING, or hook surface

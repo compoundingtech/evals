@@ -24,10 +24,10 @@ eval {
 
   judges {
     judge "OUTCOMES - both providers handle the cold batch and Codex subsequently handles active and post-batch arrivals" {
-      exec "bash ./judges/outcomes.sh"
+      exec "bash \"$CATALOG/judges/outcomes.sh\""
     }
     judge "MEASUREMENTS - emit exact bus CLI sequence, payload bytes, timing, archive names, and runner version hashes" {
-      exec "bash ./judges/measurements.sh"
+      exec "bash \"$CATALOG/judges/measurements.sh\""
     }
   }
 }

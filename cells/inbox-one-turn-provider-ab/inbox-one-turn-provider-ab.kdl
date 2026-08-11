@@ -3,7 +3,6 @@
 // exact st2 binary remains the only treatment variable.
 
 host "iot"
-env { PATH "$CATALOG/bin:$PATH" }
 
 eval {
   copy "./fixture"

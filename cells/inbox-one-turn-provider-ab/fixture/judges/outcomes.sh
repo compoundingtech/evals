@@ -29,15 +29,16 @@ for agent in iot.claude iot.codex; do
   for token in "${tokens[@]}"; do
     [ "$(grep -lRF "$token" "$agent_dir/archive" 2>/dev/null | wc -l | tr -d ' ')" -eq 1 ]
     reply=""
-    while IFS= read -r candidate; do
+    mapfile -t candidates < <(
+      grep -lRF "ACK $token" "$(mailbox_dir iot.injector)/inbox" \
+        "$(mailbox_dir iot.injector)/archive" 2>/dev/null || true
+    )
+    for candidate in "${candidates[@]}"; do
       if grep -Eq "^from:[[:space:]]*$agent([[:space:]]|$)" "$candidate"; then
         reply="$candidate"
         break
       fi
-    done < <(
-      grep -lRF "ACK $token" "$(mailbox_dir iot.injector)/inbox" \
-        "$(mailbox_dir iot.injector)/archive" 2>/dev/null || true
-    )
+    done
     [ -n "$reply" ]
     grep -Fq 'in-reply-to:' "$reply"
     grep -Eq "^from:[[:space:]]*$agent([[:space:]]|$)" "$reply"

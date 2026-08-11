@@ -15,12 +15,16 @@ if [ -z "$real" ]; then
 fi
 [ -n "$real" ]
 
+mailbox_dir() {
+  printf '%s\n' "$bus/agents/iot/${1#iot.}"
+}
+
 subjects='[]'
 for agent in iot.claude iot.codex; do
   log="$root/metrics/$agent.jsonl"
   [ -s "$log" ]
   jq -s -e 'all(.[]; (.at_ns | test("^[0-9]+$")) and (.argv | type == "array"))' "$log" >/dev/null
-  archive_names="$(find "$bus/$agent/archive" -maxdepth 1 -type f -printf '%f\n' | LC_ALL=C sort | jq -Rsc 'split("\n")[:-1]')"
+  archive_names="$(find "$(mailbox_dir "$agent")/archive" -maxdepth 1 -type f -printf '%f\n' | LC_ALL=C sort | jq -Rsc 'split("\n")[:-1]')"
   subject="$(jq -sc --arg agent "$agent" --argjson archives "$archive_names" '
     def is_delivery: .argv[0:2] == ["message", "delivery"];
     def is_discovery: .argv[0:2] == ["message", "ls"] or .argv[0:2] == ["message", "read"];
@@ -43,7 +47,7 @@ for agent in iot.claude iot.codex; do
   subjects="$(jq -cn --argjson all "$subjects" --argjson one "$subject" '$all + [$one]')"
 done
 
-source_payload_bytes="$(find "$bus/iot.claude/archive" -maxdepth 1 -type f -print0 | xargs -0 wc -c | awk 'END {print $1}')"
+source_payload_bytes="$(find "$(mailbox_dir iot.claude)/archive" -maxdepth 1 -type f -print0 | xargs -0 wc -c | awk 'END {print $1}')"
 jq -cn \
   --arg runner_version "$("$real" --version)" \
   --arg runner_binary_sha256 "$(sha256sum "$real" | awk '{print $1}')" \

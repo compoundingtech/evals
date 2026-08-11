@@ -1,34 +1,26 @@
-// Focused #238 provider A/B. Run this same cell once at the exact metadata-only st2 head and once at the
-// exact bounded-body-delivery head. The runner binary is the only treatment variable; this cell invents no
-// delivery flag or settlement command. Related to evals #57, but intentionally excludes PTY activity,
-// human-draft collision, and guarded-send policy (owned by that issue's delivery matrix).
+// Focused #238 provider A/B. Canonical Agent Specs are intentional: both exact st2 heads understand
+// the driver-facing argv/deliver declaration, while the older compact eval grammar does not. The
+// exact st2 binary remains the only treatment variable.
 
-team "iot" {
-  agent "claude" {
-    workspace "./claude"
-    env { ST_AGENT "iot.claude" PATH "$CATALOG/bin:$PATH" }
-    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT: an injected bounded body envelope is that drain; otherwise use one st2 message ls $ST_AGENT --json --include-body call. Then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again by the same rule, act on every delivered message, archive each handled item, and report completion or blockers over the st2 bus.'"#
-    ding
-  }
-  agent "codex" {
-    workspace "./codex"
-    env { ST_AGENT "iot.codex" PATH "$CATALOG/bin:$PATH" }
-    argv "codex" "--dangerously-bypass-approvals-and-sandbox" "--dangerously-bypass-hook-trust" "--model" "gpt-5.6-sol" "-c" "model_reasoning_effort=\"medium\"" "You just cold-started in a hermetic st2 eval. Read AGENTS.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT: an injected bounded body envelope is that drain; otherwise use one st2 message ls $ST_AGENT --json --include-body call. Then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again by the same rule, act on every delivered message, archive each handled item, and report completion or blockers over the st2 bus."
-    deliver "app-server"
-  }
-  agent "injector" {
-    workspace "./injector"
-    env { ST_AGENT "iot.injector" }
-    command "exec bash ./inject.sh"
-  }
-}
+host "iot"
+env { PATH "$CATALOG/bin:$PATH" }
 
 eval {
   copy "./fixture"
-  message { from "requester" to "iot.claude" content "./cold-a.md" }
-  message { from "requester" to "iot.claude" content "./cold-b.md" }
-  message { from "requester" to "iot.codex" content "./cold-a.md" }
-  message { from "requester" to "iot.codex" content "./cold-b.md" }
+  canonical-agents
+
+  // Arrange the cold backlog before the maintained provider seats launch.
+  run "seed-cold-backlog" {
+    command #"export ST_AGENT=iot.injector
+for target in iot.claude iot.codex; do
+  st2 message send "$target" --root "$CATALOG" --as iot.injector --subject "cold backlog A" -m 'Reply on this thread with exactly `ACK IOT-COLD-A-4d91`, then archive this message.' >/dev/null
+  st2 message send "$target" --root "$CATALOG" --as iot.injector --subject "cold backlog B" -m 'Reply on this thread with exactly `ACK IOT-COLD-B-7a2c`, then archive this message.' >/dev/null
+done"#
+  }
+
+  // The injector is the eval supervisor. Subject replies are worker reports; its final requester
+  // message closes the ordinary canonical-eval done loop without a special completion channel.
+  message { from "requester" to "iot.injector" content "Run the bounded inbox scenario." }
   max-timeout "900s"
 
   judges {

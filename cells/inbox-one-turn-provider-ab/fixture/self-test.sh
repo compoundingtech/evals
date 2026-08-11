@@ -7,9 +7,11 @@ cleanup() { rm -rf -- "$scratch"; }
 trap cleanup EXIT
 
 mkdir -p "$scratch"/{bin,metrics,scenario,requester/inbox,requester/archive}
+mkdir -p "$scratch/agents/iot/injector"/{inbox,archive}
 cp "$fixture/bin/st2" "$scratch/bin/st2"
 for agent in iot.claude iot.codex; do
-  mkdir -p "$scratch/$agent"/{inbox,archive}
+  agent_dir="$scratch/agents/iot/${agent#iot.}"
+  mkdir -p "$agent_dir"/{inbox,archive}
   : >"$scratch/metrics/$agent.jsonl"
   index=0
   for token in \
@@ -17,12 +19,12 @@ for agent in iot.claude iot.codex; do
     IOT-BURST-2-82bc IOT-BURST-3-c540 IOT-POST-BATCH-f92a; do
     index=$((index + 1))
     name="$(printf '%03d-%s.md' "$index" "$agent")"
-    printf '%s\n' "$token" >"$scratch/$agent/archive/$name"
+    printf '%s\n' "$token" >"$agent_dir/archive/$name"
     {
       printf 'from: %s\n' "$agent"
       printf 'in-reply-to: %s\n\n' "$name"
       printf 'ACK %s\n' "$token"
-    } >"$scratch/requester/inbox/reply-$name"
+    } >"$scratch/agents/iot/injector/inbox/reply-$name"
   done
   if [ "$agent" = "iot.claude" ]; then
     jq -cn --arg at_ns "0" --argjson argv '["message","delivery","iot.claude"]' \

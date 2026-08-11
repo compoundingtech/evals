@@ -32,9 +32,13 @@ wait_for_archives() {
   return 1
 }
 
+mailbox_dir() {
+  printf '%s\n' "$bus/agents/iot/${1#iot.}"
+}
+
 archive_token_count() {
   local agent="$1"
-  grep -lRE 'IOT-(COLD-[AB]|BURST-[123])-' "$bus/$agent/archive" 2>/dev/null | wc -l | tr -d ' '
+  grep -lRE 'IOT-(COLD-[AB]|BURST-[123])-' "$(mailbox_dir "$agent")/archive" 2>/dev/null | wc -l | tr -d ' '
 }
 
 send() {
@@ -58,3 +62,15 @@ for agent in iot.claude iot.codex; do
   send "$agent" "post-batch durability" IOT-POST-BATCH-f92a
   printf '%s\tpost-batch-sent\t%s\n' "$(date +%s%N)" "$agent" >>"$state/events.tsv"
 done
+
+for agent in iot.claude iot.codex; do
+  for _ in $(seq 1 1200); do
+    if [ "$(find "$(mailbox_dir "$agent")/archive" -maxdepth 1 -type f | wc -l | tr -d ' ')" -eq 6 ]; then
+      break
+    fi
+    sleep 0.25
+  done
+  [ "$(find "$(mailbox_dir "$agent")/archive" -maxdepth 1 -type f | wc -l | tr -d ' ')" -eq 6 ]
+done
+
+st2 message send requester --as iot.injector -m "bounded inbox scenario complete" >/dev/null

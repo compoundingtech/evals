@@ -12,13 +12,18 @@ tokens=(
   IOT-POST-BATCH-f92a
 )
 
+mailbox_dir() {
+  printf '%s\n' "$bus/agents/iot/${1#iot.}"
+}
+
 for agent in iot.claude iot.codex; do
-  [ -d "$bus/$agent/archive" ]
-  [ "$(find "$bus/$agent/inbox" -maxdepth 1 -type f | wc -l | tr -d ' ')" -eq 0 ]
+  agent_dir="$(mailbox_dir "$agent")"
+  [ -d "$agent_dir/archive" ]
+  [ "$(find "$agent_dir/inbox" -maxdepth 1 -type f | wc -l | tr -d ' ')" -eq 0 ]
   for token in "${tokens[@]}"; do
-    [ "$(grep -lRF "$token" "$bus/$agent/archive" 2>/dev/null | wc -l | tr -d ' ')" -eq 1 ]
+    [ "$(grep -lRF "$token" "$agent_dir/archive" 2>/dev/null | wc -l | tr -d ' ')" -eq 1 ]
     reply="$(
-      grep -lRF "ACK $token" "$bus/requester/inbox" "$bus/requester/archive" 2>/dev/null |
+      grep -lRF "ACK $token" "$(mailbox_dir iot.injector)/inbox" "$(mailbox_dir iot.injector)/archive" 2>/dev/null |
         while IFS= read -r candidate; do
           if grep -Eq "^from:[[:space:]]*$agent([[:space:]]|$)" "$candidate"; then
             printf '%s\n' "$candidate"

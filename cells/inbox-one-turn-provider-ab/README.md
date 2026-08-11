@@ -37,8 +37,10 @@ The Claude hook's read-only `message delivery` process is reported separately an
 model tool call. The candidate is accepted only when the provider transcript
 also proves one inference before one shell action call; a green archive outcome alone is insufficient.
 
-Codex uses structured `argv` plus `deliver "app-server"`, so both arms exercise the native #237 app-server
-seam rather than generic PTY DING. The immutable baseline is st2 #237 head
+Codex uses a canonical Agent Spec with structured `argv` plus `deliver "app-server"`, so both arms exercise
+the native #237 app-server seam rather than generic PTY DING. Canonical Agent Specs also keep the A/B on the
+driver-facing declaration boundary: both exact heads consume the same cell even though the baseline compact
+eval grammar cannot express structured argv. The immutable baseline is st2 #237 head
 `1d06c4b263a7c5a2a6b8eec1f2e8c4fbea5e2edc`; the candidate is st2 #239 head
 `c1a0f90dd4814ec3ce8067219530d7bd8723e191`. Claude keeps native
 generic `ding`, plus the candidate `UserPromptSubmit` hook declaration. Its guarded command is a clean no-op

@@ -24,7 +24,7 @@ eval {
   max-timeout "900s"
 
   judges {
-    judge "OUTCOMES - both providers reply on every exact thread, archive every handled item, and subsequently deliver the post-batch arrival" {
+    judge "OUTCOMES - both providers handle the cold batch and Codex subsequently handles active and post-batch arrivals" {
       exec "bash ./judges/outcomes.sh"
     }
     judge "MEASUREMENTS - emit exact bus CLI sequence, payload bytes, timing, archive names, and runner version hashes" {

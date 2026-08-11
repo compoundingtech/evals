@@ -16,14 +16,16 @@ behind the driver boundary tracked by st2 #162.
 
 ## Scenario and evidence
 
-Both maintained providers receive the same resettable synthetic sequence:
+Both maintained providers receive two cold-backlog messages before boot. That matched batch measures whether
+their first inference must discover bodies or can act immediately. Codex additionally receives the evented
+sequence through its typed app-server transport:
 
-1. two cold-backlog messages;
-2. a bounded three-message burst injected after the subject's first bus CLI process begins;
-3. one post-batch message injected only after the first five messages are durably archived.
+1. a bounded three-message burst injected after its first bus CLI process begins;
+2. one post-batch message injected only after its first five messages are durably archived.
 
-The held-out outcome judge requires an exact threaded acknowledgement and one archive copy for all six
-tokens, an empty subject inbox, and subsequent delivery and handling of the final post-batch arrival. The
+The held-out outcome judge requires an exact threaded acknowledgement and one archive copy for both Claude
+cold tokens and all six Codex tokens, empty subject inboxes, and Codex delivery and handling of the final
+post-batch arrival. The
 measurement judge emits JSON containing every wrapped bus CLI argv, provider-delivery/discovery/mutation
 counts, first subject inbox-operation classification,
 source payload bytes, first/last CLI timestamps, scenario timestamps, exact archive filenames, `st2
@@ -44,10 +46,10 @@ eval grammar cannot express structured argv. The setup uses st2's existing batch
 boot, matching the standard compact-eval lifecycle without adding a provider-specific trust mechanism.
 The immutable baseline is st2 #237 head
 `1d06c4b263a7c5a2a6b8eec1f2e8c4fbea5e2edc`; the candidate is st2 #239 head
-`c1a0f90dd4814ec3ce8067219530d7bd8723e191`. Claude keeps native
-generic `ding`, plus the candidate `UserPromptSubmit` hook declaration. Its guarded command is a clean no-op
-when the baseline hook target is absent, so metadata delivery falls through to one `ls --include-body` without
-adding a hook error; at the candidate head it injects the bounded bodies into the same prompt inference.
+`c1a0f90dd4814ec3ce8067219530d7bd8723e191`. Claude proves the maintained SessionStart hook path against the
+cold batch. Codex proves the maintained typed DING path against both active-turn and post-batch arrivals.
+Generic Claude PTY DING is deliberately left to evals #57: its prompt/draft collision policy is a transport
+safety axis and would confound this cell's body-availability comparison.
 
 Exact Nix-built runner binaries used for the pending matched run:
 

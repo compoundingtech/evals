@@ -6,5 +6,4 @@ agent "claude" {
     PATH "$CATALOG/bin:$PATH"
   }
   command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT: an injected bounded body envelope is that drain; otherwise use one st2 message ls $ST_AGENT --json --include-body call. Then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again by the same rule, act on every delivered message, archive each handled item, and report completion or blockers over the st2 bus.'"#
-  ding
 }

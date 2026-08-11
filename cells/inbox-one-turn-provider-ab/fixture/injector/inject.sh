@@ -21,14 +21,14 @@ wait_for_subject_cli() {
 }
 
 wait_for_archives() {
-  local agent="$1"
+  local agent="$1" expected="$2"
   for _ in $(seq 1 1200); do
-    if [ "$(archive_token_count "$agent")" -eq 5 ]; then
+    if [ "$(archive_token_count "$agent")" -eq "$expected" ]; then
       return 0
     fi
     sleep 0.25
   done
-  echo "timed out waiting for $agent first five archives" >&2
+  echo "timed out waiting for $agent archive count $expected" >&2
   return 1
 }
 
@@ -50,27 +50,28 @@ send() {
 for agent in iot.claude iot.codex; do
   wait_for_subject_cli "$agent"
   printf '%s\tfirst-subject-cli\t%s\n' "$(date +%s%N)" "$agent" >>"$state/events.tsv"
-  send "$agent" "bounded burst 1" IOT-BURST-1-31ef
-  send "$agent" "bounded burst 2" IOT-BURST-2-82bc
-  send "$agent" "bounded burst 3" IOT-BURST-3-c540
-  printf '%s\tburst-sent\t%s\n' "$(date +%s%N)" "$agent" >>"$state/events.tsv"
 done
 
-for agent in iot.claude iot.codex; do
-  wait_for_archives "$agent"
-  printf '%s\tfirst-batch-archived\t%s\n' "$(date +%s%N)" "$agent" >>"$state/events.tsv"
-  send "$agent" "post-batch durability" IOT-POST-BATCH-f92a
-  printf '%s\tpost-batch-sent\t%s\n' "$(date +%s%N)" "$agent" >>"$state/events.tsv"
-done
+send iot.codex "bounded burst 1" IOT-BURST-1-31ef
+send iot.codex "bounded burst 2" IOT-BURST-2-82bc
+send iot.codex "bounded burst 3" IOT-BURST-3-c540
+printf '%s\tburst-sent\tiot.codex\n' "$(date +%s%N)" >>"$state/events.tsv"
 
-for agent in iot.claude iot.codex; do
+wait_for_archives iot.codex 5
+printf '%s\tfirst-batch-archived\tiot.codex\n' "$(date +%s%N)" >>"$state/events.tsv"
+send iot.codex "post-batch durability" IOT-POST-BATCH-f92a
+printf '%s\tpost-batch-sent\tiot.codex\n' "$(date +%s%N)" >>"$state/events.tsv"
+
+for pair in iot.claude:2 iot.codex:6; do
+  agent="${pair%:*}"
+  expected="${pair#*:}"
   for _ in $(seq 1 1200); do
-    if [ "$(find "$(mailbox_dir "$agent")/archive" -maxdepth 1 -type f | wc -l | tr -d ' ')" -eq 6 ]; then
+    if [ "$(find "$(mailbox_dir "$agent")/archive" -maxdepth 1 -type f | wc -l | tr -d ' ')" -eq "$expected" ]; then
       break
     fi
     sleep 0.25
   done
-  [ "$(find "$(mailbox_dir "$agent")/archive" -maxdepth 1 -type f | wc -l | tr -d ' ')" -eq 6 ]
+  [ "$(find "$(mailbox_dir "$agent")/archive" -maxdepth 1 -type f | wc -l | tr -d ' ')" -eq "$expected" ]
 done
 
 st2 message send requester --as iot.injector -m "bounded inbox scenario complete" >/dev/null

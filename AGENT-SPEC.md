@@ -19,6 +19,13 @@ Scheduled work is not implemented; the reserved `schedule` node fails validation
 Hooks, personas, models, harness selection, and permissions are not special agent grammar. Authors express
 them through task commands, environment, and generic `render` operations.
 
+Downstream documents cite sections through the explicit, namespaced anchors below, for example
+[`AGENT-SPEC.md#agent-spec-resource-bindings`](AGENT-SPEC.md#agent-spec-resource-bindings). These IDs are a
+compatibility surface: keep them stable when headings move or change, never reuse them for another concept,
+and remove one only through an explicit compatibility decision.
+
+<a id="agent-spec-discovery-identity-host"></a>
+
 ## Discovery, identity, and host
 
 The conventional declaration lives at:
@@ -38,6 +45,8 @@ catalogs declare `host` and use a matching folder.
 
 The catalog owns declarations, templates, logs, PTY registry, and flat native bus resources. The workspace
 owns product work. Shipped declarations must not contain a developer's absolute paths, hostname, or username.
+
+<a id="agent-spec-complete-declaration-shape"></a>
 
 ## Complete declaration shape
 
@@ -115,6 +124,8 @@ the window reset; `mode "fail"` parks the task after attempts are exhausted and 
 crash-loop message to `supervisor`. Invalid restart subfields currently fall back to defaults; authors must not
 rely on that permissiveness.
 
+<a id="agent-spec-resource-bindings"></a>
+
 ## Resource bindings
 
 An agent may directly carry zero or more Resource bindings:
@@ -149,6 +160,8 @@ Executable evidence:
 deterministic JSON inspection, exact URI and unknown-tag preservation, Resource-only live adoption, and
 cleanup. The matched [`assignment-contract-*`](cells/) tournament covers direct Resource selection against
 Focus and Assignment controls; direct bindings are the selected treatment.
+
+<a id="agent-spec-compact-explicit-tasks"></a>
 
 ## Compact and explicit tasks
 
@@ -206,6 +219,8 @@ bounded previous log generation. On systemd Linux each task uses its own transie
 does not implicitly stop tasks; later reconciliation adopts them. Explicit network teardown or retirement is
 what stops them.
 
+<a id="agent-spec-environment-expansion"></a>
+
 ## Environment and expansion
 
 Expansion recognizes `$VAR`, `${VAR}`, and `$$` for a literal dollar. Unset variables remain literal. Task
@@ -222,6 +237,8 @@ although render expansion always provides the bus id.
 Validation requires literal workspace/cwd values to be absolute or `$CATALOG`-rooted. Missing catalog-rooted
 paths are errors. Missing external absolute paths are warnings only for the selected local host; remote-host
 filesystem presence is not evaluated locally.
+
+<a id="agent-spec-render-contract"></a>
 
 ## Render contract
 
@@ -250,6 +267,8 @@ Render expansion begins with catalog/runtime values and `ST_AGENT=<bus-id>`, the
 task named `agent`. Network startup materializes running declarations for the selected host before
 reconciliation; suspended, retired, and other-host declarations are skipped. A gating failure suppresses only that agent.
 Prefer a catalog-owned `.st2/` overlay and locally excluded tool loaders.
+
+<a id="agent-spec-validation-health-lifecycle"></a>
 
 ## Validation, health, and lifecycle
 
@@ -311,6 +330,8 @@ generation, and a durable inbox filename across suspend and resume. It remains o
 inventory until the accepted runner pin implements this contract. Task runtime `desiredState` remains the
 per-task running/absent target; `agentDesiredState` and its reason expose the declaration-level intent.
 
+<a id="agent-spec-native-bus-ding-presence"></a>
+
 ## Native bus, DING, and presence
 
 Message filenames are stable `<unix-ms>-<rand6>.md`. An archive receipt with the same filename shadows and
@@ -330,6 +351,8 @@ than replaying every message. The sidecar waits for initial target registration 
 consecutive liveness misses once the target was observed alive.
 
 Settable presence is `offline`, `available`, `busy`, `away`, or `dnd`; `unknown` is derived and cannot be set.
+
+<a id="agent-spec-claude-declaration"></a>
 
 ## Claude declaration
 
@@ -398,6 +421,8 @@ The persona and bus templates remain catalog-owned. The loader and hooks are add
 Claude launch explicitly selects `claude-sonnet-5` at medium effort; no launch may inherit the
 operator's model or effort default.
 
+<a id="agent-spec-codex-declaration"></a>
+
 ## Codex declaration
 
 ```kdl
@@ -463,6 +488,8 @@ agent "<identity>" {
 The catalog-owned `AGENTS.md` template contains the persona and bus contract together. Every current
 Codex launch explicitly selects `gpt-5.6-sol` at medium reasoning effort.
 
+<a id="agent-spec-folder-eval-projection"></a>
+
 ## Folder-eval projection
 
 The folder-eval grammar preserves its `team`, `eval`, kickoff, timeout, and held-out judge shape. Its
@@ -479,6 +506,8 @@ materializes only the known offline fixture builders, and compares each hook fil
 `harness/`. `bin/check-event-first.sh` separately requires one cold-start inbox drain followed by
 native DING wakeups. Structured exceptions are in `evidence/harness-exclusions.tsv`.
 
+<a id="agent-spec-minimum-exhaustive-authoring-examples"></a>
+
 ## Minimum and exhaustive authoring examples
 
 At `agents/example/worker/agent.kdl`, path-derived identity and host make this the smallest valid service:
@@ -493,6 +522,8 @@ normally make identity, host, `ST_AGENT`, workspace, and the real harness comman
 The complete declaration, Resource bindings, compact pair, explicit PTY/exec blocks, restart policy, and
 render block earlier in this document collectively exercise every implemented authoring field. Before
 validating/materializing the example, create every `$CATALOG`-rooted workspace it names.
+
+<a id="agent-spec-free-authoring-gate"></a>
 
 ## Free authoring gate
 

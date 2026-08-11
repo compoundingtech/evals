@@ -41,7 +41,7 @@ harness-native loader plus canonical hook file.
 | `hook-integrity` | model-free | — | 0 | none | `90s` | 4 | — | **NO STRUCTURED RUN** |
 | `host-lock-health-negatives` | model-free | — | 0 | none | `30s` | 5 | — | **NO STRUCTURED RUN** |
 | `inbox-hygiene` | Claude | `claude-sonnet-5` / medium | 1 | low | `900s` | 4 | — | **NO STRUCTURED RUN** |
-| `inbox-one-turn-provider-ab` | mixed | `claude-sonnet-5+gpt-5.6-sol` / medium | 2 | medium | `900s` | 2 | — | **NO STRUCTURED RUN** |
+| `inbox-one-turn-provider-ab` | mixed | `claude-sonnet-5+gpt-5.6-sol` / medium | 2 | medium | `900s` | 2 | **PASS** 2026-08-11T15:43:02Z, 4/4, source [`117edf4`](https://github.com/compoundingtech/evals/commit/117edf4b6872c34a75921ccdbf95e0709541fc96), [receipt](evidence/inbox-one-turn-provider-ab-runs-20260811.json) | **PASS** 2026-08-11T15:43:02Z, 4/4, source [`117edf4`](https://github.com/compoundingtech/evals/commit/117edf4b6872c34a75921ccdbf95e0709541fc96), [receipt](evidence/inbox-one-turn-provider-ab-runs-20260811.json) |
 | `incident-response` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 5 | — | **NO STRUCTURED RUN** |
 | `license-mit` | mixed | `claude-sonnet-5+gpt-5.6-sol` / medium | 3 | high | `1200s` | 6 | — | **FAIL** 2026-07-28T13:27:18Z, 5/6, source [`b3cd5fb`](https://github.com/compoundingtech/evals/commit/b3cd5fbd98c11179a4555d0f9bbccfe98351a734), [receipt](evidence/stable-main-phase4-runs-20260728.json) |
 | `license-mit-codex` | Codex | `gpt-5.6-sol` / medium | 3 | high | `1200s` | 6 | **PASS** 2026-07-26, st2 `9d26245`, 1m39s, [`40ec23d`](https://github.com/compoundingtech/evals/commit/40ec23d3e068e5bd70b6d4b9a92a92d291868dce) | **NO STRUCTURED RUN** |

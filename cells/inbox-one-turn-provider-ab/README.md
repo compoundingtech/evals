@@ -51,14 +51,34 @@ cold batch. Codex proves the maintained typed DING path against both active-turn
 Generic Claude PTY DING is deliberately left to evals #57: its prompt/draft collision policy is a transport
 safety axis and would confound this cell's body-availability comparison.
 
-Exact Nix-built runner binaries used for the pending matched run:
+Exact Nix-built runner binaries used for the matched run:
 
 | arm | st2 version | binary SHA256 |
 |---|---|---|
 | baseline | `st2 0.1.0+1d06c4b` | `06997b2c63ddf58678c7a4d024de62d957faf6c2bdc56766c15501e7946c1338` |
 | candidate | `st2 0.1.0+c1a0f90` | `6795c8539ca308fc49b439a3b6495d2bcd2ad4a5ede4cfe02dd53be2f2c67d81` |
 
-No provider/model result is claimed until both exact arms complete and their transcripts are graded.
+The matched real-provider result is tracked in
+[`evidence/inbox-one-turn-provider-ab-runs-20260811.json`](../../evidence/inbox-one-turn-provider-ab-runs-20260811.json).
+The baseline failed the exact-body outcome: Claude succeeded, but Codex archived all six messages while
+acknowledging subject-derived summaries. The candidate passed all exact-body, threaded-reply, archive,
+bounded-burst, and post-batch checks.
+
+| metric | baseline | candidate | change |
+|---|---:|---:|---:|
+| functional score | FAIL, 3/4 | PASS, 4/4 | exact-body outcome fixed |
+| Codex total tokens | 535,286 | 227,871 | -57.43% |
+| Codex recorded model-response events | 17 | 7 | -58.82% |
+| Codex tool-call boundaries | 11 | 4 | -63.64% |
+| Codex wall time | 115.367 s | 45.676 s | -60.41% |
+| Claude token volume | 367,011 | 319,857 | -12.85% |
+| Claude session duration | 114.706 s | 45.315 s | -60.49% |
+
+The original judge launcher used a cell-relative path and exited 127 after the provider executions completed.
+The receipt records this explicitly: both preserved catalogs were deterministically regraded with the corrected
+tracked judges at `3de9f7e2cffbe4d24da95d4422ed5f687c4b30f9`. The baseline returns the expected semantic failure and the
+candidate returns success. Claude API-call count and total serialized prompt bytes were not persisted and remain
+unknown rather than inferred.
 
 ## Scope boundary
 
@@ -74,5 +94,4 @@ bin/generate-catalog.sh --write
 bin/check-corpus.sh
 ```
 
-An eventual paid run requires explicit approval and exact baseline/candidate st2 binary provenance. Do not
-run either arm merely because the cell exists.
+Any further paid run requires fresh explicit approval and exact baseline/candidate st2 binary provenance.

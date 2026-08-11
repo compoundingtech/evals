@@ -2,10 +2,11 @@
 set -euo pipefail
 
 export ST_AGENT=iot.injector
+export ST_ROOT="$CATALOG"
 st2 pretrust "$CATALOG/claude" "$CATALOG/codex" >/dev/null
 for target in iot.claude iot.codex; do
-  st2 message send "$target" --root "$CATALOG" --as iot.injector --subject "cold backlog A" \
+  st2 message send "$target" --subject "cold backlog A" \
     -m 'Reply on this thread with exactly `ACK IOT-COLD-A-4d91`, then archive this message.' >/dev/null
-  st2 message send "$target" --root "$CATALOG" --as iot.injector --subject "cold backlog B" \
+  st2 message send "$target" --subject "cold backlog B" \
     -m 'Reply on this thread with exactly `ACK IOT-COLD-B-7a2c`, then archive this message.' >/dev/null
 done

@@ -1,0 +1,33 @@
+// Focused #238 provider A/B. Canonical Agent Specs are intentional: both exact st2 heads understand
+// the driver-facing argv/deliver declaration, while the older compact eval grammar does not. The
+// exact st2 binary remains the only treatment variable.
+
+host "iot"
+
+eval {
+  copy "./fixture"
+  canonical-agents
+
+  // Arrange the cold backlog before the maintained provider seats launch.
+  run "seed-cold-backlog" {
+    command "bash ./injector/seed.sh"
+  }
+
+  // The injector is the eval supervisor. Subject replies are worker reports; its final requester
+  // message closes the ordinary canonical-eval done loop without a special completion channel.
+  message {
+    from "requester"
+    to "iot.injector"
+    content "Run the bounded inbox scenario."
+  }
+  max-timeout "900s"
+
+  judges {
+    judge "OUTCOMES - both providers handle the cold batch and Codex subsequently handles active and post-batch arrivals" {
+      exec "bash \"$CATALOG/judges/outcomes.sh\""
+    }
+    judge "MEASUREMENTS - emit exact bus CLI sequence, payload bytes, timing, archive names, and runner version hashes" {
+      exec "bash \"$CATALOG/judges/measurements.sh\""
+    }
+  }
+}

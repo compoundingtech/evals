@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+self="$(readlink -f "$0")"
+real="${ST2_REAL_BIN:-}"
+if [ -z "$real" ]; then
+  while IFS= read -r candidate; do
+    if [ "$(readlink -f "$candidate")" != "$self" ]; then
+      real="$candidate"
+      break
+    fi
+  done < <(type -a -P st2)
+fi
+[ -n "$real" ] || {
+  echo "instrumentation wrapper could not resolve the real st2 binary" >&2
+  exit 127
+}
+
+log_root="${CATALOG:?CATALOG must be set}/metrics"
+mkdir -p "$log_root"
+log="$log_root/${ST_AGENT:?ST_AGENT must be set}.jsonl"
+record="$(jq -cn --arg at_ns "$(date +%s%N)" --arg cwd "$PWD" --args \
+  '$ARGS.named + {argv: $ARGS.positional}' -- "$@")"
+{
+  flock 9
+  printf '%s\n' "$record" >&9
+} 9>>"$log"
+
+exec "$real" "$@"

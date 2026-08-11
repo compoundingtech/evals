@@ -30,11 +30,14 @@ while IFS=: read -r file line text; do
     code="${code%%//*}"
   fi
 
+  code="${code//\\\"/__EVAL_ESCAPED_QUOTE__}"
+  code="${code//\"/}"
+  code="${code//__EVAL_ESCAPED_QUOTE__/\"}"
   remaining="$code"
-  provider_regex='(^|[^[:alnum:]_-])(exec[[:space:]]+)?(claude|codex)[[:space:]]+-'
+  provider_regex='(^|[^[:alnum:]_-])((exec|argv)[[:space:]]+)?(claude|codex)[[:space:]]+-'
   while [[ "$remaining" =~ $provider_regex ]]; do
     match="${BASH_REMATCH[0]}"
-    provider="${BASH_REMATCH[3]}"
+    provider="${BASH_REMATCH[4]}"
     after="${remaining#*"$match"}"
     invocation="$match$after"
     if [[ "$after" =~ $provider_regex ]]; then
@@ -57,7 +60,7 @@ while IFS=: read -r file line text; do
       ((codex_launches += 1))
       [[ "$invocation" == *"--model gpt-5.6-sol"* ]] ||
         fail "$file:$line launches Codex without --model gpt-5.6-sol"
-      [[ "$invocation" == *"model_reasoning_effort=\"medium\""* ]] ||
+      [[ "$invocation" == *"model_reasoning_effort=medium"* || "$invocation" == *"model_reasoning_effort=\"medium\""* ]] ||
         fail "$file:$line launches Codex without explicit medium reasoning effort"
       [[ "$invocation" == *"--dangerously-bypass-hook-trust"* ]] ||
         fail "$file:$line launches Codex without trusting the canonical workspace hooks"
@@ -67,7 +70,7 @@ while IFS=: read -r file line text; do
   done
 done < <(
   rg --no-ignore -n --no-heading \
-    'exec[[:space:]]+(claude|codex)|(^|[^[:alnum:]_-])(claude|codex)[[:space:]]+-' \
+    '(exec[[:space:]]+|argv[[:space:]]+")?(claude|codex)"?[[:space:]]+"?-' \
     "$scan_root" -g '*.kdl' -g '*.sh' -g '!**/_git/**' || true
 )
 

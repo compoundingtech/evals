@@ -58,4 +58,29 @@ grep -Fq 'selects Opus' "$opus_output" || {
   exit 1
 }
 
-echo "PASS: nested provider launches are counted independently; unpinned and Opus mutations fail"
+mkdir -p "$scratch/structured-valid" "$scratch/structured-unpinned"
+printf '%s\n' \
+  'agent "worker" {' \
+  '  argv "codex" "--dangerously-bypass-hook-trust" "--model" "gpt-5.6-sol" "-c" "model_reasoning_effort=\"medium\"" "task"' \
+  '}' >"$scratch/structured-valid/agent.kdl"
+printf '%s\n' \
+  'agent "worker" {' \
+  '  argv "codex" "--dangerously-bypass-hook-trust" "-c" "model_reasoning_effort=\"medium\"" "task"' \
+  '}' >"$scratch/structured-unpinned/agent.kdl"
+
+bash "$checker" "$scratch/structured-valid" >/dev/null || {
+  echo "FAIL: model policy rejected a fully pinned structured Codex argv" >&2
+  exit 1
+}
+structured_output="$scratch/structured-unpinned.out"
+if bash "$checker" "$scratch/structured-unpinned" >"$structured_output" 2>&1; then
+  echo "FAIL: model policy accepted a structured Codex argv without its model pin" >&2
+  exit 1
+fi
+grep -Fq 'launches Codex without --model gpt-5.6-sol' "$structured_output" || {
+  echo "FAIL: structured Codex mutation failed without the expected model diagnostic" >&2
+  cat "$structured_output" >&2
+  exit 1
+}
+
+echo "PASS: nested and structured provider launches are counted; unpinned and Opus mutations fail"

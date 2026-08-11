@@ -352,6 +352,32 @@ consecutive liveness misses once the target was observed alive.
 
 Settable presence is `offline`, `available`, `busy`, `away`, or `dnd`; `unknown` is derived and cannot be set.
 
+<a id="agent-spec-bounded-provider-inbox-delivery"></a>
+
+### Bounded maintained-provider inbox delivery
+
+At a maintained provider's native turn boundary, unread messages are offered as the largest complete FIFO
+prefix within fixed message-count and byte bounds. The provider envelope carries exact filenames, metadata,
+and complete bodies from the existing `message ls <identity> --json --include-body` result. The read-only
+`message delivery` surface exposes that provider-neutral rendering to thin adapters. Bodies are never
+truncated. Overflow remains durably unread for a later delivery; an oversized FIFO head falls back to its
+metadata and the existing explicit read path without reordering later messages.
+
+The ordinary path must let one inference issue one shell tool call containing the existing per-message
+`message reply` and `message archive` commands. This is an efficiency guarantee, not a new settlement
+protocol: there is no batch claim, lease, cursor, or implicit archive authority. New arrivals remain outside
+the rendered prefix, and archive receipts keep their existing exact-filename idempotency.
+
+Maintained Codex uses its structured app-server delivery channel. Maintained Claude injects the same semantic
+envelope through its native prompt hook. Unknown or custom harnesses retain the bounded metadata-only generic
+DING. Provider adapters may move behind the driver boundary without changing selection, payload, overflow,
+or archive semantics.
+
+Executable evidence: [`inbox-one-turn-provider-ab`](cells/inbox-one-turn-provider-ab/) is the matched
+Claude/Codex acceptance scaffold for cold backlog, during-turn arrival, bounded burst, and post-batch arrival.
+It is run at exact baseline and candidate st2 heads; provider transcripts and tracked receipts supply model,
+token, tool-boundary, wall-time, provenance, archive-outcome, and cleanup evidence.
+
 <a id="agent-spec-claude-declaration"></a>
 
 ## Claude declaration
@@ -503,8 +529,10 @@ workspace:
 
 `bin/check-harness-contract.sh` enumerates every model agent from every maintained root KDL,
 materializes only the known offline fixture builders, and compares each hook file byte-for-byte with
-`harness/`. `bin/check-event-first.sh` separately requires one cold-start inbox drain followed by
-native DING wakeups. Structured exceptions are in `evidence/harness-exclusions.tsv`.
+`harness/`. The bounded-delivery acceptance cell has one mechanically checked candidate-only Claude
+`UserPromptSubmit` hook in addition to that canonical baseline. `bin/check-event-first.sh` separately requires
+one cold-start inbox drain followed by native event delivery. Structured exceptions are in
+`evidence/harness-exclusions.tsv`.
 
 <a id="agent-spec-minimum-exhaustive-authoring-examples"></a>
 

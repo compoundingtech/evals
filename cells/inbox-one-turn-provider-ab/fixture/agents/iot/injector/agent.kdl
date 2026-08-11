@@ -1,0 +1,9 @@
+agent "injector" {
+  host "iot"
+  workspace "$CATALOG/injector"
+  env {
+    ST_AGENT "iot.injector"
+    PATH "$CATALOG/bin:$PATH"
+  }
+  command "exec bash ./inject.sh"
+}

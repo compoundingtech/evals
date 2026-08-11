@@ -13,7 +13,7 @@ tokens=(
 )
 
 mailbox_dir() {
-  printf '%s\n' "$bus/agents/iot/${1#iot.}"
+  printf '%s\n' "$bus/agents/iot/${1#iot.}/resources"
 }
 
 for agent in iot.claude iot.codex; do

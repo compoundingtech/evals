@@ -16,7 +16,7 @@ fi
 [ -n "$real" ]
 
 mailbox_dir() {
-  printf '%s\n' "$bus/agents/iot/${1#iot.}"
+  printf '%s\n' "$bus/agents/iot/${1#iot.}/resources"
 }
 
 subjects='[]'

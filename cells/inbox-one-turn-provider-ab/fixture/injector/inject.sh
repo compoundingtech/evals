@@ -33,7 +33,7 @@ wait_for_archives() {
 }
 
 mailbox_dir() {
-  printf '%s\n' "$bus/agents/iot/${1#iot.}"
+  printf '%s\n' "$bus/agents/iot/${1#iot.}/resources"
 }
 
 archive_token_count() {

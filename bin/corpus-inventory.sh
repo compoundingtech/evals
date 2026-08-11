@@ -56,16 +56,19 @@ for cell in "${cells[@]}"; do
     if [[ "$file" == *.kdl ]]; then
       code="${code%%//*}"
     fi
+    code="${code//\"/}"
     if [[ "$code" =~ exec[[:space:]]+claude([[:space:]]|$) ]] ||
+      [[ "$code" =~ argv[[:space:]]+claude([[:space:]]|$) ]] ||
       [[ "$code" =~ (^|[^[:alnum:]_-])claude[[:space:]]+- ]]; then
       ((claude += 1))
     elif [[ "$code" =~ exec[[:space:]]+codex([[:space:]]|$) ]] ||
+      [[ "$code" =~ argv[[:space:]]+codex([[:space:]]|$) ]] ||
       [[ "$code" =~ (^|[^[:alnum:]_-])codex[[:space:]]+- ]]; then
       ((codex += 1))
     fi
   done < <(
     rg -n --no-heading \
-      'exec[[:space:]]+(claude|codex)|(^|[^[:alnum:]_-])(claude|codex)[[:space:]]+-' \
+      '(exec[[:space:]]+|argv[[:space:]]+")?(claude|codex)"?[[:space:]]+"?-' \
       "$cell_dir" -g '*.kdl' -g '*.sh' -g '!**/_git/**' || true
   )
 

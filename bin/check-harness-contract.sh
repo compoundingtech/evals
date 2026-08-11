@@ -110,8 +110,18 @@ while IFS=$'\t' read -r cell agent harness workspace st_agent command_line; do
       { echo "FAIL: $cell/$agent CLAUDE.md does not load @PERSONA.md" >&2; failed=1; }
     [ -s "$target/PERSONA.md" ] ||
       { echo "FAIL: $cell/$agent has no non-empty PERSONA.md" >&2; failed=1; }
-    cmp -s harness/claude-settings.local.json "$target/.claude/settings.local.json" ||
-      { echo "FAIL: $cell/$agent does not materialize the canonical Claude hooks" >&2; failed=1; }
+    if [ "$cell" = "inbox-one-turn-provider-ab" ]; then
+      stripped="$scratch/$cell-$agent-hooks.json"
+      jq 'del(.hooks.UserPromptSubmit)' "$target/.claude/settings.local.json" >"$stripped"
+      cmp -s harness/claude-settings.local.json "$stripped" ||
+        { echo "FAIL: $cell/$agent differs from canonical Claude hooks beyond UserPromptSubmit" >&2; failed=1; }
+      jq -e '.hooks.UserPromptSubmit == [{"hooks":[{"type":"command","command":"test ! -x \"$ST_HOOKS/claude-user-prompt-submit.sh\" || \"$ST_HOOKS/claude-user-prompt-submit.sh\""}]}]' \
+        "$target/.claude/settings.local.json" >/dev/null ||
+        { echo "FAIL: $cell/$agent does not declare the exact guarded candidate UserPromptSubmit hook" >&2; failed=1; }
+    else
+      cmp -s harness/claude-settings.local.json "$target/.claude/settings.local.json" ||
+        { echo "FAIL: $cell/$agent does not materialize the canonical Claude hooks" >&2; failed=1; }
+    fi
     grep -Fq 'Read CLAUDE.md.' <<< "$command_text" ||
       { echo "FAIL: $cell/$agent launch does not use its Claude loader" >&2; failed=1; }
     [ ! -e "$target/.codex/hooks.json" ] ||

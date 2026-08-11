@@ -44,11 +44,12 @@ while IFS= read -r cell; do
         printf "FAIL: %s agent %s has a model command but no direct ST_AGENT\n", cell, agent > "/dev/stderr"
         bad = 1
       }
-      if (ding != 1) {
-        printf "FAIL: %s agent %s has a model command but %d direct bare ding declarations\n", cell, agent, ding > "/dev/stderr"
+      native_delivery = (harness == "Codex" && delivery == "app-server" && ding == 0) || (delivery == "" && ding == 1)
+      if (!native_delivery) {
+        printf "FAIL: %s agent %s has invalid native delivery (harness=%s delivery=%s ding=%d)\n", cell, agent, harness, delivery, ding > "/dev/stderr"
         bad = 1
       }
-      if (workspace != "" && st_agent != "" && ding == 1) {
+      if (workspace != "" && st_agent != "" && native_delivery) {
         printf "%s\t%s\t%s\t%s\t%s\t%d\n", cell, agent, harness, workspace, st_agent, command_line
       }
     }
@@ -68,6 +69,7 @@ while IFS= read -r cell; do
       harness = ""
       command_line = 0
       ding = 0
+      delivery = ""
       next
     }
     in_agent {
@@ -93,14 +95,19 @@ while IFS= read -r cell; do
         sub(/.*ST_AGENT[[:space:]]+"/, "", st_agent)
         sub(/".*/, "", st_agent)
       }
-      if ($0 ~ /^[[:space:]]*command[[:space:]]+/) {
+      if ($0 ~ /^[[:space:]]*(command|argv)[[:space:]]+/) {
         if ($0 ~ /exec claude[[:space:]]/) {
           harness = "Claude"
           command_line = NR
-        } else if ($0 ~ /exec codex[[:space:]]/) {
+        } else if ($0 ~ /(exec codex[[:space:]]|argv[[:space:]]+"codex")/) {
           harness = "Codex"
           command_line = NR
         }
+      }
+      if ($0 ~ /^[[:space:]]*deliver[[:space:]]+"/) {
+        delivery = $0
+        sub(/^[[:space:]]*deliver[[:space:]]+"/, "", delivery)
+        sub(/".*/, "", delivery)
       }
       if (trimmed == child_indent "ding") {
         ding += 1
@@ -118,7 +125,7 @@ while IFS= read -r cell; do
 done < <(find cells -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | LC_ALL=C sort)
 
 launches="$(
-  rg -n --no-heading '^[[:space:]]*command[[:space:]]+.*exec (claude|codex)[[:space:]]' \
+  rg -n --no-heading '^[[:space:]]*(command[[:space:]]+.*exec |argv[[:space:]]+")(claude|codex)' \
     cells/*/*.kdl | wc -l | tr -d ' '
 )"
 rows="$(wc -l < "$inventory" | tr -d ' ')"

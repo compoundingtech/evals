@@ -1,0 +1,42 @@
+// Focused #238 provider A/B. Run this same cell once at the exact metadata-only st2 head and once at the
+// exact bounded-body-delivery head. The runner binary is the only treatment variable; this cell invents no
+// delivery flag or settlement command. Related to evals #57, but intentionally excludes PTY activity,
+// human-draft collision, and guarded-send policy (owned by that issue's delivery matrix).
+
+team "iot" {
+  agent "claude" {
+    workspace "./claude"
+    env { ST_AGENT "iot.claude" PATH "$CATALOG/bin:$PATH" }
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode auto 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT: an injected bounded body envelope is that drain; otherwise use one st2 message ls $ST_AGENT --json --include-body call. Then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again by the same rule, act on every delivered message, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding
+  }
+  agent "codex" {
+    workspace "./codex"
+    env { ST_AGENT "iot.codex" PATH "$CATALOG/bin:$PATH" }
+    argv "codex" "--dangerously-bypass-approvals-and-sandbox" "--dangerously-bypass-hook-trust" "--model" "gpt-5.6-sol" "-c" "model_reasoning_effort=\"medium\"" "You just cold-started in a hermetic st2 eval. Read AGENTS.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT: an injected bounded body envelope is that drain; otherwise use one st2 message ls $ST_AGENT --json --include-body call. Then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again by the same rule, act on every delivered message, archive each handled item, and report completion or blockers over the st2 bus."
+    deliver "app-server"
+  }
+  agent "injector" {
+    workspace "./injector"
+    env { ST_AGENT "iot.injector" }
+    command "exec bash ./inject.sh"
+  }
+}
+
+eval {
+  copy "./fixture"
+  message { from "requester" to "iot.claude" content "./cold-a.md" }
+  message { from "requester" to "iot.claude" content "./cold-b.md" }
+  message { from "requester" to "iot.codex" content "./cold-a.md" }
+  message { from "requester" to "iot.codex" content "./cold-b.md" }
+  max-timeout "900s"
+
+  judges {
+    judge "OUTCOMES - both providers reply on every exact thread, archive every handled item, and subsequently deliver the post-batch arrival" {
+      exec "bash ./judges/outcomes.sh"
+    }
+    judge "MEASUREMENTS - emit exact bus CLI sequence, payload bytes, timing, archive names, and runner version hashes" {
+      exec "bash ./judges/measurements.sh"
+    }
+  }
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Enforce one cold-start drain followed by native DING wakeups for every maintained model seat.
+# Enforce one cold-start drain followed by native event delivery for every maintained model seat.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -55,7 +55,7 @@ if rg -n --pcre2 \
 fi
 
 if [ "$failed" -eq 0 ]; then
-  printf 'PASS: %s model seats use one cold-start drain and event-first native DING wakeups\n' \
+  printf 'PASS: %s model seats use one cold-start drain and event-first native delivery\n' \
     "$(wc -l < "$inventory" | tr -d ' ')"
 fi
 exit "$failed"

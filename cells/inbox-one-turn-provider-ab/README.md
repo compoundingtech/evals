@@ -40,7 +40,9 @@ also proves one inference before one shell action call; a green archive outcome 
 Codex uses a canonical Agent Spec with structured `argv` plus `deliver "app-server"`, so both arms exercise
 the native #237 app-server seam rather than generic PTY DING. Canonical Agent Specs also keep the A/B on the
 driver-facing declaration boundary: both exact heads consume the same cell even though the baseline compact
-eval grammar cannot express structured argv. The immutable baseline is st2 #237 head
+eval grammar cannot express structured argv. The hermetic canonical Claude seat explicitly skips interactive
+permission/trust prompts, matching the already-unattended Codex seat instead of mutating ambient trust state.
+The immutable baseline is st2 #237 head
 `1d06c4b263a7c5a2a6b8eec1f2e8c4fbea5e2edc`; the candidate is st2 #239 head
 `c1a0f90dd4814ec3ce8067219530d7bd8723e191`. Claude keeps native
 generic `ding`, plus the candidate `UserPromptSubmit` hook declaration. Its guarded command is a clean no-op

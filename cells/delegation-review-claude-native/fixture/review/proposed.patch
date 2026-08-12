@@ -1,0 +1,60 @@
+diff --git a/src/export/markdown.js b/src/export/markdown.js
+index 700cb53..d5b063b 100644
+--- a/src/export/markdown.js
++++ b/src/export/markdown.js
+@@ -3,7 +3,7 @@ import { resolveTitle } from "../compat/index.js";
+ export const DEFAULTS = { heading: "##", bullet: "-" };
+ 
+ export function exportMarkdown(notes, options = {}) {
+-  const config = { ...DEFAULTS, ...options };
++  const config = Object.assign(DEFAULTS, options);
+   return notes
+     .map((note) => `${config.heading} ${resolveTitle(note)}\n${config.bullet} ${note.body ?? ""}`)
+     .join("\n\n");
+diff --git a/src/search/query.js b/src/search/query.js
+index ed27595..b67aa4a 100644
+--- a/src/search/query.js
++++ b/src/search/query.js
+@@ -1,5 +1,5 @@
+ export function query(entries, term, limit = 10) {
+-  if (limit <= 0) limit = 10;
++  if (limit < 0) limit = 10;
+   const needle = term.trim().toLowerCase();
+   if (!needle) return [];
+   return entries.filter((entry) => entry.title.toLowerCase().includes(needle)).slice(0, limit);
+diff --git a/src/sort.js b/src/sort.js
+index 6469502..bc6f003 100644
+--- a/src/sort.js
++++ b/src/sort.js
+@@ -1,3 +1,3 @@
+ export function sortNotes(notes) {
+-  return [...notes].sort((a, b) => (a.heading ?? "").localeCompare(b.heading ?? ""));
++  return [...notes].sort((a, b) => (a.heading ?? "") > (b.heading ?? ""));
+ }
+diff --git a/src/util/clamp.js b/src/util/clamp.js
+index 360beec..a8f9213 100644
+--- a/src/util/clamp.js
++++ b/src/util/clamp.js
+@@ -1,3 +1,5 @@
+ export function clamp(value, low, high) {
+-  return Math.min(Math.max(value, low), high);
++  if (value < low) return low;
++  if (value > high) return high;
++  return value;
+ }
+diff --git a/test/query.test.js b/test/query.test.js
+index 1dfafc2..d8b3a25 100644
+--- a/test/query.test.js
++++ b/test/query.test.js
+@@ -12,6 +12,11 @@ test("query matches on title substrings", () => {
+   assert.deepEqual(query(entries, "note").map((e) => e.id), [1, 2]);
+ });
+ 
++test("query matching ignores case and surrounding space", () => {
++  assert.deepEqual(query(entries, "  NOTE ").map((e) => e.id), [1, 2]);
++  assert.deepEqual(query(entries, "gamma").map((e) => e.id), [3]);
++});
++
+ test("query returns nothing for an empty term", () => {
+   assert.deepEqual(query(entries, "   "), []);
+ });

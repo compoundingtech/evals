@@ -119,6 +119,21 @@ and continues or stops.
   model-free mutation gate proves that scope expansion, protected-requirement
   edits, missing spec upkeep, escalation-only output, and spec-only output fail
   the intended judges before either paid condition runs.
+- The twelve matched `delegation-*` cells compare bus-managed delegation with
+  harness-native sub-agent delegation on three delegation tasks. Within a task
+  the four arms hold task bytes, held-out graders, frozen product repository,
+  deliverable contract, and timeout constant; only the seats and the coordinator
+  persona vary, and the outcome graders never learn the arm. Deliverables are
+  attributed per delegate in a shared directory so one mechanical oracle reads
+  both delegation shapes. `bin/check-delegation-parity.sh` proves the matching,
+  the held-out grader discrimination in both bus shapes, and the tasks' premises
+  before any paid arm runs. Two boundaries are recorded rather than closed: a
+  folder eval launches the harness directly, so native arms run unmanaged, and
+  native fan-out is self-attested with only a negative mechanical guarantee — a
+  native cell declares exactly one bus seat and fails if another mailbox
+  appears. Timing is measured as bus latency between the kickoff receipt and the
+  coordinator's confirmation, because a single-seat folder eval never signals
+  completion and consumes its whole declared timeout.
 - The model-free `agent-spec-resource-bindings` cell traces the portable
   Resource-envelope claims in `AGENT-SPEC.md` to native st2 parsing,
   machine-readable inspection, and reconciliation. It rejects malformed or

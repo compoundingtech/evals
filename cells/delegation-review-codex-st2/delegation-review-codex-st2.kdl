@@ -1,0 +1,52 @@
+// delegation-review-codex-st2 — codex-st2 arm of the delegation-parity tournament.
+// Delegation is st2-managed: the coordinator hands each declared slice to a peer seat over the
+// native message bus. Matched with delegation-review-codex-native byte for byte except for this layer.
+team "dg" {
+  agent "sup" {
+    workspace "./sup"
+    env { ST_AGENT "dg.sup" }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You cold-started in a hermetic st2 eval. Read AGENTS.md. Drain the inbox once using st2 message, then set status available; presence failure is non-blocking. If there is no work, stand by for DING. After any DING, drain again, act on every message, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding
+  }
+  agent "w1" {
+    workspace "./w1"
+    env { ST_AGENT "dg.w1" }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You cold-started in a hermetic st2 eval. Read AGENTS.md. Drain the inbox once using st2 message, then set status available; presence failure is non-blocking. If there is no work, stand by for DING. After any DING, drain again, act on every message, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding
+  }
+  agent "w2" {
+    workspace "./w2"
+    env { ST_AGENT "dg.w2" }
+    command #"exec codex --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust --model gpt-5.6-sol -c 'model_reasoning_effort="medium"' 'You cold-started in a hermetic st2 eval. Read AGENTS.md. Drain the inbox once using st2 message, then set status available; presence failure is non-blocking. If there is no work, stand by for DING. After any DING, drain again, act on every message, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding
+  }
+}
+
+eval {
+  copy "./fixture"
+  message {
+    from "requester"
+    to "dg.sup"
+    content "./task.md"
+  }
+  max-timeout "900s"
+
+  judges {
+    judge "outcome — the summary names exactly the real defects and no behaviour-preserving hunk" {
+      exec "bash ./judges/grade.sh outcome"
+    }
+    judge "slices — both review deliverables are attributed, distinct, and independently correct" {
+      exec "bash ./judges/grade.sh slices"
+    }
+    judge "isolation — the reviewed repository is byte-identical to the frozen baseline" {
+      exec "bash ./judges/grade.sh isolation"
+    }
+    judge "delegation — st2 delegation evidence" {
+      exec "bash ./judges/grade.sh delegation st2"
+    }
+    judge "observations — descriptive per-run metrics, never gating" {
+      signal
+      exec "bash ./judges/observe.sh codex-st2"
+    }
+  }
+}

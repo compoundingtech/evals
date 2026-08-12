@@ -1,0 +1,3 @@
+# A unified diff legitimately carries a bare space on blank context lines; the corpus whitespace gate must
+# not read the reviewed proposal fixture as an authoring defect.
+cells/**/review/*.patch -whitespace

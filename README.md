@@ -159,6 +159,41 @@ and include model-free regression tests for those oracle boundaries. These pre-p
 evidence, not accepted corpus receipts; `CATALOG.md` remains authoritative and will show no accepted PASS until
 a committed cell is rerun.
 
+## Delegation-parity tournament
+
+The twelve `delegation-*` cells form one matched tournament asking whether **st2-managed sub-agents are worse
+than harness-native sub-agents** on real delegation work. It is a regression check on an existing fleet
+decision, not a benchmark: the preregistered question, metrics, replication plan, falsification rule, and
+limitations live in
+[`evidence/delegation-parity-design-20260812.md`](evidence/delegation-parity-design-20260812.md).
+
+| Task | `claude-st2` / `codex-st2` | `claude-native` | `codex-native` |
+| --- | --- | --- | --- |
+| Broad multi-file search (`sweep`, fan-out 2) | peer seats over the native bus | one seat, `Agent` sub-agents | one seat, `spawn_agent` sub-agents |
+| Independent review of a diff (`review`, fan-out 2) | peer seats over the native bus | one seat, `Agent` sub-agents | one seat, `spawn_agent` sub-agents |
+| Scoped implementation (`implement`, fan-out 1) | peer seats over the native bus | one seat, `Agent` sub-agents | one seat, `spawn_agent` sub-agents |
+
+Within one task the four arms are byte-identical in task, held-out graders, frozen product repository,
+deliverable contract, and timeout; only the delegation layer differs, and the outcome graders never learn the
+arm. Each native arm has a same-harness managed counterpart, because the decision-relevant comparison is
+within a harness family. Deliverables land in a shared `findings/` directory with per-delegate attribution, so
+one mechanical grader reads a bus delegation and a native fan-out identically.
+
+Two honest boundaries: the native arms necessarily run **unmanaged** — a folder eval launches the harness
+directly, so the fleet's native-spawn refusal never fires — and native fan-out is **self-attested**. The only
+mechanical guarantee there is negative: a native cell declares exactly one bus seat and its delegation judge
+fails if a second mailbox ever appears. Timing is measured as bus latency between the kickoff receipt and the
+coordinator's confirmation, because a single-seat folder eval never signals completion and therefore always
+consumes its whole `max-timeout`.
+
+Matching, grader discrimination, and the tasks' premises are proven for free, without starting a model:
+
+```sh
+bin/check-delegation-parity.sh
+```
+
+No arm has been run. `CATALOG.md` will show no accepted PASS for these cells until one is.
+
 ## Add or change a cell
 
 1. Create exactly one `cells/<name>/<name>.kdl`.

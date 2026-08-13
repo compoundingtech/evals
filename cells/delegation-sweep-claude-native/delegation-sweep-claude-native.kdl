@@ -1,0 +1,40 @@
+// delegation-sweep-claude-native — claude-native arm of the delegation-parity tournament.
+// Delegation is harness-native: one bus seat fans the declared slices out to its own claude
+// sub-agents. Matched with delegation-sweep-claude-st2 byte for byte except for this layer.
+team "dg" {
+  agent "sup" {
+    workspace "./sup"
+    env { ST_AGENT "dg.sup" }
+    command #"exec claude --model claude-sonnet-5 --effort medium --permission-mode bypassPermissions 'You just cold-started in a hermetic st2 eval. Read CLAUDE.md. Drain the inbox once with st2 message using $ST_ROOT and $ST_AGENT, then set status available; presence is best-effort if this flat eval seat cannot resolve. If the drain contains no work, stand by for DING. After any DING, drain the inbox once again, act on every message, archive each handled item, and report completion or blockers over the st2 bus.'"#
+    ding
+  }
+}
+
+eval {
+  copy "./fixture"
+  message {
+    from "requester"
+    to "dg.sup"
+    content "./task.md"
+  }
+  max-timeout "900s"
+
+  judges {
+    judge "outcome — the summary names exactly the modules that reach legacyTitle()" {
+      exec "bash ./judges/grade.sh outcome"
+    }
+    judge "slices — both slice deliverables are attributed, distinct, and independently correct" {
+      exec "bash ./judges/grade.sh slices"
+    }
+    judge "isolation — the audited repository is byte-identical to the frozen baseline" {
+      exec "bash ./judges/grade.sh isolation"
+    }
+    judge "delegation — native delegation evidence" {
+      exec "bash ./judges/grade.sh delegation native"
+    }
+    judge "observations — descriptive per-run metrics, never gating" {
+      signal
+      exec "bash ./judges/observe.sh claude-native"
+    }
+  }
+}

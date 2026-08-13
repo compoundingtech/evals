@@ -40,6 +40,7 @@ bin/check-fixture-reset-terminal.sh
 bin/check-harness-contract.sh
 bin/check-vrs-scope-drift.sh
 bin/check-vrs-variations.sh
+bin/check-delegation-parity.sh
 bin/check-weird-git-setup.sh
 bin/check-preflight-closed-set-mutations.sh
 bin/check-overnight-policy.sh

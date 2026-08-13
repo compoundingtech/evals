@@ -7,6 +7,7 @@ cd "$repo_root"
 
 reachable=(
   bin/check-corpus.sh
+  bin/check-delegation-parity.sh
   bin/check-event-first.sh
   bin/check-fixture-reset.sh
   bin/check-fixture-reset-terminal.sh
@@ -64,6 +65,7 @@ mapfile -t direct < <(
     LC_ALL=C sort -u
 )
 expected_direct=(
+  bin/check-delegation-parity.sh
   bin/check-event-first.sh
   bin/check-fixture-reset-terminal.sh
   bin/check-harness-contract.sh

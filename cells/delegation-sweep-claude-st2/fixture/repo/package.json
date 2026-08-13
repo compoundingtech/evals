@@ -1,0 +1,10 @@
+{
+  "name": "noteflow",
+  "version": "0.4.0",
+  "private": true,
+  "type": "module",
+  "description": "Synthetic note pipeline fixture: title resolution, search, export, and slugs.",
+  "scripts": {
+    "test": "node --test"
+  }
+}

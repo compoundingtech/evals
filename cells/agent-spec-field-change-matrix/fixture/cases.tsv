@@ -1,0 +1,19 @@
+case_id	fields	expected	gaps	contract
+source-noop-heals	F01	PASS	-	real KDL-to-JSON path/form move preserves normalized effects while independently dead work heals
+identity-remove-add	F02	RED	G03	exact old identity is removed before the new identity boots
+host-projection	F03	RED	G05	independent old/new projections converge after both overlap-first and absence-first orders without a shared receipt
+invalid-type-refuses	F04	RED	G01	unsupported type refuses validation and reconciliation before launch write or teardown
+role-metadata-adopts	F05	RED	G07	role-only change preserves the generation and becomes observable declaration metadata without notification
+workspace-survivor-event	F06	RED	G02,G04,G06	workspace survivor keeps its generation and gets one durable coalesced privacy-safe post-commit event
+resource-survivor-event	F07	RED	G02,G06	Resource field changes commit before one durable coalesced privacy-safe event and unchanged replay stays quiet
+render-survivor-event	F08	RED	G02,G06	two changed render targets commit before one durable coalesced privacy-safe event and unchanged bytes stay quiet
+task-set-remove	F09	RED	G03	removed child is cleaned by exact ownership without changing its sibling
+task-id-change	F10	RED	G03	exact old task id is removed before the new id boots
+spawn-drift-visible	F11	RED	G03,G04	healthy spawn mismatch stays live and reports desired and observed fingerprints
+invalid-policy-refuses	F12	RED	G03	invalid restart or lifecycle policy refuses instead of defaulting
+retire-removed-child	F13	RED	G03	retirement stops every owned child including one removed in the same revision
+compact-lowering-equal	F14	PASS	-	compact argv env cwd lifecycle equal the explicit PTY while native DING lowering delivers a real message
+provider-fields-core-noop	F15	PASS	-	live provider-only mutation preserves generation and launch fingerprint with zero wake event or action
+invalid-agent-isolated	F16	PASS	-	distinct invalid last-known-good generation is held while an unrelated valid runtime id boots
+plan-dry-run-order	R05	RED	G07	true dry-run reports the fixed action order and writes nothing
+moved-intent-refusal	MOVED	RED	G08	unsupported moved intent rejects cycles conflicts and host changes

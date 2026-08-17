@@ -5,6 +5,4 @@ command = "true"
 
 [resource.work]
 uri = "github-issue://example/project/41"
-
-[resource.work]
-uri = "github-pr://example/project/86"
+_tag = "github-issue"

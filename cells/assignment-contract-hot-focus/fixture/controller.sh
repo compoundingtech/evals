@@ -106,7 +106,7 @@ rebind_intent() {
   local uri="$1" tmp="$SPEC.next"
   awk -v uri="$uri" '
     /^[[:space:]]*resource "intent"/ {
-      print "  resource \"intent\" _tag=\"github-issue\" uri=\"" uri "\""
+      print "  resource \"intent\" uri=\"" uri "\""
       next
     }
     { print }

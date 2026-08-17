@@ -11,7 +11,7 @@ fail=0
 resource_count=$(grep -c '^[[:space:]]*resource "' "$SPEC")
 work_count=$(grep -c '^[[:space:]]*resource "work"' "$SPEC")
 if [ "$resource_count" -eq 5 ] && [ "$work_count" -eq 1 ] &&
-   grep -Fqx '  resource "work" _tag="github-issue" uri="github-issue://eval/widget-license-mit"' "$SPEC"; then
+   grep -Fqx '  resource "work" uri="github-issue://eval/widget-license-mit"' "$SPEC"; then
   echo "PASS: the Agent Spec declares five resources and exactly one named work binding"
 else
   echo "FAIL: expected five resources and one work binding to $WORK_URI"

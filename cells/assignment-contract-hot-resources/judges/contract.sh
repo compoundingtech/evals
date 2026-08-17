@@ -11,9 +11,9 @@ fail=0
 
 resource_count=$(grep -c '^[[:space:]]*resource "' "$SPEC")
 if [ "$resource_count" -eq 3 ] &&
-   grep -Fqx '  resource "source" _tag="worktree" uri="worktree://eval/names"' "$SPEC" &&
-   grep -Fqx '  resource "delivery" _tag="ding" uri="ding://eval/ahr.worker"' "$SPEC" &&
-   grep -Fqx '  resource "review-context" _tag="github-pr" uri="github-pr://eval/names-reverse"' "$SPEC"; then
+   grep -Fqx '  resource "source" uri="worktree://eval/names"' "$SPEC" &&
+   grep -Fqx '  resource "delivery" uri="ding://eval/ahr.worker"' "$SPEC" &&
+   grep -Fqx '  resource "review-context" uri="github-pr://eval/names-reverse"' "$SPEC"; then
   echo "PASS: final Agent Spec retains exactly the three non-work Resources"
 else
   echo "FAIL: final resource-only context is not the exact idle three-Resource shape"
@@ -22,7 +22,7 @@ fi
 
 INITIAL="$CELL/fixture/agent-spec.kdl"
 if [ "$(grep -c '^[[:space:]]*resource "' "$INITIAL")" -eq 4 ] &&
-   grep -Fqx '  resource "work" _tag="github-issue" uri="github-issue://eval/names-normalize"' "$INITIAL"; then
+   grep -Fqx '  resource "work" uri="github-issue://eval/names-normalize"' "$INITIAL"; then
   echo "PASS: initial Agent Spec has exactly four Resources with phase A bound as work"
 else
   echo "FAIL: initial resource-only context is not the intended four-Resource shape"

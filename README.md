@@ -128,7 +128,7 @@ materialization, network health, catalog/pty isolation, and pty send/peek behavi
 `agent-spec-resource-bindings` is the model-free companion to
 [`compoundingtech/st2#86`](https://github.com/compoundingtech/st2/pull/86). It exercises native catalog
 declarations rather than the tournament's synthetic Resource documents. The cell proves strict envelope
-validation, deterministic `st2 agents --json` inspection, opaque downstream tags, exact URI preservation, and
+validation, deterministic `st2 agents --json` inspection, URI-scheme-selected downstream profiles, exact URI preservation, and
 adoption of a live task after a Resource-only declaration edit.
 
 Folder-eval Resource projection, Resource resolution, access, readiness, and lifecycle policy are outside this
@@ -146,8 +146,8 @@ declaration and its resolver rules differ.
 | Hot retarget | Rebind `work`, then remove it | Rebind focused `intent`, then remove `focus` | Replace the active Assignment, then make it idle |
 | Handoff/restart | Remove A's `work`, then add B's | Remove A's focus, then focus B | Make A idle, then activate B |
 
-The selected contract is the direct-resource treatment: the resource URI is identity, `_tag` discriminates
-the resource type, and the KDL name is the binding's semantic role. An agent has zero or one direct `work`
+The selected contract is the direct-resource treatment: the resource URI is identity, its scheme selects
+the downstream profile, and the KDL name is the binding's semantic role. An agent has zero or one direct `work`
 binding; zero means idle. A handoff publishes `A -> no holder -> B`. The Focus and Assignment treatments remain
 as controls, not proposed product layers. Required/optional and access semantics are intentionally outside
 this tournament.

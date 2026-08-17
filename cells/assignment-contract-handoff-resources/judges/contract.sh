@@ -19,12 +19,12 @@ else
   echo "PASS: all Agent Spec revisions use only named tagged resources"
 fi
 
-initial_a="$(awk '/agent "a" \{/,/^}/' "$INITIAL" | grep -Fc "resource \"work\" _tag=\"github-issue\" uri=\"$URI\"")"
+initial_a="$(awk '/agent "a" \{/,/^}/' "$INITIAL" | grep -Fc "resource \"work\" uri=\"$URI\"")"
 initial_b="$(awk '/agent "b" \{/,/^}/' "$INITIAL" | grep -Fc 'resource "work"')"
 none_count="$(grep -Fc 'resource "work"' "$NONE")"
 successor_a="$(awk '/agent "a" \{/,/^}/' "$SUCCESSOR" | grep -Fc 'resource "work"')"
 successor_b="$(awk '/agent "b" \{/,/^}/' "$SUCCESSOR" |
-  grep -Fc "resource \"work\" _tag=\"github-issue\" uri=\"$URI\"")"
+  grep -Fc "resource \"work\" uri=\"$URI\"")"
 if [ "$initial_a" -eq 1 ] && [ "$initial_b" -eq 0 ] &&
    [ "$none_count" -eq 0 ] && [ "$successor_a" -eq 0 ] && [ "$successor_b" -eq 1 ]; then
   echo "PASS: published revisions encode A-only -> none -> B-only for the exact same URI"
@@ -35,7 +35,7 @@ fi
 
 if [ "$(grep -Fc 'resource "work"' "$SPEC")" -eq 1 ] &&
    ! awk '/agent "a" \{/,/^}/' "$SPEC" | grep -Fq 'resource "work"' &&
-   awk '/agent "b" \{/,/^}/' "$SPEC" | grep -Fq "resource \"work\" _tag=\"github-issue\" uri=\"$URI\""; then
+   awk '/agent "b" \{/,/^}/' "$SPEC" | grep -Fq "resource \"work\" uri=\"$URI\""; then
   echo "PASS: final durable graph binds the stable work URI only to B"
 else
   echo "FAIL: final graph does not bind exactly one work edge to B"

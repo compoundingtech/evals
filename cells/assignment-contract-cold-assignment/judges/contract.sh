@@ -16,7 +16,7 @@ assignments=$(grep -cE '^[[:space:]]*assignment "' "$SPEC")
 [ "$assignments" -eq 1 ] || { echo "FAIL: expected exactly one Assignment, found $assignments"; fail=1; }
 grep -qF 'assignment "active" _tag="coding-task" id="github-issue://eval/widget-license-mit"' "$SPEC" \
   || { echo "FAIL: Assignment is not minimal active tagged work with shared stable ID"; fail=1; }
-grep -Fqx '  resource "intent" _tag="github-issue" uri="github-issue://eval/widget-license-mit"' "$SPEC" \
+grep -Fqx '  resource "intent" uri="github-issue://eval/widget-license-mit"' "$SPEC" \
   || { echo "FAIL: intent Resource URI does not equal the Assignment ID"; fail=1; }
 grep -qF 'uses "intent" "source" "worklog" "delivery"' "$SPEC" \
   || { echo "FAIL: Assignment does not use the four selected bindings"; fail=1; }

@@ -12,7 +12,7 @@ resource_count=$(grep -c '^[[:space:]]*resource "' "$SPEC")
 intent_count=$(grep -c '^[[:space:]]*resource "intent"' "$SPEC")
 focus_count=$(grep -c '^[[:space:]]*focus "intent"' "$SPEC")
 if [ "$resource_count" -eq 5 ] && [ "$intent_count" -eq 1 ] && [ "$focus_count" -eq 1 ] &&
-   grep -Fqx '  resource "intent" _tag="github-issue" uri="github-issue://eval/widget-license-mit"' "$SPEC"; then
+   grep -Fqx '  resource "intent" uri="github-issue://eval/widget-license-mit"' "$SPEC"; then
   echo "PASS: the Agent Spec declares five resources and one focus selecting the intent Resource"
 else
   echo "FAIL: expected five resources and one focus selecting intent at $WORK_URI"

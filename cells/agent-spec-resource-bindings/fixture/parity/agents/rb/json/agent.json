@@ -4,11 +4,9 @@
   "workspace": "$CATALOG",
   "resource": {
     "work": {
-      "_tag": "github-issue",
       "uri": "github-issue://example/project/41?view=exact%20bytes"
     },
     "context": {
-      "_tag": "vendor-specific-v7",
       "uri": "vendor+thing://authority/context%2Fone"
     }
   },

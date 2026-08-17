@@ -34,7 +34,7 @@ if printf '%s\n' "$block" | grep -Fq "uri=\"$URI\""; then
   declared=true
 fi
 work_bound=false
-if printf '%s\n' "$block" | grep -Fq "resource \"work\" _tag=\"github-issue\" uri=\"$URI\"" &&
+if printf '%s\n' "$block" | grep -Fq "resource \"work\" uri=\"$URI\"" &&
    printf '%s\n' "$block" |
      grep -Fq "assignment \"active\" _tag=\"coding-task\" id=\"$URI\"" &&
    printf '%s\n' "$block" | grep -Fq 'uses "work" "source" "worklog" "delivery"'; then

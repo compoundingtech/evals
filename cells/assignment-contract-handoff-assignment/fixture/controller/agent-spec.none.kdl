@@ -1,19 +1,19 @@
 schema "agent-spec.experimental/v1"
 
 agent "a" {
-  resource "work" _tag="github-issue" uri="github-issue://eval/widget-normalization"
-  resource "source" _tag="worktree" uri="worktree://eval/widget"
-  resource "worklog" _tag="axe-worklog" uri="axe-worklog://eval/widget-normalization"
-  resource "delivery" _tag="ding" uri="ding://eval/arh.a"
+  resource "work" uri="github-issue://eval/widget-normalization"
+  resource "source" uri="worktree://eval/widget"
+  resource "worklog" uri="axe-worklog://eval/widget-normalization"
+  resource "delivery" uri="ding://eval/arh.a"
 
   assignment "idle"
 }
 
 agent "b" {
-  resource "work" _tag="github-issue" uri="github-issue://eval/widget-normalization"
-  resource "source" _tag="worktree" uri="worktree://eval/widget"
-  resource "worklog" _tag="axe-worklog" uri="axe-worklog://eval/widget-normalization"
-  resource "delivery" _tag="ding" uri="ding://eval/arh.b"
+  resource "work" uri="github-issue://eval/widget-normalization"
+  resource "source" uri="worktree://eval/widget"
+  resource "worklog" uri="axe-worklog://eval/widget-normalization"
+  resource "delivery" uri="ding://eval/arh.b"
 
   assignment "idle"
 }

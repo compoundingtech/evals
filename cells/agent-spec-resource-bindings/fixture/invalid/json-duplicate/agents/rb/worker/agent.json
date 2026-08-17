@@ -4,11 +4,9 @@
   "workspace": "$CATALOG",
   "resource": {
     "work": {
-      "_tag": "github-issue",
       "uri": "github-issue://example/project/41"
     },
     "work": {
-      "_tag": "github-pr",
       "uri": "github-pr://example/project/86"
     }
   },

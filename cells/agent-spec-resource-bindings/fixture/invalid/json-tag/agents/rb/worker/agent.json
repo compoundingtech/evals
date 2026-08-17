@@ -4,7 +4,8 @@
   "workspace": "$CATALOG",
   "resource": {
     "work": {
-      "uri": "not-an-absolute-uri"
+      "uri": "github-issue://example/project/41",
+      "_tag": "github-issue"
     }
   },
   "command": "true"

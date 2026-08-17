@@ -21,9 +21,9 @@ cleanup() {
 trap cleanup EXIT
 
 for case_name in \
-  uri duplicate policy \
-  json-uri json-duplicate json-policy \
-  toml-uri toml-duplicate toml-policy
+  uri duplicate policy tag \
+  json-uri json-duplicate json-policy json-tag \
+  toml-uri toml-duplicate toml-policy toml-tag
 do
   output="$root/invalid-$case_name.out"
   set +e
@@ -35,12 +35,15 @@ done
 grep -Fq 'must be an exact absolute URI' "$root/invalid-uri.out"
 grep -Fq "duplicate resource binding 'work'" "$root/invalid-duplicate.out"
 grep -Fq 'unsupported property `access`' "$root/invalid-policy.out"
+grep -Fq 'unsupported property `_tag`' "$root/invalid-tag.out"
 grep -Fq 'must be an exact absolute URI' "$root/invalid-json-uri.out"
 grep -Fq "duplicate resource binding 'work'" "$root/invalid-json-duplicate.out"
 grep -Fq 'unknown field `access`' "$root/invalid-json-policy.out"
+grep -Fq 'unknown field `_tag`' "$root/invalid-json-tag.out"
 grep -Fq 'must be an exact absolute URI' "$root/invalid-toml-uri.out"
 grep -Fq 'duplicate key' "$root/invalid-toml-duplicate.out"
 grep -Fq 'unknown field `access`' "$root/invalid-toml-policy.out"
+grep -Fq 'unknown field `_tag`' "$root/invalid-toml-tag.out"
 echo "RESOURCE-STRICT-FAILURES-GREEN-c214"
 
 st2 validate --catalog "$root/parity" --host rb --strict >/dev/null
@@ -52,12 +55,10 @@ jq -e '
   .[0].resources == [
     {
       "name": "context",
-      "_tag": "vendor-specific-v7",
       "uri": "vendor+thing://authority/context%2Fone"
     },
     {
       "name": "work",
-      "_tag": "github-issue",
       "uri": "github-issue://example/project/41?view=exact%20bytes"
     }
   ]
@@ -73,12 +74,10 @@ jq -e '
   .[0].resources == [
     {
       "name": "context",
-      "_tag": "vendor-specific-v7",
       "uri": "vendor+thing://authority/context%2Fone"
     },
     {
       "name": "work",
-      "_tag": "github-issue",
       "uri": "github-issue://example/project/41?view=exact%20bytes"
     }
   ]
@@ -94,10 +93,10 @@ before="$(
 test -n "$before"
 
 sed -i \
-  's#resource "work" _tag="github-issue" uri="github-issue://example/project/41?view=exact%20bytes"#resource "work" _tag="github-pr" uri="github-pr://example/project/86?view=exact%20bytes"#' \
+  's#resource "work" uri="github-issue://example/project/41?view=exact%20bytes"#resource "work" uri="github-pr://example/project/86?view=exact%20bytes"#' \
   "$spec"
 sed -i \
-  '/resource "context"/a\\  resource "terminal" _tag="pty" uri="pty://rb/rb.worker"' \
+  '/resource "context"/a\\  resource "terminal" uri="pty://rb/rb.worker"' \
   "$spec"
 st2 validate --catalog "$net" --host rb --strict >/dev/null
 st2 up --once --catalog "$net" --host rb >"$root/adopt.out"
@@ -114,17 +113,14 @@ jq -e '
   .[0].resources == [
     {
       "name": "context",
-      "_tag": "vendor-specific-v7",
       "uri": "vendor+thing://authority/context%2Fone"
     },
     {
       "name": "terminal",
-      "_tag": "pty",
       "uri": "pty://rb/rb.worker"
     },
     {
       "name": "work",
-      "_tag": "github-pr",
       "uri": "github-pr://example/project/86?view=exact%20bytes"
     }
   ]

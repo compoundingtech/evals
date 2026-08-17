@@ -1,8 +1,8 @@
 schema "agent-spec.experimental/v1"
 
 agent "dev" {
-  resource "work" _tag="github-issue" uri="github-issue://eval/names-normalize"
-  resource "source" _tag="worktree" uri="worktree://eval/names"
-  resource "delivery" _tag="ding" uri="ding://eval/ahr.worker"
-  resource "review-context" _tag="github-pr" uri="github-pr://eval/names-reverse"
+  resource "work" uri="github-issue://eval/names-normalize"
+  resource "source" uri="worktree://eval/names"
+  resource "delivery" uri="ding://eval/ahr.worker"
+  resource "review-context" uri="github-pr://eval/names-reverse"
 }

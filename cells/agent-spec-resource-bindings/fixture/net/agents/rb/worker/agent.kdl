@@ -3,8 +3,8 @@ agent "worker" {
   role "worker"
   workspace "$CATALOG"
 
-  resource "work" _tag="github-issue" uri="github-issue://example/project/41?view=exact%20bytes"
-  resource "context" _tag="vendor-specific-v7" uri="vendor+thing://authority/context%2Fone"
+  resource "work" uri="github-issue://example/project/41?view=exact%20bytes"
+  resource "context" uri="vendor+thing://authority/context%2Fone"
 
   pty "agent" {
     id "rb.worker"

@@ -43,23 +43,23 @@ idle_assignment() {
 shape_ok=true
 for revision in "$INITIAL" "$NONE" "$SUCCESSOR"; do
   [ "$(grep -cE '^[[:space:]]*resource "' "$revision")" -eq 8 ] || shape_ok=false
-  [ "$(grep -Fc "resource \"work\" _tag=\"github-issue\" uri=\"$URI\"" "$revision")" -eq 2 ] ||
+  [ "$(grep -Fc "resource \"work\" uri=\"$URI\"" "$revision")" -eq 2 ] ||
     shape_ok=false
   [ "$(grep -cE '^[[:space:]]*assignment "' "$revision")" -eq 2 ] || shape_ok=false
   for agent in a b; do
     block="$(agent_block "$revision" "$agent")"
     [ "$(printf '%s\n' "$block" | grep -cE '^[[:space:]]*resource "')" -eq 4 ] || shape_ok=false
     [ "$(printf '%s\n' "$block" |
-      grep -Fc "resource \"work\" _tag=\"github-issue\" uri=\"$URI\"")" -eq 1 ] ||
+      grep -Fc "resource \"work\" uri=\"$URI\"")" -eq 1 ] ||
       shape_ok=false
     [ "$(printf '%s\n' "$block" |
-      grep -Fc 'resource "source" _tag="worktree" uri="worktree://eval/widget"')" -eq 1 ] ||
+      grep -Fc 'resource "source" uri="worktree://eval/widget"')" -eq 1 ] ||
       shape_ok=false
     [ "$(printf '%s\n' "$block" |
-      grep -Fc 'resource "worklog" _tag="axe-worklog" uri="axe-worklog://eval/widget-normalization"')" -eq 1 ] ||
+      grep -Fc 'resource "worklog" uri="axe-worklog://eval/widget-normalization"')" -eq 1 ] ||
       shape_ok=false
     [ "$(printf '%s\n' "$block" |
-      grep -Fc "resource \"delivery\" _tag=\"ding\" uri=\"ding://eval/arh.$agent\"")" -eq 1 ] ||
+      grep -Fc "resource \"delivery\" uri=\"ding://eval/arh.$agent\"")" -eq 1 ] ||
       shape_ok=false
     [ "$(printf '%s\n' "$block" | grep -cE '^[[:space:]]*assignment "')" -eq 1 ] ||
       shape_ok=false

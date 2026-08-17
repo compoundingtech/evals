@@ -19,16 +19,16 @@ else
   echo "PASS: all Agent Spec revisions use named tagged resources plus focus"
 fi
 
-initial_a="$(awk '/agent "a" \{/,/^}/' "$INITIAL" | grep -Fc "resource \"work\" _tag=\"github-issue\" uri=\"$URI\"")"
-initial_b="$(awk '/agent "b" \{/,/^}/' "$INITIAL" | grep -Fc "resource \"work\" _tag=\"github-issue\" uri=\"$URI\"")"
+initial_a="$(awk '/agent "a" \{/,/^}/' "$INITIAL" | grep -Fc "resource \"work\" uri=\"$URI\"")"
+initial_b="$(awk '/agent "b" \{/,/^}/' "$INITIAL" | grep -Fc "resource \"work\" uri=\"$URI\"")"
 initial_a_focus="$(awk '/agent "a" \{/,/^}/' "$INITIAL" | grep -Fc 'focus "work"')"
 initial_b_focus="$(awk '/agent "b" \{/,/^}/' "$INITIAL" | grep -Fc 'focus "work"')"
-none_work="$(grep -Fc "resource \"work\" _tag=\"github-issue\" uri=\"$URI\"" "$NONE")"
+none_work="$(grep -Fc "resource \"work\" uri=\"$URI\"" "$NONE")"
 none_focus="$(grep -Fc 'focus "work"' "$NONE")"
 successor_a="$(awk '/agent "a" \{/,/^}/' "$SUCCESSOR" |
-  grep -Fc "resource \"work\" _tag=\"github-issue\" uri=\"$URI\"")"
+  grep -Fc "resource \"work\" uri=\"$URI\"")"
 successor_b="$(awk '/agent "b" \{/,/^}/' "$SUCCESSOR" |
-  grep -Fc "resource \"work\" _tag=\"github-issue\" uri=\"$URI\"")"
+  grep -Fc "resource \"work\" uri=\"$URI\"")"
 successor_a_focus="$(awk '/agent "a" \{/,/^}/' "$SUCCESSOR" | grep -Fc 'focus "work"')"
 successor_b_focus="$(awk '/agent "b" \{/,/^}/' "$SUCCESSOR" | grep -Fc 'focus "work"')"
 if [ "$initial_a" -eq 1 ] && [ "$initial_b" -eq 1 ] &&
@@ -42,7 +42,7 @@ else
   fail=1
 fi
 
-if [ "$(grep -Fc "resource \"work\" _tag=\"github-issue\" uri=\"$URI\"" "$SPEC")" -eq 2 ] &&
+if [ "$(grep -Fc "resource \"work\" uri=\"$URI\"" "$SPEC")" -eq 2 ] &&
    ! awk '/agent "a" \{/,/^}/' "$SPEC" | grep -Fq 'focus "work"' &&
    awk '/agent "b" \{/,/^}/' "$SPEC" | grep -Fq 'focus "work"'; then
   echo "PASS: final graph retains the stable work URI and focuses only B"

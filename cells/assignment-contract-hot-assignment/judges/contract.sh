@@ -58,7 +58,7 @@ else
   echo "PASS: controller notification body is a task-free durable-context signal"
 fi
 
-if grep -Fqx '  resource "work" _tag="github-issue" uri="github-issue://eval/names-format-label"' "$SPEC"; then
+if grep -Fqx '  resource "work" uri="github-issue://eval/names-format-label"' "$SPEC"; then
   echo "PASS: the last work Resource remains present but is not assigned"
 else
   echo "FAIL: final context did not retain the phase B work Resource"

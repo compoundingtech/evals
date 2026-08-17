@@ -105,7 +105,7 @@ rebind_work() {
   local uri="$1" tmp="$SPEC.next"
   awk -v uri="$uri" '
     /^[[:space:]]*resource "work"/ {
-      print "  resource \"work\" _tag=\"github-issue\" uri=\"" uri "\""
+      print "  resource \"work\" uri=\"" uri "\""
       next
     }
     /^[[:space:]]*assignment "active"/ {

@@ -13,7 +13,7 @@ resource_count=$(grep -c '^[[:space:]]*resource "' "$SPEC")
 intent_count=$(grep -c '^[[:space:]]*resource "intent"' "$SPEC")
 focus_count=$(grep -c '^[[:space:]]*focus ' "$SPEC")
 if [ "$resource_count" -eq 4 ] && [ "$intent_count" -eq 1 ] && [ "$focus_count" -eq 0 ] &&
-   grep -Fqx '  resource "intent" _tag="github-issue" uri="github-issue://eval/names-format-label"' "$SPEC"; then
+   grep -Fqx '  resource "intent" uri="github-issue://eval/names-format-label"' "$SPEC"; then
   echo "PASS: final Agent Spec retains four resources and omits focus to represent idle"
 else
   echo "FAIL: expected four resources, the phase B intent URI, and no focus in final durable context"

@@ -11,7 +11,7 @@ eval {
     judge "STRICT ENVELOPE — malformed URI, duplicate names, and policy fields fail closed" {
       exec "grep -Fqx RESOURCE-STRICT-FAILURES-GREEN-c214 $RUNS_DIR/contract.out"
     }
-    judge "INSPECTION — agents JSON is deterministic and preserves opaque tags plus exact URI bytes" {
+    judge "INSPECTION — agents JSON is deterministic and preserves URI schemes plus exact URI bytes" {
       exec "grep -Fqx RESOURCE-INSPECTION-GREEN-c214 $RUNS_DIR/contract.out"
     }
     judge "ADOPTION — a Resource-only declaration edit updates inspection without replacing the live task" {

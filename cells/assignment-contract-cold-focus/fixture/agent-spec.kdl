@@ -1,10 +1,10 @@
 schema "agent-spec.experimental/v1"
 
 agent "dev" {
-  resource "intent" _tag="github-issue" uri="github-issue://eval/widget-license-mit"
-  resource "source" _tag="worktree" uri="worktree://eval/widget"
-  resource "worklog" _tag="axe-worklog" uri="axe-worklog://eval/widget-license"
-  resource "delivery" _tag="ding" uri="ding://eval/arc.worker"
-  resource "review-context" _tag="github-pr" uri="github-pr://eval/widget-separator"
+  resource "intent" uri="github-issue://eval/widget-license-mit"
+  resource "source" uri="worktree://eval/widget"
+  resource "worklog" uri="axe-worklog://eval/widget-license"
+  resource "delivery" uri="ding://eval/arc.worker"
+  resource "review-context" uri="github-pr://eval/widget-separator"
   focus "intent"
 }

@@ -1,13 +1,13 @@
 schema "agent-spec.experimental/v1"
 
 agent "a" {
-  resource "source" _tag="worktree" uri="worktree://eval/widget"
-  resource "worklog" _tag="axe-worklog" uri="axe-worklog://eval/widget-normalization"
-  resource "delivery" _tag="ding" uri="ding://eval/arh.a"
+  resource "source" uri="worktree://eval/widget"
+  resource "worklog" uri="axe-worklog://eval/widget-normalization"
+  resource "delivery" uri="ding://eval/arh.a"
 }
 
 agent "b" {
-  resource "source" _tag="worktree" uri="worktree://eval/widget"
-  resource "worklog" _tag="axe-worklog" uri="axe-worklog://eval/widget-normalization"
-  resource "delivery" _tag="ding" uri="ding://eval/arh.b"
+  resource "source" uri="worktree://eval/widget"
+  resource "worklog" uri="axe-worklog://eval/widget-normalization"
+  resource "delivery" uri="ding://eval/arh.b"
 }

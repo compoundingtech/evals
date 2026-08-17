@@ -6,7 +6,7 @@ Model-free acceptance coverage for the native Agent Spec Resource envelope intro
 The cell proves the catalog contract directly through st2:
 
 - KDL, TOML, and JSON reject malformed URIs, duplicate binding names, and unsupported policy properties.
-- Resource names are unique and `_tag` remains opaque.
+- Resource names are unique, URI schemes remain open, and `_tag` is rejected as unsupported.
 - Canonical KDL and supported TOML/JSON forms project the same stable, name-ordered
   `st2 agents --json` descriptors without normalizing URI bytes.
 - Editing only Resource bindings updates the declared roster while the existing PTY keeps the same process

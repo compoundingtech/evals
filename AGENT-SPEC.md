@@ -62,7 +62,7 @@ agent "<identity>" {
   // desired-state "suspended" reason="Waiting for capacity"
   keep #false
 
-  resource "work" _tag="github-issue" uri="github-issue://example/project/123"
+  resource "work" uri="github-issue://example/project/123"
 
   restart {
     attempts 3
@@ -101,7 +101,7 @@ Supported agent children are:
 | `desired-state "suspended" reason="..."` | Keep the declaration and durable state in the catalog while reconciling all of its tasks absent. `running` is normally represented by omitting this node; `retired` requests final collection. |
 | `retired #true` | Legacy read-compatible spelling of retirement. New lifecycle transitions use `desired-state` with a rationale. |
 | `keep #true` | Freeze dead evidence and suppress collection/restart for every task; retirement still stops live tasks. |
-| `resource "name" _tag="type" uri="absolute-uri"` | Binds one uniquely named, externally identified Resource as declaration metadata. |
+| `resource "name" uri="absolute-uri"` | Binds one uniquely named, externally identified Resource as declaration metadata. |
 | `restart { … }` | Optional service restart policy. |
 | `env { KEY "value" }` | Environment inherited by the compact agent task and sidecars. |
 | `command "…"` | Compact interactive task named `agent`. |
@@ -131,25 +131,29 @@ rely on that permissiveness.
 An agent may directly carry zero or more Resource bindings:
 
 ```kdl
-resource "work" _tag="github-issue" uri="github-issue://example/project/123"
-resource "source" _tag="worktree" uri="worktree://example/project/main"
+resource "work" uri="github-issue://example/project/123"
+resource "source" uri="worktree://example/project/main"
 ```
 
 The positional name is the Resource's agent-local semantic role. Names are non-empty and unique within one
-agent. `_tag` is a non-empty, opaque discriminator owned by the Resource type's downstream contract. `uri` is
-an RFC 3986 absolute URI and is the Resource identity. st2 preserves the URI's exact bytes; it does not
-normalize or resolve it. Declaration order has no meaning. Canonical KDL and supported TOML/JSON parsing lower
-bindings to deterministic name order.
+agent. `uri` is an RFC 3986 absolute URI and is the Resource identity; its scheme selects an open,
+downstream-owned Resource profile. st2 preserves the URI's exact bytes but neither normalizes it, resolves it,
+registers schemes, nor rejects unknown schemes. Declaration order has no meaning. Canonical KDL and supported
+TOML/JSON parsing lower bindings to deterministic name order.
 
-The generic envelope is closed: each binding has exactly the positional name, `_tag`, and `uri`. Missing or
-duplicate fields, duplicate names, child nodes, invalid URI syntax, and unsupported properties such as access
+The generic envelope is closed: each binding has exactly the positional name and `uri`. Missing or duplicate
+fields, duplicate names, child nodes, invalid URI syntax, and unsupported properties such as `_tag`, access,
 or readiness policy fail validation. This prevents an ignored property from appearing enforced.
+
+Scheme owners reuse a registered or authority-defined scheme only when its semantics match. A profile intended
+for broader interoperability uses a short descriptive lowercase name; a private profile uses a reverse-domain
+owner prefix, such as `dev.example.build-record:`. One scheme selects one profile contract.
 
 Resource bindings are declaration metadata, not launch targets. They do not make an otherwise unrunnable
 service runnable and are excluded from effective task launch definitions. Editing only Resource bindings
 therefore updates catalog inspection while an already-live task is adopted without stop, replacement, or
 relaunch. `st2 agents --json [--enrich]` exposes every binding as a name-ordered
-`{"name","_tag","uri"}` descriptor and preserves unknown downstream tags.
+`{"name","uri"}` descriptor and preserves unknown schemes.
 
 The envelope does not define Resource schemas, resolution, access grants, required/optional status, readiness,
 lifecycle, mutation, or rendering. A URI's presence grants no authority. Those semantics belong to the
@@ -157,7 +161,7 @@ concrete Resource type and its consumer, not st2.
 
 Executable evidence:
 [`agent-spec-resource-bindings`](cells/agent-spec-resource-bindings/) covers strict parser failures,
-deterministic JSON inspection, exact URI and unknown-tag preservation, Resource-only live adoption, and
+deterministic JSON inspection, exact URI and unknown-scheme preservation, Resource-only live adoption, and
 cleanup. The matched [`assignment-contract-*`](cells/) tournament covers direct Resource selection against
 Focus and Assignment controls; direct bindings are the selected treatment.
 

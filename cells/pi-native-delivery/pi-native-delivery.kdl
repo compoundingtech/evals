@@ -1,0 +1,32 @@
+// pi's native-delivery contract: expansion, transport exclusivity, companion suppression, and the
+// fail-closed launch gate. Model-free on purpose — every claim here is deterministic, so it belongs
+// in the always-runnable tier rather than behind a model seat.
+eval {
+  copy "./fixture"
+  max-timeout "120s"
+
+  run "contract" {
+    command "bash ./contract.sh"
+  }
+
+  judges {
+    judge "EXPANSION — a typed pi driver names no machine-local path and accepts its workspace" {
+      exec "grep -Fqx PI-EXPANSION-GREEN-p1a7 $RUNS_DIR/contract.out"
+    }
+    judge "EXCLUSIVITY — a declaration carrying both ding and deliver fails closed" {
+      exec "grep -Fqx PI-EXCLUSIVITY-GREEN-p1a7 $RUNS_DIR/contract.out"
+    }
+    judge "TRANSPORT — deliver \"pi-channel\" wraps the authored launch and adds no DING companion" {
+      exec "grep -Fqx PI-TRANSPORT-GREEN-p1a7 $RUNS_DIR/contract.out"
+    }
+    judge "HOOKSET — the immutable set carries the channel extension st2 injects at launch" {
+      exec "grep -Fqx PI-HOOKSET-GREEN-p1a7 $RUNS_DIR/contract.out"
+    }
+    judge "FAIL-CLOSED — an unverified hook set holds the pi launch instead of flapping it" {
+      exec "grep -Fqx PI-GATE-GREEN-p1a7 $RUNS_DIR/contract.out"
+    }
+    judge "CONTRACT — the declared bus-contract asset reaches AGENTS.md byte-identically" {
+      exec "grep -Fqx PI-BUS-CONTRACT-GREEN-p1a7 $RUNS_DIR/contract.out"
+    }
+  }
+}

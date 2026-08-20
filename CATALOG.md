@@ -65,7 +65,7 @@ harness-native loader plus canonical hook file.
 | `st2-doctor-structure` | model-free | — | 0 | none | `60s` | 4 | — | **NO STRUCTURED RUN** |
 | `st2-network` | model-free | — | 0 | none | `60s` | 2 | — | **NO STRUCTURED RUN** |
 | `stream-github-ci-waiter` | model-free | — | 0 | none | `25m` | 5 | — | **NO STRUCTURED RUN** |
-| `stream-nix-build-waiter` | model-free | — | 0 | none | `120s` | 4 | — | **NO STRUCTURED RUN** |
+| `stream-nix-build-waiter` | model-free | — | 0 | none | `120s` | 5 | — | **NO STRUCTURED RUN** |
 | `strict-validation-json` | model-free | — | 0 | none | `60s` | 4 | — | **NO STRUCTURED RUN** |
 | `targeted-reconcile-isolation` | model-free | — | 0 | none | `60s` | 7 | — | **NO STRUCTURED RUN** |
 | `test-writing` | Claude | `claude-sonnet-5` / medium | 2 | medium | `1200s` | 3 | — | **NO STRUCTURED RUN** |

@@ -14,7 +14,10 @@ eval {
     judge "TERMINALS - real successful and failed Nix builds emit truthful terminal events" {
       exec "grep -Fqx STREAM-NIX-TERMINALS-GREEN-4d91 $RUNS_DIR/contract.out"
     }
-    judge "RETRY - repeated terminal publication deduplicates to one inbox message" {
+    judge "DING - terminal events wake the live owner PTY, remain readable, and archive cleanly" {
+      exec "grep -Fqx STREAM-NIX-DING-GREEN-4d91 $RUNS_DIR/contract.out"
+    }
+    judge "RETRY - repeated and restarted publication does not recreate or redeliver archived events" {
       exec "grep -Fqx STREAM-NIX-RETRY-GREEN-4d91 $RUNS_DIR/contract.out"
     }
     judge "CLEANUP - shutdown leaves neither waiter task nor eval-owned PTY running" {

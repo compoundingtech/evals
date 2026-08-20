@@ -13,9 +13,15 @@ boundary. The adapter retries the exact immutable arguments with a bounded expon
 supervised rather than flapping. The wrapper then forwards to the explicitly captured candidate st2 binary;
 Nix itself is never mocked.
 
+The owning agent is a deterministic maintained-composer PTY with a real generated DING sidecar. Both terminal
+events visibly reach that live session exactly once. The fixture reads their structured stream identity through
+the public message CLI, archives them, reads the archived records again byte-for-byte, and proves the inbox is
+drained.
+
 The cell then kills and reconciles both adapters, proving a fresh process derives the same event identity from
-the stable build request and is also deduplicated. It retains the original filename and leaves exactly one
-inbox message per build. Finally it shuts the agent down and proves no waiter task or eval-owned PTY remains.
+the stable build request and is also deduplicated. It retains the original archived filenames without recreating
+an inbox record or redelivering either DING. Finally it shuts the agent down and proves no waiter task,
+generated DING, or eval-owned PTY remains.
 
 The fixture is hermetic with respect to external services: it uses the host's configured `<nixpkgs>` but no
 network, credentials, substituter fetch, or model seat. The expected-failure derivation is an intentional

@@ -17,6 +17,17 @@ cleanup() {
 }
 trap cleanup EXIT
 
+wait_for_text() {
+  marker="$1"
+  file="$2"
+  for _ in $(seq 1 400); do
+    grep -Fq "$marker" "$file" 2>/dev/null && return 0
+    sleep 0.05
+  done
+  printf 'text %s did not reach %s\n' "$marker" "$file" >&2
+  return 1
+}
+
 st2 validate --catalog "$net" --host stream --strict >/dev/null
 st2 up --once --catalog "$net" --host stream >"$root/up.out"
 grep -Fq 'stream.nix-watcher.stream-nix-success' "$root/up.out"
@@ -54,6 +65,33 @@ jq -e '.terminal == "failure" and .buildStatus == 1 and .first.status == "create
 grep -Fq 'intentional-nix-waiter-failure' "$root/nix-failure.build.log"
 echo "STREAM-NIX-TERMINALS-GREEN-4d91"
 
+deliveries="$net/deliveries.log"
+wait_for_text 'Nix build success' "$deliveries"
+wait_for_text 'Nix build failure' "$deliveries"
+test "$(wc -l <"$deliveries")" -eq 2
+
+for mode in success failure; do
+  filename="$(jq -r '.first.filename' "$root/nix-$mode.events.jsonl")"
+  st2 message read stream.nix-watcher "$filename" \
+    --catalog "$net" --host stream --json >"$root/nix-$mode.message.json"
+  jq -e --arg stream "nix-$mode" --arg key "$mode" '
+    .stream == $stream and
+    .eventKey == $key and
+    .eventId != null and
+    (.body | contains("real Nix build reached terminal status"))
+  ' "$root/nix-$mode.message.json" >/dev/null
+  st2 message archive stream.nix-watcher "$filename" \
+    --catalog "$net" --host stream >/dev/null
+  st2 message read stream.nix-watcher "$filename" --archive \
+    --catalog "$net" --host stream --json >"$root/nix-$mode.archived.json"
+  cmp "$root/nix-$mode.message.json" "$root/nix-$mode.archived.json"
+done
+inbox="$net/agents/stream/nix-watcher/resources/inbox"
+archive="$net/agents/stream/nix-watcher/resources/archive"
+test "$(find "$inbox" -maxdepth 1 -type f -name '*.md' | wc -l)" -eq 0
+test "$(find "$archive" -maxdepth 1 -type f -name '*.md' | wc -l)" -eq 2
+echo "STREAM-NIX-DING-GREEN-4d91"
+
 for mode in success failure; do
   test "$(sed -n '1,3p' "$root/injection-nix-$mode.log" | wc -l)" -eq 3
   test "$(sed -n '1,3p' "$root/injection-nix-$mode.log" | awk '{print $4}' | sort -u | wc -l)" -eq 1
@@ -71,8 +109,8 @@ jq -e '
   [.tasks[] | select(.task == "stream-nix-success" or .task == "stream-nix-failure")]
   | length == 2 and all(.runtime.state == "running")
 ' "$root/tasks-after-retry.json" >/dev/null
-inbox="$net/agents/stream/nix-watcher/resources/inbox"
-test "$(find "$inbox" -maxdepth 1 -type f -name '*.md' | wc -l)" -eq 2
+test "$(find "$inbox" -maxdepth 1 -type f -name '*.md' | wc -l)" -eq 0
+test "$(find "$archive" -maxdepth 1 -type f -name '*.md' | wc -l)" -eq 2
 
 # Model a supervisor restart after an uncertain acknowledgement. The adapter
 # derives its event identity from the stable build request, not its process ID.
@@ -90,7 +128,10 @@ for mode in success failure; do
     .[1].retry.status == "deduplicated"
   ' "$root/nix-$mode.events.jsonl" >/dev/null
 done
-test "$(find "$inbox" -maxdepth 1 -type f -name '*.md' | wc -l)" -eq 2
+sleep 1
+test "$(wc -l <"$deliveries")" -eq 2
+test "$(find "$inbox" -maxdepth 1 -type f -name '*.md' | wc -l)" -eq 0
+test "$(find "$archive" -maxdepth 1 -type f -name '*.md' | wc -l)" -eq 2
 echo "STREAM-NIX-RETRY-GREEN-4d91"
 
 st2 down --catalog "$net" --host stream >/dev/null

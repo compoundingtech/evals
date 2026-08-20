@@ -1,0 +1,9 @@
+agent "worker" {
+  host "stream"
+  workspace "$CATALOG/.."
+  env { ST_AGENT "stream.worker" }
+  command "exec sleep 300"
+  stream "external" {}
+  stream "shell" { command #"exec bash "$CATALOG/../adapter.sh" shell"# }
+  stream "argv" { argv "bash" "adapter.sh" "argv" "value with spaces" "literal;$(not-expanded)" }
+}

@@ -1,0 +1,33 @@
+// Native Agent Spec stream declaration, lifecycle, adapter, and ingress acceptance.
+eval {
+  copy "./fixture"
+  max-timeout "90s"
+
+  run "contract" {
+    command "bash ./contract.sh"
+  }
+
+  judges {
+    judge "STRICT SHAPE - names, launch envelope, interval, and task collisions fail closed" {
+      exec "grep -Fqx STREAM-STRICT-SHAPE-GREEN-83a7 $RUNS_DIR/contract.out"
+    }
+    judge "LOWERING - shell and argv adapters have exact derived exec task identities; external ingress has none" {
+      exec "grep -Fqx STREAM-LOWERING-GREEN-83a7 $RUNS_DIR/contract.out"
+    }
+    judge "ADAPTERS - both supervised launch forms publish through the public event CLI" {
+      exec "grep -Fqx STREAM-ADAPTERS-GREEN-83a7 $RUNS_DIR/contract.out"
+    }
+    judge "INGRESS - external events deduplicate stably and conflicting identity reuse fails closed" {
+      exec "grep -Fqx STREAM-INGRESS-GREEN-83a7 $RUNS_DIR/contract.out"
+    }
+    judge "CAPABILITIES - strict discovery and no-follow state/inbox/archive operations prevent redirected writes" {
+      exec "grep -Fqx STREAM-CAPABILITIES-GREEN-83a7 $RUNS_DIR/contract.out"
+    }
+    judge "LIFECYCLE - suspend removes owner plus adapters and refuses ingress; resume relaunches them" {
+      exec "grep -Fqx STREAM-LIFECYCLE-GREEN-83a7 $RUNS_DIR/contract.out"
+    }
+    judge "CLEANUP - no eval-owned PTY or exec task remains" {
+      exec "grep -Fqx STREAM-CLEANUP-GREEN-83a7 $RUNS_DIR/contract.out"
+    }
+  }
+}

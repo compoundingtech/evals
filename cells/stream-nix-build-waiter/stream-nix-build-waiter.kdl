@@ -1,0 +1,27 @@
+// Real, model-free Nix build waiters supervised as native st2 stream adapters.
+eval {
+  copy "./fixture"
+  max-timeout "120s"
+
+  run "contract" {
+    command "bash ./contract.sh"
+  }
+
+  judges {
+    judge "WAITING - real uncached Nix derivations remain observable before terminal ingress" {
+      exec "grep -Fqx STREAM-NIX-WAITING-GREEN-4d91 $RUNS_DIR/contract.out"
+    }
+    judge "TERMINALS - real successful and failed Nix builds emit truthful terminal events" {
+      exec "grep -Fqx STREAM-NIX-TERMINALS-GREEN-4d91 $RUNS_DIR/contract.out"
+    }
+    judge "DING - terminal events wake the live owner PTY, remain readable, and archive cleanly" {
+      exec "grep -Fqx STREAM-NIX-DING-GREEN-4d91 $RUNS_DIR/contract.out"
+    }
+    judge "RETRY - repeated and restarted publication does not recreate or redeliver archived events" {
+      exec "grep -Fqx STREAM-NIX-RETRY-GREEN-4d91 $RUNS_DIR/contract.out"
+    }
+    judge "CLEANUP - shutdown leaves neither waiter task nor eval-owned PTY running" {
+      exec "grep -Fqx STREAM-NIX-CLEANUP-GREEN-4d91 $RUNS_DIR/contract.out"
+    }
+  }
+}

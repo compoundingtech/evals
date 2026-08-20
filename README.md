@@ -97,9 +97,11 @@ VERDICT: PASS
 ```
 
 Requirements are `st2 0.1.0` from source
-[`0fed14b`](https://github.com/compoundingtech/st2/commit/0fed14bb5653b67e1d64f1199e240c4c5c612bf7),
-`pty`, Bash, Git, `jq`, Rust/Cargo for the pinned KDL parser gate, and Node for JavaScript fixtures. A paid cell
-also needs every harness named by its dry-run row.
+[`ffdb83c`](https://github.com/compoundingtech/st2/commit/ffdb83c9541978a96ff8ce4c466628e15918cbc1),
+`pty`, Bash, Git, `jq`, Rust/Cargo for the pinned KDL parser gate, and Node for JavaScript fixtures. The
+`stream-nix-build-waiter` cell additionally requires `nix-build`, `nix-instantiate`, and a configured
+`<nixpkgs>` lookup; the overnight runner checks these before starting the selected corpus. A paid cell also
+needs every harness named by its dry-run row.
 
 ## Cell layout
 

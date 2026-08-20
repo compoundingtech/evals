@@ -50,14 +50,13 @@ checks run before either run step starts. The control is the Linux executable fr
 The composed runtime uses:
 
 - PTY `d5fabc3917407aeb937a012bd97679c303e18033` (merged);
-- st2 `8ca0f3653aae6ca6ebcb880f82e9296016df6e08`, the merge identity of
-  [st2 #132](https://github.com/compoundingtech/st2/pull/132).
+- st2 `ffdb83c9541978a96ff8ce4c466628e15918cbc1`, the exact stream candidate proven by this corpus.
 
 The executable SHA-256 identities are:
 
 - PTY: `1c9716d435ca56ad9b4f67056d76fa6856cdc08e6bbda1fd4be6f59952e9fde3`;
-- st2 merged source: `e193141523bb35a397f90170f6fc182e663d205eef2d95af27a94dcae806cc48`;
+- st2 candidate source: `adbd2099db237c17df3dac29052cb387f4ed99888e7477910c33e518c377a3e8`;
 - st2 `0fed14b` control: `d61d12b2b1189a391c196ca28f8f4ba69072d14fcbad2571fc29db1f250f4eed`.
 
-The merged st2 identity is the accepted composition boundary for this cell. The repository-wide corpus runner
-remains a separate published-version pin until its normal release update.
+The exact st2 candidate identity is the accepted composition boundary for this cell and the repository-wide
+corpus runner.

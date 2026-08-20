@@ -1,0 +1,27 @@
+// Realistic GitHub PR CI waiter: deterministic controls by default, authenticated network smoke when opted in.
+eval {
+  copy "./fixture"
+  max-timeout "25m"
+
+  run "contract" {
+    command "bash ./contract.sh"
+  }
+
+  judges {
+    judge "RETRY AND DEDUP - pending checks are polled to terminal success and replay emits once" {
+      exec "grep -Fqx GH-CI-RETRY-DEDUP-GREEN-b9e4 $RUNS_DIR/contract.out"
+    }
+    judge "FAILURE SUPERSESSION - terminal failure replaces the prior keyed CI result" {
+      exec "grep -Fqx GH-CI-FAILURE-SUPERSESSION-GREEN-b9e4 $RUNS_DIR/contract.out"
+    }
+    judge "DELIVERY RETRY - transient ingress failures back off and eventually publish exactly once" {
+      exec "grep -Fqx GH-CI-DELIVERY-RETRY-GREEN-b9e4 $RUNS_DIR/contract.out"
+    }
+    judge "TIMEOUT - permanently pending checks exhaust the bound without emitting" {
+      exec "grep -Fqx GH-CI-TIMEOUT-NO-EVENT-GREEN-b9e4 $RUNS_DIR/contract.out"
+    }
+    judge "CLEANUP - the waiter leaves no eval-owned process" {
+      exec "grep -Fqx GH-CI-CLEANUP-GREEN-b9e4 $RUNS_DIR/contract.out"
+    }
+  }
+}

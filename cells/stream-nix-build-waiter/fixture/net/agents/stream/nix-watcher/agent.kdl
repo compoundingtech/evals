@@ -1,0 +1,9 @@
+agent "nix-watcher" {
+  host "stream"
+  workspace "$CATALOG/.."
+  env { ST_AGENT "stream.nix-watcher" }
+  command "exec perl \"$CATALOG/fake-tui.pl\""
+  ding
+  stream "nix-success" { argv "bash" "nix-build-waiter.sh" "success" }
+  stream "nix-failure" { argv "bash" "nix-build-waiter.sh" "failure" }
+}

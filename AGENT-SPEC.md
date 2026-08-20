@@ -5,8 +5,8 @@ by evals. st2 is the current implementation, not the owner of the contract; a fu
 implementation can target the same contract and proofs.
 
 The current corpus proof is pinned to st2
-[`0fed14bb5653b67e1d64f1199e240c4c5c612bf7`](https://github.com/compoundingtech/st2/commit/0fed14bb5653b67e1d64f1199e240c4c5c612bf7)
-(`0.1.0`, source `0fed14b`). The pin identifies the implementation and version the corpus currently proves; it
+[`ffdb83c9541978a96ff8ce4c466628e15918cbc1`](https://github.com/compoundingtech/st2/commit/ffdb83c9541978a96ff8ce4c466628e15918cbc1)
+(`0.1.0`, source `ffdb83c`). The pin identifies the implementation and version the corpus currently proves; it
 does not transfer ownership of the specification to st2. A proposed behavior change must update this contract
 and its maintained proof cells before an implementation claims conformance. Do not infer additional fields or
 commands from older corpus fixtures.
@@ -64,6 +64,10 @@ agent "<identity>" {
 
   resource "work" uri="github-issue://example/project/123"
 
+  stream "webhook" {}
+  stream "ci" { command #"exec ci-adapter --emit-to "$ST_AGENT""# }
+  stream "deploy" { argv "deploy-adapter" "--json" }
+
   restart {
     attempts 3
     interval "60s"
@@ -102,6 +106,9 @@ Supported agent children are:
 | `retired #true` | Legacy read-compatible spelling of retirement. New lifecycle transitions use `desired-state` with a rationale. |
 | `keep #true` | Freeze dead evidence and suppress collection/restart for every task; retirement still stops live tasks. |
 | `resource "name" uri="absolute-uri"` | Binds one uniquely named, externally identified Resource as declaration metadata. |
+| `stream "name" {}` | Declares a named external event ingress endpoint. |
+| `stream "name" { command "..." }` | Declares an ingress endpoint and a runner-supervised shell adapter. |
+| `stream "name" { argv "program" "arg"... }` | Declares an ingress endpoint and a runner-supervised direct-argv adapter. |
 | `restart { … }` | Optional service restart policy. |
 | `env { KEY "value" }` | Environment inherited by the compact agent task and sidecars. |
 | `command "…"` | Compact interactive task named `agent`. |
@@ -123,6 +130,57 @@ seconds or `ms`, `s|sec|secs`, `m|min|mins`, `h|hr|hrs`, and `d|day|days`. `mode
 the window reset; `mode "fail"` parks the task after attempts are exhausted and sends one best-effort
 crash-loop message to `supervisor`. Invalid restart subfields currently fall back to defaults; authors must not
 rely on that permissiveness.
+
+<a id="agent-spec-event-streams"></a>
+
+## Event streams
+
+An agent may declare zero or more named streams. A stream name is 1-40 ASCII characters, contains only
+lowercase letters, digits, and hyphens, and neither begins nor ends with a hyphen. Names are unique within one
+agent. The stream envelope is closed: the node has exactly one
+positional name, no properties, and zero or one launch child. A launch is either exactly one positional
+`command` string or a non-empty positional-string `argv`; declaring both, extra arguments or properties,
+typed nodes, child blocks, unknown children, and `every` all fail validation. Scheduling remains the separate,
+reserved `schedule` contract; streams are long-running event sources.
+
+A launch-bearing stream lowers directly to a derived, terminal-free exec task named `stream-<name>` with
+runtime id `<host>.<identity>.stream-<name>`. `command` runs through `sh -c`; `argv` executes element zero
+directly with the remaining elements unchanged. The derived task inherits agent environment, cwd, restart
+policy, suspension, resumption, retirement, and cleanup. An explicit task named `stream-<name>` is therefore a
+collision and fails validation. A stream adapter is a sibling companion: it does not make an otherwise
+unrunnable agent runnable, and its failure does not relaunch a healthy owning agent.
+
+A commandless stream declares external ingress and creates no task. Neither form is a delivery transport:
+streams publish ordinary durable inbox records but do not wake an agent unless it separately declares a
+delivery transport such as `ding`. Producers publish with a stable identity:
+
+```sh
+st2 event emit <host>.<identity> \
+  --stream <name> --event-id <producer-id> \
+  [--key <group>] [--supersede] [--subject <one-line-summary>] \
+  --message <body> --host <host> --json
+```
+
+The recipient must be active and must declare the stream. A first identity/content pair creates one canonical
+inbox record; an identical replay returns the same filename as deduplicated; reuse with different content
+fails closed. `--supersede` archives the unread predecessor for the same key, or the stream-wide predecessor
+without a key, before publishing its successor. Per-stream state is durable and bounded to the latest 128
+identities; an identity older than that honest horizon is new again. Event ids, keys, stream names, and subjects
+reject control characters before any write.
+
+Ingress and stream authoring resolve their targets through strict catalog discovery. Ingress retains no-follow
+capabilities for stream state, its create-new temporary, inbox, and archive operations. An unobservable
+declaration entry or a symlinked state/inbox path therefore fails closed and cannot redirect event bytes or
+authored declarations outside the owning agent directory.
+
+Executable evidence: [`agent-spec-streams`](cells/agent-spec-streams/) proves strict declaration failures,
+direct lowering and runtime identity, command/argv execution, external ingress without a task, stable
+deduplication and conflicting-reuse refusal, and suspend/resume coupling through the real st2 CLI and runtime.
+[`stream-nix-build-waiter`](cells/stream-nix-build-waiter/) proves supervised adapters against real successful
+and failed Nix builds, transient publication retry, restart replay, and deduplication. The maintained offline
+lane of [`stream-github-ci-waiter`](cells/stream-github-ci-waiter/) proves pending-to-terminal polling, keyed
+supersession, publication retry, timeout refusal, and cleanup; its opt-in authenticated lane exercises the same
+boundary against a real GitHub Actions transition without making network state a merge gate.
 
 <a id="agent-spec-resource-bindings"></a>
 
@@ -542,7 +600,11 @@ Inspect the declaration, every referenced template, and every workspace destinat
 materialization command. Materialization is byte-idempotent and does not imply hook installation. Starting
 the network is a separate, explicitly authorized action.
 
-For source `0fed14b`, the accepted published Linux executable has SHA256
+The latest independently pinned release-mode executable for source `ffdb83c` has SHA256
+`adbd2099db237c17df3dac29052cb387f4ed99888e7477910c33e518c377a3e8`. It is built from the exact source
+above and exercised by the maintained stream cell. It is not yet an immutable published release artifact.
+
+For the older source `0fed14b`, the accepted published Linux executable has SHA256
 `d61d12b2b1189a391c196ca28f8f4ba69072d14fcbad2571fc29db1f250f4eed`; its published archive has SHA256
 `d14404ae678bbe3f2a5ad8580cde1e4b8f6009067c46555f392c6e0957b8a2da`, and the downloaded `SHA256SUMS`
 asset has SHA256 `50cfd8722e58d1c74fdc543f3e3bb3bac768decd04575fde2360ea838ec5e9d3`. The immutable

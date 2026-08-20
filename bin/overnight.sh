@@ -128,9 +128,11 @@ fi
 
 requires_claude=0
 requires_codex=0
-while IFS=$'\t' read -r _cell _harness models _effort _seats _cost _timeout _judges; do
+requires_nix=0
+while IFS=$'\t' read -r cell _harness models _effort _seats _cost _timeout _judges; do
   [[ "$models" != *claude-sonnet-5* ]] || requires_claude=1
   [[ "$models" != *gpt-5.6-sol* ]] || requires_codex=1
+  [ "$cell" != stream-nix-build-waiter ] || requires_nix=1
 done < "$inventory"
 
 printf '%-30s %-10s %-35s %-7s %-5s %-8s %s\n' \
@@ -181,6 +183,21 @@ fi
 echo
 echo "== free preflight (no model seats) =="
 bin/check-corpus.sh
+
+if [ "$requires_nix" -eq 1 ]; then
+  command -v nix-build >/dev/null || {
+    echo "FAIL: selected cells require Nix, but nix-build is not on PATH" >&2
+    exit 1
+  }
+  command -v nix-instantiate >/dev/null || {
+    echo "FAIL: selected cells require Nix, but nix-instantiate is not on PATH" >&2
+    exit 1
+  }
+  nix-instantiate --find-file nixpkgs >/dev/null 2>&1 || {
+    echo "FAIL: selected cells require Nix, but <nixpkgs> is not configured" >&2
+    exit 1
+  }
+fi
 
 if [ "$requires_claude" -eq 1 ]; then
   command -v claude >/dev/null || {

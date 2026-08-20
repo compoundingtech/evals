@@ -35,11 +35,14 @@ while (1) {
     last if !defined($read) || $read == 0;
     $buffer .= $chunk;
 
-    if (!defined($payload) && $buffer =~ s/.*?\e\[200~(.*?)\e\[201~//s) {
-        $payload = $1;
-        staged($payload);
-    }
-    if (defined($payload) && $buffer =~ s/^[^\r\n]*[\r\n]//s) {
+    while (1) {
+        if (!defined($payload)) {
+            last unless $buffer =~ s/.*?\e\[200~(.*?)\e\[201~//s;
+            $payload = $1;
+            staged($payload);
+            next;
+        }
+        last unless $buffer =~ s/^[^\r\n]*[\r\n]//s;
         $payload =~ s/[\r\n]+/ /g;
         print {$log} "$payload\n";
         accepted($payload);

@@ -9,7 +9,6 @@ export PTY_ROOT="$net/pty"
 export XDG_STATE_HOME="$root/state"
 export ST_AGENT=stream.worker
 export STREAM_KEEP_ALIVE=0
-real_gh="$(command -v gh)"
 real_st2="$(command -v st2)"
 
 cleanup() {
@@ -72,6 +71,7 @@ test "$(find "$net/agents/stream/worker/resources/inbox" -type f | wc -l)" -eq 1
 echo "GH-CI-TIMEOUT-NO-EVENT-GREEN-b9e4"
 
 if test "${STREAM_GH_LIVE:-0}" = 1; then
+  real_gh="$(command -v gh)"
   "$real_gh" auth status >/dev/null
   rm -f "$root/live.count"
   live="$(STREAM_GH_BIN="$real_gh" STREAM_GH_TRACE_FILE="$root/live-trace.jsonl" STREAM_GH_MAX_ATTEMPTS=700 STREAM_GH_POLL_SECONDS=2 "$root/wait-gh-pr-ci.sh")"

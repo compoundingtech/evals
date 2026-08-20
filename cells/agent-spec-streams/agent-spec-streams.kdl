@@ -20,7 +20,7 @@ eval {
     judge "INGRESS - external events deduplicate stably and conflicting identity reuse fails closed" {
       exec "grep -Fqx STREAM-INGRESS-GREEN-83a7 $RUNS_DIR/contract.out"
     }
-    judge "CAPABILITIES - strict discovery and no-follow state/inbox operations prevent redirected writes" {
+    judge "CAPABILITIES - strict discovery and no-follow state/inbox/archive operations prevent redirected writes" {
       exec "grep -Fqx STREAM-CAPABILITIES-GREEN-83a7 $RUNS_DIR/contract.out"
     }
     judge "LIFECYCLE - suspend removes owner plus adapters and refuses ingress; resume relaunches them" {

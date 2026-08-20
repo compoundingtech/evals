@@ -20,7 +20,14 @@ url="$(jq -er '.url' <<<"$pr_json")"
 head="$(jq -er '.headRefOid' <<<"$pr_json")"
 
 for attempt in $(seq 1 "$max_attempts"); do
+  set +e
   checks="$("$gh_bin" pr checks "$pr" --repo "$repo" --json name,state,bucket,workflow,link)"
+  checks_status="$?"
+  set -e
+  if test "$checks_status" -ne 0 && test "$checks_status" -ne 8; then
+    printf 'gh pr checks failed with status %s\n' "$checks_status" >&2
+    exit "$checks_status"
+  fi
   summary="$(jq -cer 'sort_by(.workflow, .name) | map({workflow,name,state,bucket,link})' <<<"$checks")"
   count="$(jq 'length' <<<"$summary")"
   pending="$(jq '[.[] | select(.bucket == "pending")] | length' <<<"$summary")"

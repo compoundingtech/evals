@@ -129,6 +129,38 @@ nofollow_case() {
 nofollow_case state streams
 nofollow_case inbox inbox
 
+archive_catalog="$root/no-follow-archive"
+archive_agent="$archive_catalog/agents/stream/worker"
+archive_outside="$root/outside-archive"
+mkdir -p "$archive_agent/resources" "$archive_outside"
+cp "$original" "$archive_agent/agent.kdl"
+archive_first="$(st2 event emit stream.worker \
+  --catalog "$archive_catalog" \
+  --stream external \
+  --event-id no-follow-archive-first \
+  --key archive \
+  --message first \
+  --host stream \
+  --json)"
+archive_first_filename="$(jq -r .filename <<<"$archive_first")"
+rmdir "$archive_agent/resources/archive"
+ln -s "$archive_outside" "$archive_agent/resources/archive"
+set +e
+st2 event emit stream.worker \
+  --catalog "$archive_catalog" \
+  --stream external \
+  --event-id no-follow-archive-second \
+  --key archive \
+  --supersede \
+  --message second \
+  --host stream \
+  --json >"$root/no-follow-archive.out" 2>&1
+archive_status="$?"
+set -e
+test "$archive_status" -ne 0
+test -e "$archive_agent/resources/inbox/$archive_first_filename"
+test -z "$(find "$archive_outside" -mindepth 1 -print -quit)"
+
 temporary_catalog="$root/no-follow-temporary"
 temporary_agent="$temporary_catalog/agents/stream/worker"
 temporary_state="$temporary_agent/resources/streams/external"

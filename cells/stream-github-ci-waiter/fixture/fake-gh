@@ -13,8 +13,10 @@ case "${1:-} ${2:-}" in
     printf '%s' "$count" >"$count_file"
     if test "${FAKE_GH_MODE:-success}" = pending; then
       printf '%s\n' '[{"bucket":"pending","link":"https://example.invalid/run","name":"check","state":"IN_PROGRESS","workflow":"Nix"}]'
+      exit 8
     elif test "$count" -lt 3; then
       printf '%s\n' '[{"bucket":"pending","link":"https://example.invalid/run","name":"check","state":"IN_PROGRESS","workflow":"Nix"}]'
+      exit 8
     elif test "${FAKE_GH_MODE:-success}" = failure; then
       printf '%s\n' '[{"bucket":"fail","link":"https://example.invalid/run","name":"check","state":"FAILURE","workflow":"Nix"}]'
     else

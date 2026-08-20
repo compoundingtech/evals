@@ -3,7 +3,11 @@ set -euo pipefail
 
 case "${1:-} ${2:-}" in
   'pr view')
-    printf '%s\n' '{"number":285,"url":"https://github.com/compoundingtech/st2/pull/285","headRefOid":"1ca43e397f804277c553b08b4571408e82831bb4","state":"MERGED"}'
+    head='1ca43e397f804277c553b08b4571408e82831bb4'
+    if test "${FAKE_GH_MODE:-success}" = head-change && test -e "${FAKE_GH_COUNT_FILE:?}.head-changed"; then
+      head='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+    fi
+    printf '{"number":285,"url":"https://github.com/compoundingtech/st2/pull/285","headRefOid":"%s","state":"MERGED"}\n' "$head"
     ;;
   'pr checks')
     count_file="${FAKE_GH_COUNT_FILE:?FAKE_GH_COUNT_FILE is required}"
@@ -11,7 +15,10 @@ case "${1:-} ${2:-}" in
     test ! -f "$count_file" || count="$(cat "$count_file")"
     count=$((count + 1))
     printf '%s' "$count" >"$count_file"
-    if test "${FAKE_GH_MODE:-success}" = pending; then
+    if test "${FAKE_GH_MODE:-success}" = head-change; then
+      : >"$count_file.head-changed"
+      printf '%s\n' '[{"bucket":"pass","link":"https://example.invalid/run","name":"check","state":"SUCCESS","workflow":"Nix"}]'
+    elif test "${FAKE_GH_MODE:-success}" = pending; then
       printf '%s\n' '[{"bucket":"pending","link":"https://example.invalid/run","name":"check","state":"IN_PROGRESS","workflow":"Nix"}]'
       exit 8
     elif test "$count" -lt 3; then

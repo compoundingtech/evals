@@ -30,6 +30,12 @@ for attempt in $(seq 1 "$max_attempts"); do
     printf 'gh pr checks failed with status %s\n' "$checks_status" >&2
     exit "$checks_status"
   fi
+  current_head_json="$("$gh_bin" pr view "$pr" --repo "$repo" --json headRefOid)"
+  current_head="$(jq -er '.headRefOid' <<<"$current_head_json")"
+  if test "$current_head" != "$head"; then
+    printf 'GitHub PR head changed while polling: %s -> %s\n' "$head" "$current_head" >&2
+    exit 75
+  fi
   summary="$(jq -cer 'sort_by(.workflow, .name) | map({workflow,name,state,bucket,link})' <<<"$checks")"
   count="$(jq 'length' <<<"$summary")"
   pending="$(jq '[.[] | select(.bucket == "pending")] | length' <<<"$summary")"

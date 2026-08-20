@@ -70,6 +70,14 @@ grep -Fq 'did not reach a terminal state after 3 attempts' "$root/pending.out"
 test "$(find "$net/agents/stream/worker/resources/inbox" -type f | wc -l)" -eq 1
 echo "GH-CI-TIMEOUT-NO-EVENT-GREEN-b9e4"
 
+set +e
+STREAM_GH_MAX_ATTEMPTS=3 run_fake head-change "$root/head-change.count" >"$root/head-change.out" 2>&1
+head_change_status="$?"
+set -e
+test "$head_change_status" -eq 75
+grep -Fq 'GitHub PR head changed while polling' "$root/head-change.out"
+test "$(find "$net/agents/stream/worker/resources/inbox" -type f | wc -l)" -eq 1
+
 if test "${STREAM_GH_LIVE:-0}" = 1; then
   real_gh="$(command -v gh)"
   "$real_gh" auth status >/dev/null

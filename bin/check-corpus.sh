@@ -5,9 +5,9 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
-expected_source="474e6c0"
-expected_binary_sha256="bc8cd6b10ff2ba98bd847f070fa45be44fb869d0daefd45367aa0d9c9adb82fc"
-expected_version_regex='^st2 0\.1\.0 — running from local source \(474e6c0, .+ ago\)$'
+expected_source="47c4aed"
+expected_binary_sha256="d2d692bde797c162071e30ee4a6cf9889bdd8cadb38227cd64d1f29af47cba08"
+expected_version_regex='^st2 0\.1\.0 — running from local source \(47c4aed, .+ ago\)$'
 st2_path="$(command -v st2)"
 actual_version="$(st2 --version)"
 [[ "$actual_version" =~ $expected_version_regex ]] || {

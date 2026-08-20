@@ -19,6 +19,7 @@ case "${1:-} ${2:-}" in
       exit 8
     elif test "${FAKE_GH_MODE:-success}" = failure; then
       printf '%s\n' '[{"bucket":"fail","link":"https://example.invalid/run","name":"check","state":"FAILURE","workflow":"Nix"}]'
+      exit 1
     else
       printf '[{"bucket":"pass","link":"https://example.invalid/run%s","name":"check","state":"SUCCESS","workflow":"Nix"}]\n' "${FAKE_GH_LINK_SUFFIX:-}"
     fi

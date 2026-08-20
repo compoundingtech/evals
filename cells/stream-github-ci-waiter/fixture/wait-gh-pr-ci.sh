@@ -24,7 +24,9 @@ for attempt in $(seq 1 "$max_attempts"); do
   checks="$("$gh_bin" pr checks "$pr" --repo "$repo" --json name,state,bucket,workflow,link)"
   checks_status="$?"
   set -e
-  if test "$checks_status" -ne 0 && test "$checks_status" -ne 8; then
+  # `gh pr checks` returns 1 for a terminal failed/cancelled check while still
+  # writing the requested JSON, and 8 while checks remain pending.
+  if test "$checks_status" -ne 0 && test "$checks_status" -ne 1 && test "$checks_status" -ne 8; then
     printf 'gh pr checks failed with status %s\n' "$checks_status" >&2
     exit "$checks_status"
   fi

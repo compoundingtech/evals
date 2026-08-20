@@ -88,21 +88,96 @@ printf 'PI-EXCLUSIVITY-GREEN-p1a7\n'
 # ---------------------------------------------------------------------------------------------
 # TRANSPORT
 #
-# The hand-authored form must reach the same wrapper as the typed driver, and — unlike `mcp` — must
-# render nothing and generate no DING companion. A generated companion here would mean a natively
-# delivered seat was also being poked through the terminal.
+# The hand-authored `deliver "pi-channel"` form must reach the SAME wrapper as the typed pi driver,
+# and must add no DING companion.
+#
+# Asserting only "the JSON has no ding and mentions pilot" would be vacuous for a judge whose stated
+# purpose is the wrapper: a declaration compiled to the wrong wrapper entirely would still pass it.
+# The task inventory does not expose argv, so the two paths are compiled for real and their launched
+# command lines compared. Byte equality after normalising the catalog path is what proves
+# convergence — strictly stronger than matching a wrapper substring, because it also catches a
+# divergent identity, runtime id, or provider argv.
+#
+# Still model-free: `pi` here is a stub that sleeps, and nothing contacts a model or the network.
 # ---------------------------------------------------------------------------------------------
+transport_bin="$work/bin"
+mkdir -p "$transport_bin"
+printf '#!/usr/bin/env bash\nsleep 30\n' > "$transport_bin/pi"
+chmod +x "$transport_bin/pi"
+
+transport_hooks="$work/transport-hooks"
+mkdir -p "$transport_hooks"
+ST_HOOKS="$transport_hooks" st2 hooks install >/dev/null 2>&1 ||
+  fail "hooks install failed while preparing the transport comparison"
+
+compile_launch() {
+  # Launch one variant in its own PTY root and echo its command line with the catalog path masked.
+  # A separate root per variant is required: both variants resolve to the same session id, so a
+  # shared root would make the second pass adopt the first instead of compiling its own launch.
+  local variant="$1" catalog="$2"
+  local root="$work/pty-$variant"
+  mkdir -p "$root"
+  PATH="$transport_bin:$PATH" ST_HOOKS="$transport_hooks" PTY_ROOT="$root" \
+    st2 up --catalog "$catalog" --host evalhost --once >/dev/null 2>&1
+  sleep 2
+  local command
+  command="$(PTY_ROOT="$root" pty list --json 2>/dev/null |
+    python3 -c "import json,sys;print(next((s['command'] for s in json.load(sys.stdin)),'ABSENT'))")"
+  PTY_ROOT="$root" ST_HOOKS="$transport_hooks" \
+    st2 down --catalog "$catalog" --host evalhost >/dev/null 2>&1
+  printf '%s' "${command//$catalog/<CATALOG>}"
+}
+
+typed_catalog="$work/typed"
+mkdir -p "$typed_catalog/agents/evalhost/pilot" "$work/ws-typed"
+cat > "$typed_catalog/agents/evalhost/pilot/agent.kdl" <<KDL
+agent "pilot" {
+  host "evalhost"
+  workspace "$work/ws-typed"
+  pi {
+    model "provider/model"
+    prompt "boot"
+  }
+}
+KDL
+
 deliver_catalog="$work/deliver"
-mkdir -p "$deliver_catalog/agents/evalhost/pilot" "$work/ws"
+mkdir -p "$deliver_catalog/agents/evalhost/pilot" "$work/ws-deliver"
 cat > "$deliver_catalog/agents/evalhost/pilot/agent.kdl" <<KDL
 agent "pilot" {
   host "evalhost"
-  workspace "$work/ws"
+  workspace "$work/ws-deliver"
   deliver "pi-channel"
   argv "pi" "-a" "--model" "provider/model" "boot"
 }
 KDL
 
+typed_argv="$(compile_launch typed "$typed_catalog")"
+deliver_argv="$(compile_launch deliver "$deliver_catalog")"
+
+# Non-vacuous: a variant that never launched must fail rather than compare equal as "ABSENT".
+[ "$typed_argv" != "ABSENT" ] || fail "the typed pi driver produced no launch to compare"
+[ "$deliver_argv" != "ABSENT" ] || fail "deliver \"pi-channel\" produced no launch to compare"
+
+case "$typed_argv" in
+  *"driver pi-session"*) ;;
+  *) fail "the typed pi driver did not compile to the pi-session wrapper: $typed_argv" ;;
+esac
+case "$deliver_argv" in
+  *"driver pi-session"*) ;;
+  *) fail "deliver \"pi-channel\" did not compile to the pi-session wrapper: $deliver_argv" ;;
+esac
+case "$deliver_argv" in
+  *"-- pi -a --model provider/model boot"*) ;;
+  *) fail "the authored provider argv did not survive wrapping: $deliver_argv" ;;
+esac
+[ "$typed_argv" = "$deliver_argv" ] ||
+  fail "the two declaration paths diverge:
+  typed:   $typed_argv
+  deliver: $deliver_argv"
+
+# No DING companion for a natively-delivered seat: a companion would mean the seat was also being
+# poked through the terminal, which is exactly what `deliver` exists to avoid.
 tasks="$(st2 tasks --catalog "$deliver_catalog" --host evalhost --json 2>&1)" ||
   fail "task inventory failed for a deliver \"pi-channel\" declaration: $tasks"
 case "$tasks" in

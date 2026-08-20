@@ -21,16 +21,29 @@ model-backed cell needs corpus policy work that this cell deliberately does not 
 |---|---|
 | `EXPANSION` | The declaration must not name the channel extension — `st2 driver pi-session` splices it in from the binary's *verified* hook set, so a catalog never pins one host's layout. Also asserts `-a`, since pi's project-trust modal otherwise blocks startup before any event fires, and that `effort` lowers to pi's `--thinking`. |
 | `EXCLUSIVITY` | A declaration carrying both `ding` and `deliver` must fail closed. This is the rule that keeps a natively-delivered seat off the PTY write path entirely, which is what leaves decision `0004`'s synchronous-proof gate untouched. |
-| `TRANSPORT` | The hand-authored `deliver "pi-channel"` form reaches the same wrapper as the typed driver and — unlike `mcp` — renders nothing and generates **no DING companion**. A companion here would mean a natively delivered seat was also being poked through the terminal. |
+| `TRANSPORT` | The hand-authored `deliver "pi-channel"` form must reach the *same wrapper* as the typed driver, and generate **no DING companion**. Both paths are compiled for real and their launched command lines compared byte-for-byte after masking the catalog path — the inventory does not expose argv, and a substring check would not catch a divergent identity, runtime id, or provider argv. |
 | `HOOKSET` | pi has no hook mechanism of its own, so its extension ships in the same immutable, content-addressed set as the Codex and Claude lifecycle scripts. |
 | `FAIL-CLOSED` | Without a verified set the wrapper cannot supply the channel, so the launch is **held** and the error names the remedy — rather than flapping and burying that message in a restart loop. |
 | `CONTRACT` | The restored boot ritual is a *pointer* into st2's shipped bus contract, not a standalone instruction: it says to set status and drain the inbox without naming the commands. The declaration must therefore land that contract at `AGENTS.md`, where pi reads it, byte-identically. A fixture stand-in is used rather than vendoring st2's template across repos. Measured live: without the contract a real model hunts the filesystem with `find /` and never sets its status. |
 
 ## Teeth
 
-Verified non-vacuous rather than assumed: run against an `st2` predating pi support, all seven
-gating judges fail; against a build with it, all seven pass. A green result here is therefore
-evidence about st2, not about the harness being generous.
+Verified non-vacuous rather than assumed, three ways.
+
+- **Whole cell against a predecessor.** Run against an `st2` predating pi support, all seven gating
+  judges fail; against merged `main`, all seven pass. A green result is evidence about st2, not
+  about the cell being generous.
+- **`TRANSPORT` against a divergent wrapper.** The judge claims the two declaration paths converge,
+  so it is probed with a mutation that makes them diverge: switch the hand-authored fixture to
+  `deliver "mcp"` with a `claude` argv. The judge fails and names the wrapper it actually got —
+  `driver claude-session` — rather than passing on the absence of a DING companion.
+- **Against a variant that never launched.** `ABSENT` is rejected explicitly, so a comparison
+  between two failures cannot register as agreement.
+
+The `TRANSPORT` probe matters because the judge's first version was genuinely weak: it asserted only
+that the task inventory lacked `ding` and mentioned the agent, which a wrong wrapper would satisfy.
+The task inventory does not expose argv, so the current judge compiles both declaration paths for
+real and compares the launched command lines after masking the catalog path.
 
 ## Not covered, and why
 

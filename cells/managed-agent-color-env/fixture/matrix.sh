@@ -10,8 +10,8 @@ test -S "$runtime_dir/bus"
 export XDG_RUNTIME_DIR="$runtime_dir"
 systemd-run --user --scope --quiet true
 
-expected_st2_commit="15c63a9"
-expected_st2_sha256="6f5e76942f56b4ea1d2121d3f47efd216f27c91686333e95a9cfe5877e3f36fc"
+expected_st2_commit="6e06b55"
+expected_st2_sha256="b5a2a408830039e35ebfbfd4ab29ba66c629b810c8e7efa4f1d061faba3d405f"
 expected_pty_sha256="1c9716d435ca56ad9b4f67056d76fa6856cdc08e6bbda1fd4be6f59952e9fde3"
 st2_path="$(command -v st2)"
 pty_path="$(command -v pty)"

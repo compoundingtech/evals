@@ -1,0 +1,6 @@
+agent "nix-watcher" {
+  host "stream"
+  command "sleep 300"
+  stream "nix-success" { argv "bash" "$CATALOG/../nix-build-waiter.sh" "success" }
+  stream "nix-failure" { argv "bash" "$CATALOG/../nix-build-waiter.sh" "failure" }
+}

@@ -5,8 +5,8 @@ by evals. st2 is the current implementation, not the owner of the contract; a fu
 implementation can target the same contract and proofs.
 
 The current corpus proof is pinned to st2
-[`29dec2f3c9dc0f9eb980f913e9c972c3f10785f1`](https://github.com/compoundingtech/st2/commit/29dec2f3c9dc0f9eb980f913e9c972c3f10785f1)
-(`0.1.0+29dec2f`, source `29dec2f`). The pin identifies the implementation and version the corpus currently proves; it
+[`493bc5cb70c680650a7a49de0d3b33cccd5b6810`](https://github.com/compoundingtech/st2/commit/493bc5cb70c680650a7a49de0d3b33cccd5b6810)
+(`0.1.0`, source `493bc5c`). The pin identifies the implementation and version the corpus currently proves; it
 does not transfer ownership of the specification to st2. A proposed behavior change must update this contract
 and its maintained proof cells before an implementation claims conformance. Do not infer additional fields or
 commands from older corpus fixtures.
@@ -176,6 +176,11 @@ authored declarations outside the owning agent directory.
 Executable evidence: [`agent-spec-streams`](cells/agent-spec-streams/) proves strict declaration failures,
 direct lowering and runtime identity, command/argv execution, external ingress without a task, stable
 deduplication and conflicting-reuse refusal, and suspend/resume coupling through the real st2 CLI and runtime.
+[`stream-nix-build-waiter`](cells/stream-nix-build-waiter/) proves supervised adapters against real successful
+and failed Nix builds, transient publication retry, restart replay, and deduplication. The maintained offline
+lane of [`stream-github-ci-waiter`](cells/stream-github-ci-waiter/) proves pending-to-terminal polling, keyed
+supersession, publication retry, timeout refusal, and cleanup; its opt-in authenticated lane exercises the same
+boundary against a real GitHub Actions transition without making network state a merge gate.
 
 <a id="agent-spec-resource-bindings"></a>
 
@@ -595,8 +600,8 @@ Inspect the declaration, every referenced template, and every workspace destinat
 materialization command. Materialization is byte-idempotent and does not imply hook installation. Starting
 the network is a separate, explicitly authorized action.
 
-The latest independently pinned candidate executable for source `29dec2f` has SHA256
-`af4bf721977f9cd11992ba96ba8b5a0afdec1f8619ec2a20ccad6558768d7b2a`. It is built from the exact source
+The latest independently pinned release-mode executable for source `493bc5c` has SHA256
+`25f35c420a305badc4e13eb62555a371eadd01b21d02ad448f3e4d57c4233dd4`. It is built from the exact source
 above and exercised by the maintained stream cell. It is not yet an immutable published release artifact.
 
 For the older source `0fed14b`, the accepted published Linux executable has SHA256

@@ -60,7 +60,7 @@ for mode in success failure; do
 done
 jq -e '.terminal == "success" and .buildStatus == 0 and .first.status == "created"' \
   "$root/nix-success.events.jsonl" >/dev/null
-jq -e '.terminal == "failure" and .buildStatus == 1 and .first.status == "created"' \
+jq -e '.terminal == "failure" and (.buildStatus == 1 or .buildStatus == 100) and .first.status == "created"' \
   "$root/nix-failure.events.jsonl" >/dev/null
 grep -Fq 'intentional-nix-waiter-failure' "$root/nix-failure.build.log"
 echo "STREAM-NIX-TERMINALS-GREEN-4d91"

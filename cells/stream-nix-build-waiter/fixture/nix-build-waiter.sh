@@ -21,7 +21,7 @@ if test "$mode" = success; then
   terminal=success
 else
   build_body='sleep 2; echo intentional-nix-waiter-failure >&2; exit 23'
-  expected_status=1
+  expected_status='1 or 100'
   terminal=failure
 fi
 
@@ -32,7 +32,14 @@ nix-build --no-out-link --option substitute false --expr \
 build_status="$?"
 set -e
 
-if test "$build_status" -ne "$expected_status"; then
+if test "$mode" = success; then
+  status_matches=$((build_status == 0))
+else
+  # Legacy nix-build releases use 1 for a failed derivation; newer releases
+  # reserve 100 for this same terminal build-failure outcome.
+  status_matches=$((build_status == 1 || build_status == 100))
+fi
+if test "$status_matches" -ne 1; then
   printf 'unexpected nix-build status: got %s, expected %s\n' "$build_status" "$expected_status" >&2
   cat "$build_log" >&2
   exit 1

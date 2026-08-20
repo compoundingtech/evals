@@ -94,6 +94,13 @@ test "$conflict_status" -ne 0
 test "$undeclared_status" -ne 0
 grep -Fq 'reused with different content' "$root/conflict.out"
 grep -Fq "does not declare stream 'missing'" "$root/undeclared.out"
+
+keyed="$(st2 event emit stream.worker --stream external --event-id keyed-old --key pr-1 --supersede --message old --host stream --json)"
+keyless="$(st2 event emit stream.worker --stream external --event-id keyless-new --supersede --message new --host stream --json)"
+keyed_filename="$(jq -r .filename <<<"$keyed")"
+test "$(jq -r .superseded <<<"$keyless")" = "$keyed_filename"
+test ! -e "$net/agents/stream/worker/resources/inbox/$keyed_filename"
+test -e "$net/agents/stream/worker/resources/archive/$keyed_filename"
 echo "STREAM-INGRESS-GREEN-83a7"
 
 nofollow_case() {
@@ -122,6 +129,36 @@ nofollow_case() {
 nofollow_case state streams
 nofollow_case inbox inbox
 
+temporary_catalog="$root/no-follow-temporary"
+temporary_agent="$temporary_catalog/agents/stream/worker"
+temporary_state="$temporary_agent/resources/streams/external"
+temporary_victim="$root/temporary-victim"
+mkdir -p "$temporary_state"
+cp "$original" "$temporary_agent/agent.kdl"
+printf '%s' 'must remain unchanged' >"$temporary_victim"
+set +e
+bash -c '
+  victim="$1"
+  state="$2"
+  catalog="$3"
+  for counter in $(seq 0 4095); do
+    ln -s "$victim" "$state/.state.tmp-$$-$counter"
+  done
+  exec st2 event emit stream.worker \
+    --catalog "$catalog" \
+    --stream external \
+    --event-id no-follow-temporary \
+    --message payload \
+    --host stream \
+    --json
+' _ "$temporary_victim" "$temporary_state" "$temporary_catalog" >"$root/no-follow-temporary.out" 2>&1
+temporary_status="$?"
+set -e
+test "$temporary_status" -ne 0
+grep -Fq 'fresh stream state temporary' "$root/no-follow-temporary.out"
+test "$(cat "$temporary_victim")" = 'must remain unchanged'
+test ! -e "$temporary_state/state.json"
+
 strict="$root/strict-discovery"
 mkdir -p "$strict/agents/stream/worker"
 cp "$original" "$strict/agents/stream/worker/agent.kdl"
@@ -139,6 +176,19 @@ set -e
 test "$strict_status" -ne 0
 grep -Fq 'unobservable declaration entry' "$root/strict-discovery.out"
 test ! -e "$strict/agents/stream/worker/resources/inbox"
+
+strict_original="$(sha256sum "$strict/agents/stream/worker/agent.kdl")"
+set +e
+st2 stream add concealed-check \
+  --catalog "$strict" \
+  --agent stream.worker \
+  --host stream \
+  --json >"$root/strict-authoring.out" 2>&1
+authoring_status="$?"
+set -e
+test "$authoring_status" -ne 0
+grep -Fq 'unobservable declaration entry' "$root/strict-authoring.out"
+test "$(sha256sum "$strict/agents/stream/worker/agent.kdl")" = "$strict_original"
 echo "STREAM-CAPABILITIES-GREEN-83a7"
 
 st2 agent desired-state stream.worker suspended --reason "Acceptance hold" --host stream --json >"$root/suspend.json"

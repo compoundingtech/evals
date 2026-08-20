@@ -5,8 +5,8 @@ by evals. st2 is the current implementation, not the owner of the contract; a fu
 implementation can target the same contract and proofs.
 
 The current corpus proof is pinned to st2
-[`9be176f5ce06443296e38bc53760b64fd48ee3d5`](https://github.com/compoundingtech/st2/commit/9be176f5ce06443296e38bc53760b64fd48ee3d5)
-(`0.1.0+9be176f`, source `9be176f`). The pin identifies the implementation and version the corpus currently proves; it
+[`2fa21f12212777ee46857d6eb3eb13db1b4ba64b`](https://github.com/compoundingtech/st2/commit/2fa21f12212777ee46857d6eb3eb13db1b4ba64b)
+(`0.1.0+2fa21f1`, source `2fa21f1`). The pin identifies the implementation and version the corpus currently proves; it
 does not transfer ownership of the specification to st2. A proposed behavior change must update this contract
 and its maintained proof cells before an implementation claims conformance. Do not infer additional fields or
 commands from older corpus fixtures.
@@ -168,9 +168,10 @@ without a key, before publishing its successor. Per-stream state is durable and 
 identities; an identity older than that honest horizon is new again. Event ids, keys, stream names, and subjects
 reject control characters before any write.
 
-Ingress resolves the recipient through strict catalog discovery and retains no-follow capabilities for stream
-state, inbox, and archive operations. An unobservable declaration entry or a symlinked state/inbox ancestor
-therefore fails closed and cannot redirect event bytes outside the owning agent directory.
+Ingress and stream authoring resolve their targets through strict catalog discovery. Ingress retains no-follow
+capabilities for stream state, its create-new temporary, inbox, and archive operations. An unobservable
+declaration entry or a symlinked state/inbox path therefore fails closed and cannot redirect event bytes or
+authored declarations outside the owning agent directory.
 
 Executable evidence: [`agent-spec-streams`](cells/agent-spec-streams/) proves strict declaration failures,
 direct lowering and runtime identity, command/argv execution, external ingress without a task, stable
@@ -594,8 +595,8 @@ Inspect the declaration, every referenced template, and every workspace destinat
 materialization command. Materialization is byte-idempotent and does not imply hook installation. Starting
 the network is a separate, explicitly authorized action.
 
-The latest independently pinned candidate executable for source `9be176f` has SHA256
-`e575e057d018be2b864eeb1aacd3f1d67332a7a2fbfcadccab1499b4511e5545`. It is built from the exact source
+The latest independently pinned candidate executable for source `2fa21f1` has SHA256
+`fda5b37c26bc4a2cd7a2fe545186efc96bb741f620395cb7ac8f0aa66e295f91`. It is built from the exact source
 above and exercised by the maintained stream cell. It is not yet an immutable published release artifact.
 
 For the older source `0fed14b`, the accepted published Linux executable has SHA256

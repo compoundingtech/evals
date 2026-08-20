@@ -48,6 +48,12 @@ check_invalid interval \
 check_invalid collision \
   'agent "worker" { host "stream"; command "true"; stream "ci" {}; exec "stream-ci" { command "true" } }' \
   'declares both `stream "ci"` and a task named `stream-ci`'
+check_invalid property \
+  'agent "worker" { host "stream"; command "true"; stream "ci" bogus=#true {} }' \
+  'no properties'
+check_invalid misspelled \
+  'agent "worker" { host "stream"; command "true"; stream "ci" { comand "watch" } }' \
+  'unsupported field `comand`'
 echo "STREAM-STRICT-SHAPE-GREEN-83a7"
 
 st2 validate --catalog "$net" --host stream --strict >/dev/null
@@ -89,6 +95,51 @@ test "$undeclared_status" -ne 0
 grep -Fq 'reused with different content' "$root/conflict.out"
 grep -Fq "does not declare stream 'missing'" "$root/undeclared.out"
 echo "STREAM-INGRESS-GREEN-83a7"
+
+nofollow_case() {
+  local name="$1"
+  local ancestor="$2"
+  local catalog="$root/no-follow-$name"
+  local agent="$catalog/agents/stream/worker"
+  local outside="$root/outside-$name"
+  mkdir -p "$agent/resources" "$outside"
+  cp "$original" "$agent/agent.kdl"
+  ln -s "$outside" "$agent/resources/$ancestor"
+  set +e
+  st2 event emit stream.worker \
+    --catalog "$catalog" \
+    --stream external \
+    --event-id "no-follow-$name" \
+    --message payload \
+    --host stream \
+    --json >"$root/no-follow-$name.out" 2>&1
+  local status="$?"
+  set -e
+  test "$status" -ne 0
+  test -z "$(find "$outside" -mindepth 1 -print -quit)"
+}
+
+nofollow_case state streams
+nofollow_case inbox inbox
+
+strict="$root/strict-discovery"
+mkdir -p "$strict/agents/stream/worker"
+cp "$original" "$strict/agents/stream/worker/agent.kdl"
+ln -s "$strict/missing-agent.kdl" "$strict/concealed-agent.kdl"
+set +e
+st2 event emit stream.worker \
+  --catalog "$strict" \
+  --stream external \
+  --event-id strict-discovery \
+  --message payload \
+  --host stream \
+  --json >"$root/strict-discovery.out" 2>&1
+strict_status="$?"
+set -e
+test "$strict_status" -ne 0
+grep -Fq 'unobservable declaration entry' "$root/strict-discovery.out"
+test ! -e "$strict/agents/stream/worker/resources/inbox"
+echo "STREAM-CAPABILITIES-GREEN-83a7"
 
 st2 agent desired-state stream.worker suspended --reason "Acceptance hold" --host stream --json >"$root/suspend.json"
 st2 up --once --catalog "$net" --host stream >"$root/suspended-up.out"

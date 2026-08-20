@@ -18,7 +18,7 @@ harness-native loader plus canonical hook file.
 |---|---|---|---:|---|---|---:|---|---|
 | `adopt-only-migration` | model-free | — | 0 | none | `90s` | 6 | — | **NO STRUCTURED RUN** |
 | `agent-spec-resource-bindings` | model-free | — | 0 | none | `60s` | 4 | — | **NO STRUCTURED RUN** |
-| `agent-spec-streams` | model-free | — | 0 | none | `90s` | 6 | — | **NO STRUCTURED RUN** |
+| `agent-spec-streams` | model-free | — | 0 | none | `90s` | 7 | — | **NO STRUCTURED RUN** |
 | `assignment-contract-cold-assignment` | Codex | `gpt-5.6-sol` / medium | 2 | medium | `1200s` | 3 | — | **NO STRUCTURED RUN** |
 | `assignment-contract-cold-focus` | Codex | `gpt-5.6-sol` / medium | 2 | medium | `1200s` | 3 | — | **NO STRUCTURED RUN** |
 | `assignment-contract-cold-resources` | Codex | `gpt-5.6-sol` / medium | 2 | medium | `1200s` | 3 | — | **NO STRUCTURED RUN** |

@@ -97,7 +97,7 @@ VERDICT: PASS
 ```
 
 Requirements are `st2 0.1.0` from source
-[`389eeb8`](https://github.com/compoundingtech/st2/commit/389eeb8038ad8e20736bb762dd509ea6a6fa46f1),
+[`ffdb83c`](https://github.com/compoundingtech/st2/commit/ffdb83c9541978a96ff8ce4c466628e15918cbc1),
 `pty`, Bash, Git, `jq`, Rust/Cargo for the pinned KDL parser gate, and Node for JavaScript fixtures. The
 `stream-nix-build-waiter` cell additionally requires `nix-build`, `nix-instantiate`, and a configured
 `<nixpkgs>` lookup; the overnight runner checks these before starting the selected corpus. A paid cell also

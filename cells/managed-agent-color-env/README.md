@@ -50,12 +50,12 @@ checks run before either run step starts. The control is the Linux executable fr
 The composed runtime uses:
 
 - PTY `d5fabc3917407aeb937a012bd97679c303e18033` (merged);
-- st2 `389eeb8038ad8e20736bb762dd509ea6a6fa46f1`, the exact stream candidate proven by this corpus.
+- st2 `ffdb83c9541978a96ff8ce4c466628e15918cbc1`, the exact stream candidate proven by this corpus.
 
 The executable SHA-256 identities are:
 
 - PTY: `1c9716d435ca56ad9b4f67056d76fa6856cdc08e6bbda1fd4be6f59952e9fde3`;
-- st2 candidate source: `f3dbd6901f59decdea999de08c6ddc72683a36d79ad4cf5cb219b554c63c8ba9`;
+- st2 candidate source: `adbd2099db237c17df3dac29052cb387f4ed99888e7477910c33e518c377a3e8`;
 - st2 `0fed14b` control: `d61d12b2b1189a391c196ca28f8f4ba69072d14fcbad2571fc29db1f250f4eed`.
 
 The exact st2 candidate identity is the accepted composition boundary for this cell and the repository-wide

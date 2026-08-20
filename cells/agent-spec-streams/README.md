@@ -1,7 +1,7 @@
 # agent-spec-streams
 
 Model-free E2E acceptance for the canonical Agent Spec stream contract introduced by
-[`compoundingtech/st2#288`](https://github.com/compoundingtech/st2/pull/288).
+[`compoundingtech/st2#300`](https://github.com/compoundingtech/st2/pull/300).
 
 The cell crosses the public parser, reconciliation, process, event-ingress, authoring, inbox, and task
 inventory boundaries. Its negative controls prove the contract is fail-closed for invalid names, unsupported

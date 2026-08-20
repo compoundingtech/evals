@@ -5,8 +5,8 @@ by evals. st2 is the current implementation, not the owner of the contract; a fu
 implementation can target the same contract and proofs.
 
 The current corpus proof is pinned to st2
-[`2fa21f12212777ee46857d6eb3eb13db1b4ba64b`](https://github.com/compoundingtech/st2/commit/2fa21f12212777ee46857d6eb3eb13db1b4ba64b)
-(`0.1.0+2fa21f1`, source `2fa21f1`). The pin identifies the implementation and version the corpus currently proves; it
+[`29dec2f3c9dc0f9eb980f913e9c972c3f10785f1`](https://github.com/compoundingtech/st2/commit/29dec2f3c9dc0f9eb980f913e9c972c3f10785f1)
+(`0.1.0+29dec2f`, source `29dec2f`). The pin identifies the implementation and version the corpus currently proves; it
 does not transfer ownership of the specification to st2. A proposed behavior change must update this contract
 and its maintained proof cells before an implementation claims conformance. Do not infer additional fields or
 commands from older corpus fixtures.
@@ -595,8 +595,8 @@ Inspect the declaration, every referenced template, and every workspace destinat
 materialization command. Materialization is byte-idempotent and does not imply hook installation. Starting
 the network is a separate, explicitly authorized action.
 
-The latest independently pinned candidate executable for source `2fa21f1` has SHA256
-`fda5b37c26bc4a2cd7a2fe545186efc96bb741f620395cb7ac8f0aa66e295f91`. It is built from the exact source
+The latest independently pinned candidate executable for source `29dec2f` has SHA256
+`af4bf721977f9cd11992ba96ba8b5a0afdec1f8619ec2a20ccad6558768d7b2a`. It is built from the exact source
 above and exercised by the maintained stream cell. It is not yet an immutable published release artifact.
 
 For the older source `0fed14b`, the accepted published Linux executable has SHA256

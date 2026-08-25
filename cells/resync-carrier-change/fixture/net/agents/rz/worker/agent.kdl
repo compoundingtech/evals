@@ -1,0 +1,6 @@
+agent "worker" {
+  host "rz"
+  command "sleep 300"
+  resource "goal" uri="resources/goal.md" reason="Standing mission."
+  resource "journal" uri="resources/context/journal.md" reason="Agent-authored store."
+}

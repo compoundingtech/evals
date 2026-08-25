@@ -144,10 +144,14 @@ wait_for "declaration resync event" 'find "$inbox" -maxdepth 1 -type f -exec gre
 echo "RESYNC-DECLARATION-GREEN-c4a9"
 
 kill -TERM "$sup_pid"
-sup_pid=""
 for _ in $(seq 1 40); do
   kill -0 "$sup_pid" 2>/dev/null || break
   sleep 0.25
 done
+kill -0 "$sup_pid" 2>/dev/null && {
+  echo "resident supervisor did not terminate" >&2
+  exit 1
+}
+sup_pid=""
 st2 down --catalog "$net" --host rz >/dev/null 2>&1
 echo "RESYNC-CLEANUP-GREEN-c4a9"

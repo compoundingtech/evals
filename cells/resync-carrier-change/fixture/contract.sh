@@ -7,6 +7,7 @@ agent_dir="$net/agents/rz/worker"
 declaration="$agent_dir/agent.kdl"
 goal="$agent_dir/resources/goal.md"
 journal="$agent_dir/resources/context/journal.md"
+readiness="$agent_dir/resources/readiness.txt"
 inbox="$agent_dir/resources/inbox"
 archive="$agent_dir/resources/archive"
 original="$root/resync-carrier-change.original"
@@ -58,7 +59,7 @@ wait_running() {
   local deadline=$((SECONDS + 30))
   while ((SECONDS < deadline)); do
     if st2 tasks --catalog "$net" --host rz --json 2>/dev/null \
-      | jq -e '[.tasks[] | select(.runtimeId | startswith("rz.worker"))] | length > 0' >/dev/null; then
+      | jq -e '[.tasks[] | select((.runtimeId | startswith("rz.worker")) and .runtime.state == "running")] | length > 0' >/dev/null; then
       return 0
     fi
     sleep 0.25
@@ -67,7 +68,21 @@ wait_running() {
   return 1
 }
 wait_running
-sleep 1 # let the pass's watch-set application land behind the visible launch
+wait_watcher_ready() {
+  local deadline=$((SECONDS + 30))
+  local generation=0
+  while ((SECONDS < deadline)); do
+    generation=$((generation + 1))
+    printf 'readiness %s\n' "$generation" >"$readiness"
+    sleep 0.25
+    if find "$inbox" -maxdepth 1 -type f -exec grep -l '^key: readiness$' {} \; 2>/dev/null | grep -q .; then
+      return 0
+    fi
+  done
+  echo "resync watcher never observed readiness carrier" >&2
+  return 1
+}
+wait_watcher_ready
 
 goal_event_files() {
   local directory="$1"

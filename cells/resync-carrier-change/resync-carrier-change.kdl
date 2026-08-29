@@ -1,0 +1,34 @@
+// Resync carrier-change acceptance: a resident supervisor watches declared local carriers,
+// classifies them, and emits digest-keyed superseded events through the built-in resync stream.
+eval {
+  copy "./fixture"
+  max-timeout "120s"
+
+  run "contract" {
+    command "bash ./contract.sh"
+  }
+
+  judges {
+    judge "RESERVED — declaring the built-in resync stream is refused" {
+      exec "grep -Fqx RESYNC-RESERVED-GREEN-c4a9 $RUNS_DIR/contract.out"
+    }
+    judge "FIRST CHANGE — creating the goal carrier emits exactly one resync event" {
+      exec "grep -Fqx RESYNC-FIRST-CHANGE-GREEN-c4a9 $RUNS_DIR/contract.out"
+    }
+    judge "EQUAL BYTES — rewriting identical content stays silent (digest identity)" {
+      exec "grep -Fqx RESYNC-EQUAL-BYTES-SILENT-GREEN-c4a9 $RUNS_DIR/contract.out"
+    }
+    judge "AUTHORED STORE — the context store never notifies" {
+      exec "grep -Fqx RESYNC-AUTHORED-STORE-SILENT-GREEN-c4a9 $RUNS_DIR/contract.out"
+    }
+    judge "SUPERSEDE — changed content re-notifies and keeps one unread head per key" {
+      exec "grep -Fqx RESYNC-SUPERSEDE-GREEN-c4a9 $RUNS_DIR/contract.out"
+    }
+    judge "DECLARATION — whole-file replacement by rename notifies" {
+      exec "grep -Fqx RESYNC-DECLARATION-GREEN-c4a9 $RUNS_DIR/contract.out"
+    }
+    judge "CLEANUP — the resident supervisor and the seat are torn down" {
+      exec "grep -Fqx RESYNC-CLEANUP-GREEN-c4a9 $RUNS_DIR/contract.out"
+    }
+  }
+}
